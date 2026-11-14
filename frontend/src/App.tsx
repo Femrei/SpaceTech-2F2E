@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 
 import { AboutSheet } from "@/components/AboutSheet"
+import { ThemeToggle } from "@/components/ThemeToggle"
 import { LoadingPanels } from "@/components/Common"
 import { Dashboard } from "@/components/Dashboard"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -64,10 +65,13 @@ export default function App() {
             <SatelliteIcon className="size-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-base font-semibold leading-tight sm:text-lg">{t("appTitle")}</h1>
+            <h1 className="truncate font-heading text-lg font-semibold leading-tight sm:text-xl">{t("appTitle")}</h1>
             <p className="truncate text-xs text-muted-foreground sm:text-sm">{t("appSubtitle")}</p>
           </div>
-          {meta && <AboutSheet downloadedOn={meta.data_downloaded_on} />}
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            {meta && <AboutSheet downloadedOn={meta.data_downloaded_on} />}
+          </div>
         </div>
       </header>
 

@@ -8,13 +8,14 @@ import { trendKind, variableUnit } from "@/lib/content"
 import { fmt, fmtP, fmtPct, t } from "@/lib/i18n"
 import { TREND_ICON, TREND_TEXT, trendText } from "@/lib/trendStyle"
 
-// Tek bir KPI kutusu: küçük başlık + (i) açıklaması, büyük değer, altında
+// Tek bir KPI kutusu: küçük başlık + (i) açıklaması, büyük değer (sayıysa mono), altında
 // değeri sade dille anlatan kısa not.
-function Tile({ label, help, value, caption }: {
+function Tile({ label, help, value, caption, numeric = false }: {
   label: string
   help?: string
   value: ReactNode
   caption: ReactNode
+  numeric?: boolean
 }) {
   return (
     <Card size="sm" className="gap-1">
@@ -23,7 +24,7 @@ function Tile({ label, help, value, caption }: {
           {label}
           <InfoTip text={help} />
         </div>
-        <div className="text-2xl font-semibold tracking-tight tabular-nums">{value}</div>
+        <div className={numeric ? "font-mono text-xl font-medium tracking-tight tabular-nums sm:text-2xl" : "text-xl font-semibold tracking-tight sm:text-2xl"}>{value}</div>
         <div className="text-xs text-muted-foreground">{caption}</div>
       </CardContent>
     </Card>
@@ -62,11 +63,18 @@ export function KpiTiles({ result, variable, termHelp, showPercent = true }: {
       <Tile
         label={t("kpiChange")}
         help={termHelp("per decade")}
-        value={`${fmt(result.sen_slope_per_decade, 2, true)} ${unit}`}
+        numeric
+        value={
+          <>
+            {fmt(result.sen_slope_per_decade, 2, true)}
+            <span className="ml-1.5 font-sans text-sm font-normal text-muted-foreground">{unit}</span>
+          </>
+        }
         caption={t("kpiChangeCaption")}
       />
       <Tile
         label={t("kpiPercent")}
+        numeric
         value={!showPercent || pct === null ? "—" : fmtPct(pct)}
         caption={showPercent ? t("kpiPercentCaption") : t("noPercentCaption")}
       />

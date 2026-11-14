@@ -39,6 +39,8 @@ const TEXTS = {
     tr: "Veriler yüklenemedi. Bağlantını kontrol edip tekrar dene.",
   },
   retry: { en: "Try again", tr: "Tekrar dene" },
+  toLight: { en: "Switch to light theme", tr: "Açık temaya geç" },
+  toDark: { en: "Switch to dark theme", tr: "Koyu temaya geç" },
   // --- Dashboard ----------------------------------------------------------
   intro: {
     en: "Pick a region and a measurement to see what changed over the last 25 years, and whether the change is real or just chance.",

@@ -81,7 +81,7 @@ export function OverviewGrid({ meta, items, regionId, variableId, onSelect }: {
       <CardContent className="space-y-5">
         {meta.regions.map((region) => (
           <div key={region.id} className="space-y-2">
-            <h3 className="text-sm font-semibold">{regionName(region)}</h3>
+            <h3 className="font-heading text-base font-semibold">{regionName(region)}</h3>
             <div className="grid gap-3 sm:grid-cols-3">
               {meta.variables.map((variable) => {
                 const item = find(region.id, variable.id)

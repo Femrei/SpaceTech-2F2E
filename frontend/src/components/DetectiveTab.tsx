@@ -210,7 +210,7 @@ export function DetectiveTab({ meta }: { meta: Meta }) {
           <LoadingPanels />
         ) : (
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold">{themeLabel(theme!, meta.themes[theme!])}</h2>
+            <h2 className="font-heading text-xl font-semibold">{themeLabel(theme!, meta.themes[theme!])}</h2>
             <div className="grid gap-3 md:grid-cols-2">
               {suggestions.map((s, i) => {
                 const region = meta.regions.find((r) => r.id === s.region_id)
