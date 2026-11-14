@@ -43,8 +43,42 @@ cd frontend && npm run build && cd ..
 uvicorn api:app --host 0.0.0.0 --port 8000
 ```
 
+With Docker (same thing in one container, this is what hosting platforms run):
+
+```bash
+docker build -t earth-trend-detective .
+docker run -p 8000:8000 earth-trend-detective     # http://localhost:8000
+```
+
+### Publishing a public link
+
+The `Dockerfile` works on any host that builds Docker images and sets `$PORT`.
+Two free options that give a public URL with no login for visitors:
+
+- **Render** (render.com): New → Web Service → connect this GitHub repo →
+  Runtime: Docker → Instance type: Free → Create. The URL looks like
+  `https://<name>.onrender.com`. Free instances sleep when idle, so the first
+  visit can take ~1 minute.
+- **Hugging Face Spaces** (huggingface.co/new-space): SDK: Docker → push this
+  repo to the Space, and add `app_port: 8000` to the Space's README header.
+
+After deploying, open the link in a private/incognito window to check it works
+without being signed in.
+
 UI language: set `LANG` in `frontend/src/lib/i18n.ts` (`"tr"` during development,
 `"en"` for the final submission).
+
+### App tabs
+
+| Tab | What it does | Uses |
+|---|---|---|
+| Dashboard | Region + measurement picker with map, KPI tiles, Simple/Detailed chart, plain-language explanation, all-regions grid | A `load_series`, B `analyze_trend`, `interpret` |
+| Detective Mode | Theme → suggestions → investigation, with clue + "follow the clue" | D `THEMES`, `suggest`, `next_step_hint` |
+| Case Files | Ready-made cases; two-region cases open the compare view | D `get_cases` |
+| Compare | Same measurement, two regions, same/opposite direction summary | B `compare_trends` |
+
+API endpoints (`api.py`): `/api/meta`, `/api/analysis`, `/api/overview`,
+`/api/compare`, `/api/suggest`.
 
 ## Contribution workflow
 
