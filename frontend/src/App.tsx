@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react"
 import {
   FolderOpenIcon,
   LayoutDashboardIcon,
@@ -9,19 +9,32 @@ import {
 } from "lucide-react"
 
 import { AboutSheet } from "@/components/AboutSheet"
-import { CasesTab } from "@/components/CasesTab"
-import { CompareTab } from "@/components/CompareTab"
+import { LoadingPanels } from "@/components/Common"
 import { Dashboard } from "@/components/Dashboard"
-import { DetectiveTab } from "@/components/DetectiveTab"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { fetchMeta, type Meta } from "@/lib/api"
 import { t } from "@/lib/i18n"
 
-// Sekme içerikleri gizlense de bellekte kalır (forceMount); böylece örneğin
-// Dedektif Modu'ndaki ilerleme sekme değiştirince kaybolmaz.
+// Pano dışındaki sekmelerin kodu ayrı dosyalara bölünür ve ancak sekme ilk
+// açıldığında indirilir; açılışta sadece Pano yüklenir.
+const DetectiveTab = lazy(() => import("@/components/DetectiveTab").then((m) => ({ default: m.DetectiveTab })))
+const CasesTab = lazy(() => import("@/components/CasesTab").then((m) => ({ default: m.CasesTab })))
+const CompareTab = lazy(() => import("@/components/CompareTab").then((m) => ({ default: m.CompareTab })))
+
+// Bir sekme ilk açıldığında oluşturulur; sonra gizlense de bellekte kalır
+// (forceMount), böylece örneğin Dedektif Modu'ndaki ilerleme kaybolmaz.
 const PANEL = "data-[state=inactive]:hidden"
+
+// Sekme içeriğini sadece daha önce açılmışsa çizer; yüklenirken iskelet gösterir.
+function Panel({ value, visited, children }: { value: string; visited: Set<string>; children: ReactNode }) {
+  return (
+    <TabsContent value={value} forceMount className={PANEL}>
+      {visited.has(value) && <Suspense fallback={<LoadingPanels />}>{children}</Suspense>}
+    </TabsContent>
+  )
+}
 
 // Sayfanın tamamı: üst bar (logo + başlık + Hakkında) -> (geliştirme uyarısı)
 // -> 4 sekme -> altbilgi (veri kaynağı). Açılışta backend'den katalog vb.
@@ -29,6 +42,14 @@ const PANEL = "data-[state=inactive]:hidden"
 export default function App() {
   const [meta, setMeta] = useState<Meta | null>(null)
   const [failed, setFailed] = useState(false)
+  const [tab, setTab] = useState("explore")
+  const [visited, setVisited] = useState(() => new Set(["explore"]))
+
+  // Sekme değişince onu "açılmış" olarak işaretler (ilk açılışta içeriği yüklenir).
+  const openTab = (value: string) => {
+    setTab(value)
+    setVisited((prev) => (prev.has(value) ? prev : new Set(prev).add(value)))
+  }
 
   useEffect(() => {
     fetchMeta().then(setMeta).catch(() => setFailed(true))
@@ -68,19 +89,19 @@ export default function App() {
         ) : !meta ? (
           <Skeleton className="h-96 w-full" />
         ) : (
-          <Tabs defaultValue="explore" className="gap-5">
+          <Tabs value={tab} onValueChange={openTab} className="gap-5">
             <TabsList variant="line" className="h-auto w-full flex-wrap justify-start gap-1 border-b px-0 pb-1">
               <TabsTrigger className="h-10 flex-none px-3" value="explore"><LayoutDashboardIcon />{t("tabExplore")}</TabsTrigger>
               <TabsTrigger className="h-10 flex-none px-3" value="detective"><SearchIcon />{t("tabDetective")}</TabsTrigger>
               <TabsTrigger className="h-10 flex-none px-3" value="cases"><FolderOpenIcon />{t("tabCases")}</TabsTrigger>
               <TabsTrigger className="h-10 flex-none px-3" value="compare"><ScaleIcon />{t("tabCompare")}</TabsTrigger>
             </TabsList>
-            <TabsContent value="explore" forceMount className={PANEL}><Dashboard meta={meta} /></TabsContent>
-            <TabsContent value="detective" forceMount className={PANEL}><DetectiveTab meta={meta} /></TabsContent>
-            <TabsContent value="cases" forceMount className={PANEL}>
+            <Panel value="explore" visited={visited}><Dashboard meta={meta} /></Panel>
+            <Panel value="detective" visited={visited}><DetectiveTab meta={meta} /></Panel>
+            <Panel value="cases" visited={visited}>
               <CasesTab meta={meta} mock={meta.stubs_in_use.some((s) => s.startsWith("detective"))} />
-            </TabsContent>
-            <TabsContent value="compare" forceMount className={PANEL}><CompareTab meta={meta} /></TabsContent>
+            </Panel>
+            <Panel value="compare" visited={visited}><CompareTab meta={meta} /></Panel>
           </Tabs>
         )}
       </main>
