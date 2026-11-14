@@ -11,6 +11,9 @@ import { makeTermHelp, regionName, variableName, variableUnit } from "@/lib/cont
 import { t } from "@/lib/i18n"
 import { useAnalysis } from "@/lib/useAnalysis"
 
+// Basit/Detaylı seçicisinde seçili seçenek iki temada da net ayrışsın.
+const SEGMENT = "px-3 data-active:bg-card data-active:shadow-sm dark:data-active:border-transparent dark:data-active:bg-white/15"
+
 // Bir bölge + değişkenin tam analiz görünümü (Pano, Dedektif Modu ve Vaka
 // Dosyaları aynı bloğu kullanır):
 //   4 özet kutusu -> solda grafik (Basit/Detaylı), sağda "Bu ne demek?" kartı.
@@ -53,8 +56,8 @@ export function AnalysisBlock({ meta, regionId, variableId, extra }: {
             <CardAction>
               <Tabs value={view} onValueChange={(v) => setView(v as ChartView)}>
                 <TabsList>
-                  <TabsTrigger value="simple">{t("viewSimple")}</TabsTrigger>
-                  <TabsTrigger value="detailed">{t("viewDetailed")}</TabsTrigger>
+                  <TabsTrigger value="simple" className={SEGMENT}>{t("viewSimple")}</TabsTrigger>
+                  <TabsTrigger value="detailed" className={SEGMENT}>{t("viewDetailed")}</TabsTrigger>
                 </TabsList>
               </Tabs>
             </CardAction>

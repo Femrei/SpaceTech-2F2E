@@ -80,7 +80,9 @@ const TEXTS = {
   movingAvg: { en: "12-month average", tr: "12 aylık ortalama" },
   trendLine: { en: "Long-term trend", tr: "Uzun dönem eğilim" },
   ciBand: { en: "Uncertainty range (95%)", tr: "Belirsizlik aralığı (%95)" },
+  showMonthly: { en: "Show monthly values", tr: "Aylık değerleri göster" },
   anomaly: { en: "Difference from normal", tr: "Normalden fark" },
+  anomalyYearly: { en: "Yearly difference from normal", tr: "Yıllık normalden fark" },
   year: { en: "Year", tr: "Yıl" },
   sourceCaption: {
     en: "Source: {dataset} · monthly, averaged over the whole region",
@@ -90,8 +92,8 @@ const TEXTS = {
   whatItMeans: { en: "What does this mean?", tr: "Bu ne demek?" },
   howToRead: { en: "How to read the chart", tr: "Grafik nasıl okunur?" },
   readSimple1: {
-    en: "The thin grey line is each month's value; it goes up and down with the seasons.",
-    tr: "İnce gri çizgi her ayın değeri; mevsimlere göre iner çıkar.",
+    en: "Tick \"Show monthly values\" to add each month's raw value as a thin grey line; it goes up and down with the seasons.",
+    tr: "\"Aylık değerleri göster\" kutucuğuyla her ayın ham değerini ince gri çizgi olarak ekleyebilirsin; mevsimlere göre iner çıkar.",
   },
   readSimple2: {
     en: "The thick line is the 12-month average: the seasons are smoothed out.",
@@ -102,8 +104,8 @@ const TEXTS = {
     tr: "Kesikli renkli çizgi uzun dönem eğilim; etrafındaki gölge belirsizlik aralığıdır.",
   },
   readDetailed1: {
-    en: "Each bar shows how much a month differed from a normal month of the same kind (e.g. this July vs. an average July).",
-    tr: "Her çubuk, o ayın aynı takvim ayının normalinden ne kadar saptığını gösterir (ör. bu Temmuz, ortalama bir Temmuz'a göre).",
+    en: "Each bar is one year: how far that year's months were, on average, from their normal (e.g. each July vs. an average July).",
+    tr: "Her çubuk bir yıl: o yılın aylarının kendi normallerinden ortalama ne kadar saptığını gösterir (ör. her Temmuz, ortalama bir Temmuz'a göre).",
   },
   readDetailed2: {
     en: "Bars above zero: higher than normal. Below zero: lower than normal.",
@@ -139,6 +141,10 @@ const TEXTS = {
   regionB: { en: "Region 2", tr: "2. bölge" },
   sameRegion: { en: "Pick two different regions.", tr: "İki farklı bölge seç." },
   compareChartTitle: { en: "Difference from normal (12-month average)", tr: "Normalden fark (12 aylık ortalama)" },
+  compareChartTitlePct: {
+    en: "Difference from normal, % of each region's average (12-month average)",
+    tr: "Normalden fark, bölgenin kendi ortalamasına göre % (12 aylık ortalama)",
+  },
   compareChartDesc: {
     en: "Each solid line shows how far that region is from its own normal; dashed lines are the long-term trends.",
     tr: "Her düz çizgi o bölgenin kendi normalinden ne kadar saptığını gösterir; kesikli çizgiler uzun dönem eğilimlerdir.",

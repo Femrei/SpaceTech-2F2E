@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart"
 import type { ComparePoint, Meta, Region, TrendResult, Variable } from "@/lib/api"
 import { compareSummary, regionName, trendKind, variableName, variableShort, variableUnit } from "@/lib/content"
-import { LANG, fmt, fmtP, t } from "@/lib/i18n"
+import { LANG, fmt, fmtP, fmtPct, t } from "@/lib/i18n"
 import { TREND_ICON, TREND_TEXT, trendText } from "@/lib/trendStyle"
 import { useComparison } from "@/lib/useAnalysis"
 
@@ -41,7 +41,7 @@ function CompareTooltip({ active, payload, unit, nameA, nameB }: {
               <span className="size-2 rounded-full" style={{ background: color }} />
               {name}
             </span>
-            <span className="font-mono tabular-nums">{fmt(v, 2, true)} {unit}</span>
+            <span className="font-mono tabular-nums">{unit === "%" ? fmtPct(v) : `${fmt(v, 2, true)} ${unit}`}</span>
           </div>
         ),
       )}
@@ -107,6 +107,22 @@ export function CompareView({ meta, variableId, regionA, regionB }: {
   const { data } = state
   const unit = variableUnit(variable)
   const opposite = !data.comparison.same_direction
+  // Bölgelerin ölçeği çok farklı olabilir (Doğu Karadeniz'in yağışı Konya'nın 6 katı),
+  // bu yüzden grafik her bölgenin farkını kendi uzun dönem ortalamasına göre yüzde
+  // olarak çizer. Sıcaklık gibi sıfırı keyfi ölçümlerde yüzde anlamsız olduğundan
+  // (B'nin NO_PERCENT_VARIABLES kuralı) orada gerçek birim kullanılır.
+  const asPercent = !(meta.no_percent_variables ?? []).includes(variableId)
+  const chartUnit = asPercent ? "%" : unit
+  const scaleA = asPercent ? 100 / Math.abs(data.result_a.mean_value) : 1
+  const scaleB = asPercent ? 100 / Math.abs(data.result_b.mean_value) : 1
+  const times = (v: number | null, k: number) => (v === null ? null : v * k)
+  const rows: ComparePoint[] = data.points.map((p) => ({
+    date: p.date,
+    a: times(p.a, scaleA),
+    b: times(p.b, scaleB),
+    trend_a: times(p.trend_a, scaleA),
+    trend_b: times(p.trend_b, scaleB),
+  }))
   const yearTicks = data.points
     .map((p) => p.date)
     .filter((d) => d.endsWith("-01-01") && Number(d.slice(0, 4)) % 5 === 0)
@@ -125,27 +141,29 @@ export function CompareView({ meta, variableId, regionA, regionB }: {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>{variableName(variable)}: {t("compareChartTitle")}</CardTitle>
+            <CardTitle>
+              {variableName(variable)}: {asPercent ? t("compareChartTitlePct") : t("compareChartTitle")}
+            </CardTitle>
             <CardDescription>{t("compareChartDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <ChartContainer config={config} className="aspect-auto h-[300px] w-full sm:h-[340px]">
-              <ComposedChart data={data.points} margin={{ left: 0, right: 8, top: 16 }}>
+              <ComposedChart data={rows} margin={{ left: 0, right: 8, top: 16 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="date" ticks={yearTicks} tickFormatter={(d: string) => d.slice(0, 4)} tickLine={false} axisLine={false} />
                 <YAxis
                   width={48}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v: number) => fmt(v, 1)}
-                  label={{ value: unit, position: "top", offset: 6, style: { fill: "var(--muted-foreground)", fontSize: 11 } }}
+                  tickFormatter={(v: number) => fmt(v, asPercent ? 0 : 1)}
+                  label={{ value: chartUnit, position: "top", offset: 6, style: { fill: "var(--muted-foreground)", fontSize: 11 } }}
                 />
-                <Tooltip content={<CompareTooltip unit={unit} nameA={regionName(a)} nameB={regionName(b)} />} />
-                <ReferenceLine y={0} stroke="var(--border)" />
-                <Line dataKey="a" stroke={COLOR_A} strokeWidth={2} dot={false} isAnimationActive={false} />
-                <Line dataKey="b" stroke={COLOR_B} strokeWidth={2} dot={false} isAnimationActive={false} />
-                <Line dataKey="trend_a" stroke={COLOR_A} strokeWidth={3} strokeDasharray="8 5" dot={false} isAnimationActive={false} />
-                <Line dataKey="trend_b" stroke={COLOR_B} strokeWidth={3} strokeDasharray="8 5" dot={false} isAnimationActive={false} />
+                <Tooltip content={<CompareTooltip unit={chartUnit} nameA={regionName(a)} nameB={regionName(b)} />} />
+                <ReferenceLine y={0} stroke="var(--muted-foreground)" strokeOpacity={0.6} />
+                <Line dataKey="a" stroke={COLOR_A} strokeWidth={2.5} dot={false} isAnimationActive={false} />
+                <Line dataKey="b" stroke={COLOR_B} strokeWidth={2.5} dot={false} isAnimationActive={false} />
+                <Line dataKey="trend_a" stroke={COLOR_A} strokeWidth={3.5} strokeDasharray="10 6" dot={false} connectNulls isAnimationActive={false} />
+                <Line dataKey="trend_b" stroke={COLOR_B} strokeWidth={3.5} strokeDasharray="10 6" dot={false} connectNulls isAnimationActive={false} />
               </ComposedChart>
             </ChartContainer>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
