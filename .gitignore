@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Secrets
+.env
+*.key
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Large or downloaded data (commit only small curated files such as data/catalog.json)
+data/raw/
+data/cache/
+*.nc
+*.nc4
+*.h5
+*.hdf
