@@ -14,7 +14,17 @@
       "unit": "mm/month",
       "period": { "start": "2001-01", "end": "2025-09" },
       "period_note": "IMERG Final Run monthly data were only available up to September 2025 when the data were downloaded, so October–December 2025 are missing.",
-      "themes": ["drought", "water"]
+      "themes": ["drought", "water"],
+      "context": {
+        "increasing": "More rain and snow can refill soils, rivers, reservoirs and groundwater, which helps farms and nature. But if the extra water comes as heavier downpours, it can also raise the risk of floods and soil erosion, because hard, dry ground lets much of it run off.",
+        "decreasing": "Less rain and snow leaves less water to refill soils, rivers, reservoirs and groundwater, which can put more pressure on irrigation and wells in farming regions. Climate assessments project less summer rain and more drought for the Mediterranean region, which includes western and central Turkey, as warming continues.",
+        "no_clear_trend": "Rainfall changes a lot from one year to the next, so 25 years is often too short to separate a long-term change from natural ups and downs. 'No clear trend' does not mean nothing is changing — it means this data can't tell yet.",
+        "sources": [
+          { "title": "IPCC AR6 Working Group I (2021): Summary for Policymakers, headline statements", "url": "https://www.ipcc.ch/report/ar6/wg1/resources/spm-headline-statements/" },
+          { "title": "IPCC AR6 Working Group I (2021): Regional fact sheet, Europe and the Mediterranean", "url": "https://www.ipcc.ch/report/ar6/wg1/downloads/factsheets/IPCC_AR6_WGI_Regional_Fact_Sheet_Europe.pdf" },
+          { "title": "NASA Science: How atmospheric water vapor amplifies Earth's greenhouse effect", "url": "https://science.nasa.gov/earth/climate-change/steamy-relationships-how-atmospheric-water-vapor-amplifies-earths-greenhouse-effect/" }
+        ]
+      }
     },
     {
       "id": "soil_moisture",
@@ -28,7 +38,16 @@
       "resolution": "0.25° (about 25 km)",
       "unit": "kg/m²",
       "period": { "start": "2001-01", "end": "2025-12" },
-      "themes": ["drought", "water"]
+      "themes": ["drought", "water"],
+      "context": {
+        "increasing": "Wetter topsoil usually means more water for crops and wild plants. But soil that is already wet can't soak up much more, so heavy rain falling on it is more likely to run off and cause floods.",
+        "decreasing": "Drier topsoil leaves crops and wild plants less water to draw on, which can hurt rain-fed harvests and push farmers to pump more groundwater for irrigation. Soil moisture often warns of drought before other signs appear, and the IPCC reports that this kind of drought has already become more common around the Mediterranean.",
+        "no_clear_trend": "Topsoil reacts quickly to every wet or dry spell, so it swings a lot from year to year and a slow change can stay hidden. Remember that these values come from a computer model (GLDAS) fed with observations, not from direct measurements.",
+        "sources": [
+          { "title": "Drought.gov (NOAA NIDIS): Soil moisture", "url": "https://www.drought.gov/topics/soil-moisture" },
+          { "title": "IPCC AR6 Working Group I (2021): Regional fact sheet, Europe and the Mediterranean", "url": "https://www.ipcc.ch/report/ar6/wg1/downloads/factsheets/IPCC_AR6_WGI_Regional_Fact_Sheet_Europe.pdf" }
+        ]
+      }
     },
     {
       "id": "temp",
@@ -42,7 +61,17 @@
       "resolution": "0.5° × 0.625° (about 50 km)",
       "unit": "°C",
       "period": { "start": "2001-01", "end": "2025-12" },
-      "themes": ["warming", "drought"]
+      "themes": ["warming", "drought"],
+      "context": {
+        "increasing": "Warmer air increases evaporation from soil, lakes and plants, so land can dry out even if rainfall stays the same. Warming also brings more frequent heat waves and, in snowy places such as high mountains, less snow that melts earlier, which changes when rivers and lakes get their water.",
+        "decreasing": "A cooling trend would go against the warming seen across Europe and most of the world, so it is worth double-checking, for example against a nearby region. Cooler air means less evaporation, but also a higher risk of frost damage to crops.",
+        "no_clear_trend": "Temperature trends usually show up sooner than rain trends, but year-to-year swings can still hide a slow change over 25 years. Compare with a nearby region, or check again when more years of data are available.",
+        "sources": [
+          { "title": "NASA Science: How atmospheric water vapor amplifies Earth's greenhouse effect", "url": "https://science.nasa.gov/earth/climate-change/steamy-relationships-how-atmospheric-water-vapor-amplifies-earths-greenhouse-effect/" },
+          { "title": "IPCC AR6 Working Group I (2021): Summary for Policymakers, headline statements", "url": "https://www.ipcc.ch/report/ar6/wg1/resources/spm-headline-statements/" },
+          { "title": "IPCC AR6 Working Group I (2021): Regional fact sheet, Europe and the Mediterranean", "url": "https://www.ipcc.ch/report/ar6/wg1/downloads/factsheets/IPCC_AR6_WGI_Regional_Fact_Sheet_Europe.pdf" }
+        ]
+      }
     }
   ],
   "regions": [

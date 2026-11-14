@@ -16,6 +16,7 @@ Public API (used by the UI; do not change signatures without telling C):
     get_cases()                                     -> list[dict]
     next_step_hint(result, variable_id, region_id)  -> str
     next_step(result, variable_id, region_id)       -> {"text", "variable_id", "region_id"}
+    get_context(result, variable_id)                -> {"key", "text", "sources"}
 
 ``result`` is the dict returned by B's ``trend.analyze_trend``; only its
 ``direction`` and ``significant`` keys are read.
@@ -155,3 +156,23 @@ def next_step(result: dict, variable_id: str, region_id: str) -> dict:
 def next_step_hint(result: dict, variable_id: str, region_id: str) -> str:
     """Detective-style sentence suggesting what to look at next."""
     return next_step(result, variable_id, region_id)["text"]
+
+
+CONTEXT_KEYS = ("increasing", "decreasing", "no_clear_trend")
+
+
+def get_context(result: dict, variable_id: str) -> dict:
+    """Real-world context ("What does this mean?") for an ``analyze_trend`` result.
+
+    Picks ``variables[].context["increasing" | "decreasing"]`` only when the trend
+    is significant; anything else (not significant, or B's "no change" direction)
+    gets ``"no_clear_trend"``, so the UI never attaches a story to noise.
+    Returns ``{"key", "text", "sources": [{"title", "url"}, ...]}``.
+    """
+    context = get_variable(variable_id)["context"]
+    direction = result["direction"]
+    if bool(result["significant"]) and direction in ("increasing", "decreasing"):
+        key = direction
+    else:
+        key = "no_clear_trend"
+    return {"key": key, "text": context[key], "sources": list(context["sources"])}
