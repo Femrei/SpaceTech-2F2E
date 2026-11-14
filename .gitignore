@@ -24,8 +24,7 @@ env/
 .DS_Store
 Thumbs.db
 
-# Large or downloaded data (commit only small curated files such as data/catalog.json)
-data/raw/
+# Large or intermediate data (the small raw Giovanni CSVs in data/raw/ ARE committed)
 data/cache/
 *.nc
 *.nc4
