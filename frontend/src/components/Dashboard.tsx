@@ -10,7 +10,7 @@ import { regionDescription, regionName, variableName, variableShort } from "@/li
 import { t } from "@/lib/i18n"
 
 // Pano (dashboard) sekmesinin tamamı, yukarıdan aşağıya:
-//   1) Bölge + ölçüm seçimi (kısa açıklamalarıyla) ve yanında bölge haritası
+//   1) Bölge + ölçüm seçimi (kısa açıklamalarıyla), altında geniş bölge haritası
 //   2) Analiz bloğu: 4 özet kutusu, grafik (Basit/Detaylı), "Bu ne demek?" kartı
 //   3) Tüm bölgeler bir bakışta: tıklanabilir 3x3 özet ızgarası
 export function Dashboard({ meta }: { meta: Meta }) {
@@ -40,8 +40,8 @@ export function Dashboard({ meta }: { meta: Meta }) {
       <p className="text-sm text-muted-foreground">{t("intro")}</p>
 
       <Card size="sm">
-        <CardContent className="grid gap-4 lg:grid-cols-3">
-          <div className="grid content-start gap-4 sm:grid-cols-2 lg:col-span-2">
+        <CardContent className="space-y-4">
+          <div className="grid content-start gap-4 sm:grid-cols-2">
             <Picker
               label={t("region")}
               value={regionId}
@@ -57,7 +57,12 @@ export function Dashboard({ meta }: { meta: Meta }) {
               hint={variableShort(variable)}
             />
           </div>
-          <RegionMap regions={meta.regions} selectedId={regionId} onSelect={setRegionId} />
+          <RegionMap
+            regions={meta.regions}
+            selectedId={regionId}
+            onSelect={setRegionId}
+            mapClassName="h-72 sm:h-96"
+          />
         </CardContent>
       </Card>
 
