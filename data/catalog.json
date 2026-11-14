@@ -1,0 +1,225 @@
+{
+  "schema_version": 1,
+  "variables": [
+    {
+      "id": "precip",
+      "name": "Precipitation",
+      "short_description": "How much rain and snow falls each month, measured as the depth of water it would make on flat ground.",
+      "long_description": "Monthly precipitation from NASA's IMERG product, which combines measurements from a fleet of satellites in the Global Precipitation Measurement (GPM) mission and calibrates them with rain gauges on the ground. Rain and snow are where a region's water comes from: they refill soils, rivers, lakes and groundwater. A long-term drop can point to growing drought risk, while a rise can mean more water but also more floods. Precipitation varies a lot from year to year, so a trend is harder to detect than for temperature.",
+      "dataset": "GPM_3IMERGM",
+      "dataset_variable": "precipitation",
+      "source": "NASA GPM IMERG (satellite constellation, gauge-calibrated)",
+      "source_type": "satellite",
+      "resolution": "0.1° (about 10 km)",
+      "unit": "mm/month",
+      "period": { "start": "2001-01", "end": "2025-09" },
+      "period_note": "IMERG Final Run monthly data were only available up to September 2025 when the data were downloaded, so October–December 2025 are missing.",
+      "themes": ["drought", "water"]
+    },
+    {
+      "id": "soil_moisture",
+      "name": "Surface soil moisture (0–10 cm)",
+      "short_description": "How wet the top 10 cm of soil is — think of it as how much water plants can easily reach.",
+      "long_description": "The amount of water held in the top 10 cm of soil, from NASA's GLDAS Noah land surface model. It is not measured directly: the model combines satellite and ground observations of rain, sunlight, temperature and wind to calculate how much water soaks into the soil and how much evaporates. Surface soil moisture reacts quickly to both rain and heat, so it is one of the first places drought shows up and it matters directly for crops. 1 kg/m² equals a 1 mm layer of water.",
+      "dataset": "GLDAS_NOAH025_M",
+      "dataset_variable": "SoilMoi0_10cm_inst",
+      "source": "NASA GLDAS Noah land surface model (driven by satellite and ground observations)",
+      "source_type": "model",
+      "resolution": "0.25° (about 25 km)",
+      "unit": "kg/m²",
+      "period": { "start": "2001-01", "end": "2025-12" },
+      "themes": ["drought", "water"]
+    },
+    {
+      "id": "temp",
+      "name": "Air temperature (2 m)",
+      "short_description": "How warm the air is about 2 metres above the ground — roughly where people and crops feel it.",
+      "long_description": "Monthly mean air temperature at 2 m height from NASA's MERRA-2 reanalysis. A reanalysis is a weather model that is continuously corrected with millions of observations from satellites, weather stations, balloons and aircraft, giving a consistent record everywhere on Earth. Temperature is the most direct sign of warming. Warmer air also pulls more water out of soil and plants, so rising temperature can dry a region even if rainfall stays the same.",
+      "dataset": "M2TMNXSLV",
+      "dataset_variable": "T2M",
+      "source": "NASA MERRA-2 reanalysis",
+      "source_type": "reanalysis",
+      "resolution": "0.5° × 0.625° (about 50 km)",
+      "unit": "°C",
+      "period": { "start": "2001-01", "end": "2025-12" },
+      "themes": ["warming", "drought"]
+    }
+  ],
+  "regions": [
+    {
+      "id": "konya",
+      "name": "Konya Closed Basin",
+      "name_in_text": "the Konya Closed Basin",
+      "bbox": { "west": 32.0, "south": 37.2, "east": 34.0, "north": 38.6 },
+      "lat": 37.9,
+      "lon": 33.0,
+      "description": "A semi-arid plateau in central Türkiye whose rivers never reach the sea: water collects inside the basin or evaporates. The plain itself gets only around 300 mm of rain a year (our box, which also takes in the surrounding hills, averages about 440 mm), yet it is often called Türkiye's grain basket and its farms rely heavily on groundwater for irrigation. Falling groundwater levels have been linked to a growing number of sinkholes (obruk) opening up in the plain.",
+      "teaser": "Konya is Türkiye's grain basket, and its farms depend on scarce water.",
+      "themes": ["water", "drought", "warming"],
+      "compare_with": "black_sea"
+    },
+    {
+      "id": "van",
+      "name": "Lake Van Basin",
+      "name_in_text": "the Lake Van Basin",
+      "bbox": { "west": 42.0, "south": 38.0, "east": 44.0, "north": 39.3 },
+      "lat": 38.65,
+      "lon": 43.0,
+      "description": "A high plateau in eastern Türkiye around Lake Van, the country's largest lake, whose surface lies about 1,640 m above sea level. The lake has no outlet, which makes its water salty and alkaline (a soda lake). Winters are long, cold and snowy (January averages about −7 °C in our box), so changes in temperature affect snow cover, spring melt and the water that reaches the lake. Our box includes the lake itself, so the regional averages mix lake and land.",
+      "teaser": "Van's high, cold plateau is sensitive to changes in temperature and snow.",
+      "themes": ["warming", "water"],
+      "compare_with": "konya"
+    },
+    {
+      "id": "black_sea",
+      "name": "Eastern Black Sea",
+      "name_in_text": "the Eastern Black Sea",
+      "bbox": { "west": 39.5, "south": 40.4, "east": 41.6, "north": 41.2 },
+      "lat": 40.8,
+      "lon": 40.55,
+      "description": "The steep, green slopes of north-eastern Türkiye between the Black Sea coast and the crest of the Pontic (Kaçkar) Mountains, around Trabzon and Rize, famous for their tea gardens. Moist air from the sea is forced up the mountains, which makes this the wettest part of the country: the coast near Rize receives more than 2,000 mm of rain a year, and our box averages about 1,100 mm. Most of the box is mountain land, so it is cool — about 7.5 °C on average and under 18 °C in July. Heavy rain here can trigger floods and landslides.",
+      "teaser": "The Eastern Black Sea's rainy mountains are Türkiye's wettest corner — a useful contrast to the dry interior.",
+      "themes": ["water", "warming"],
+      "compare_with": "konya"
+    }
+  ],
+  "themes": [
+    {
+      "id": "drought",
+      "question": "Is it getting drier?",
+      "reasons": [
+        { "variable_id": "soil_moisture", "reason": "Soil moisture is one of the first places drought shows up." },
+        { "variable_id": "precip", "reason": "Less rain is the most direct way a region can dry out." },
+        { "variable_id": "temp", "reason": "Warmer air pulls more water from soil and plants, so heat can dry a region even when rain stays the same." }
+      ]
+    },
+    {
+      "id": "warming",
+      "question": "Is it getting hotter?",
+      "reasons": [
+        { "variable_id": "temp", "reason": "Air temperature is the most direct sign of warming." }
+      ]
+    },
+    {
+      "id": "water",
+      "question": "What's happening to water?",
+      "reasons": [
+        { "variable_id": "precip", "reason": "Rain and snow are where a region's water comes from." },
+        { "variable_id": "soil_moisture", "reason": "Soil moisture shows how much of that water stays where plants can reach it." }
+      ]
+    }
+  ],
+  "glossary": [
+    { "term": "trend", "definition": "The long-term direction a quantity is moving in over many years, once the ups and downs of seasons and single years are set aside." },
+    { "term": "anomaly", "definition": "How much a month differs from what is normal for that calendar month. A July anomaly of +1.5 °C means that July was 1.5 °C warmer than the average July." },
+    { "term": "seasonal cycle", "definition": "The regular rise and fall that repeats every year, like hot summers and cold winters. We remove it so it cannot hide a long-term trend or fake one." },
+    { "term": "climatology", "definition": "The long-term average for each calendar month, for example the average of all Januaries. Anomalies are measured against it." },
+    { "term": "p-value", "definition": "How likely it is that a trend at least this strong would appear by pure chance if nothing were really changing. Below 0.05 = significant." },
+    { "term": "statistically significant", "definition": "The trend is strong enough compared with the natural ups and downs that it is unlikely to be pure chance (here: p < 0.05). It does not tell you how big or important the change is, or what caused it." },
+    { "term": "Mann-Kendall test", "definition": "A test that checks whether values tend to go up or down over time by comparing them in pairs. We use the seasonal version, which only compares the same month across years (January with January), so the seasonal cycle cannot fool it." },
+    { "term": "Sen's slope", "definition": "A robust estimate of how fast a quantity changes: the median of the slopes between pairs of points. A few extreme months barely affect it." },
+    { "term": "linear regression (OLS)", "definition": "Fitting the straight line that best follows the anomalies (ordinary least squares). Its slope is the trend line drawn on the chart." },
+    { "term": "confidence interval", "definition": "A range of plausible values for the true rate of change, given the noise in the data. If a 95% interval does not include zero, a trend of zero is hard to reconcile with the data." },
+    { "term": "per decade", "definition": "Rates are given per 10 years. −1.2 kg/m² per decade means a drop of about 1.2 kg/m² every 10 years, or about 3 kg/m² over 25 years." },
+    { "term": "area-averaged", "definition": "One value for the whole region: the average over all grid cells inside the region's box. Places inside the region can behave differently from the average." }
+  ],
+  "hints": [
+    {
+      "variable_id": "*", "direction": "no change", "significant": true,
+      "text": "The test flags a significant trend, but its estimated rate is about zero. Look closely at the chart before drawing conclusions.",
+      "next": null
+    },
+    {
+      "variable_id": "soil_moisture", "direction": "decreasing", "significant": true,
+      "text": "🕵️ Clue found! The soil in {region} is drying. Is it less rain — or more heat? Check precipitation next.",
+      "next": { "variable_id": "precip", "region_id": "{region_id}" }
+    },
+    {
+      "variable_id": "soil_moisture", "direction": "increasing", "significant": true,
+      "text": "🕵️ Interesting — the soil in {region} is getting wetter. Is more rain falling? Check precipitation next.",
+      "next": { "variable_id": "precip", "region_id": "{region_id}" }
+    },
+    {
+      "variable_id": "soil_moisture", "direction": "*", "significant": false,
+      "text": "No significant trend in soil moisture yet — natural year-to-year swings may be hiding any change. Compare with {compare_region} to see a different story.",
+      "next": { "variable_id": "soil_moisture", "region_id": "{compare_region_id}" }
+    },
+    {
+      "variable_id": "precip", "direction": "decreasing", "significant": true,
+      "text": "🕵️ Clue found! Less rain is falling in {region}. Does the soil feel it? Check soil moisture next.",
+      "next": { "variable_id": "soil_moisture", "region_id": "{region_id}" }
+    },
+    {
+      "variable_id": "precip", "direction": "increasing", "significant": true,
+      "text": "🕵️ More rain is falling in {region}. Is the rest of the country seeing the same? Compare with {compare_region}.",
+      "next": { "variable_id": "precip", "region_id": "{compare_region_id}" }
+    },
+    {
+      "variable_id": "precip", "direction": "*", "significant": false,
+      "text": "Rain isn't clearly changing in {region} — its natural swings from year to year are large. So if the land is drying, what else could be behind it? Try temperature.",
+      "next": { "variable_id": "temp", "region_id": "{region_id}" }
+    },
+    {
+      "variable_id": "temp", "direction": "increasing", "significant": true,
+      "text": "🕵️ Clue found! It's getting warmer in {region}. Warmer air pulls more water out of soil and plants — check soil moisture next.",
+      "next": { "variable_id": "soil_moisture", "region_id": "{region_id}" }
+    },
+    {
+      "variable_id": "temp", "direction": "decreasing", "significant": true,
+      "text": "It's getting cooler in {region}, which goes against the warming seen in most of the world. Compare with {compare_region} to check.",
+      "next": { "variable_id": "temp", "region_id": "{compare_region_id}" }
+    },
+    {
+      "variable_id": "temp", "direction": "*", "significant": false,
+      "text": "No significant temperature trend yet — is 25 years long enough to tell? Compare with {compare_region}.",
+      "next": { "variable_id": "temp", "region_id": "{compare_region_id}" }
+    },
+    {
+      "variable_id": "*", "direction": "*", "significant": "*",
+      "text": "No clear clue yet — try comparing with {compare_region}, or think about whether 25 years is long enough.",
+      "next": { "variable_id": "{variable_id}", "region_id": "{compare_region_id}" }
+    }
+  ],
+  "cases": [
+    {
+      "id": "konya_drying",
+      "title": "Case 1: Is Konya drying out?",
+      "story": "In the Konya Closed Basin, wells have been drilled ever deeper and sinkholes have opened up in farm fields. But is the soil itself really getting drier — or does it only feel that way after a few bad years? Look at 25 years of NASA data and decide for yourself.",
+      "region_id": "konya",
+      "variable_id": "soil_moisture",
+      "compare_region_id": null,
+      "chain": null,
+      "status": "ready"
+    },
+    {
+      "id": "van_warming",
+      "title": "Case 2: Is Lake Van's basin heating up?",
+      "story": "Around Lake Van, winters are long and snowy, and the lake depends on the snow that melts each spring. A warmer basin could mean less snow and an earlier melt. But has the air really warmed over the last 25 years, or would a few mild winters only make it seem so? Let the data decide.",
+      "region_id": "van",
+      "variable_id": "temp",
+      "compare_region_id": null,
+      "chain": null,
+      "status": "ready"
+    },
+    {
+      "id": "different_climates_same_story",
+      "title": "Case 3: Very different climates, same story?",
+      "story": "The Konya plain is dry and sunny; the Eastern Black Sea's mountains get more than twice as much rain and are covered in tea gardens and forest. You might expect their soils to tell completely different stories. Put the two side by side and see whether they do.",
+      "region_id": "konya",
+      "variable_id": "soil_moisture",
+      "compare_region_id": "black_sea",
+      "chain": null,
+      "status": "ready"
+    },
+    {
+      "id": "konya_rain_or_heat",
+      "title": "Case 4: Rain or heat — who's the culprit?",
+      "story": "Soil can dry out for two reasons: less water falls on it, or more water is pulled out of it by warmer air. In Konya, both suspects are on the list. Start with the rain, then question the heat, and see which suspect the evidence fits better. Remember: a trend can make a suspect more or less likely, but on its own it cannot prove what caused the change.",
+      "region_id": "konya",
+      "variable_id": "precip",
+      "compare_region_id": null,
+      "chain": ["precip", "temp", "soil_moisture"],
+      "status": "ready"
+    }
+  ]
+}
