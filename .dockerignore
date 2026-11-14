@@ -6,7 +6,6 @@ venv
 .pytest_cache
 frontend/node_modules
 frontend/dist
-data/raw
 data/cache
 *.nc
 *.nc4

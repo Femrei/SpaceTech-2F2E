@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart"
 import type { ComparePoint, Meta, Region, TrendResult, Variable } from "@/lib/api"
 import { compareSummary, regionName, trendKind, variableName, variableShort, variableUnit } from "@/lib/content"
-import { LANG, fmt, t } from "@/lib/i18n"
+import { LANG, fmt, fmtP, t } from "@/lib/i18n"
 import { TREND_COLOR, TREND_ICON, trendText } from "@/lib/trendStyle"
 import { useComparison } from "@/lib/useAnalysis"
 
@@ -71,7 +71,7 @@ function RegionSummary({ region, result, unit, color }: {
           {trendText(kind)}
         </div>
         <div className="text-sm">
-          {fmt(result.slope_per_decade, 2, true)} {t("perDecadeUnit", { unit })}
+          {fmt(result.sen_slope_per_decade, 2, true)} {t("perDecadeUnit", { unit })}
         </div>
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           {result.significant ? (
@@ -79,7 +79,7 @@ function RegionSummary({ region, result, unit, color }: {
           ) : (
             <CircleDashedIcon className="size-3.5" />
           )}
-          {result.significant ? t("significant") : t("notSignificant")} · p = {fmt(result.mk_p, 3)}
+          {result.significant ? t("significant") : t("notSignificant")} · {fmtP(result.mk_p)}
         </div>
       </CardContent>
     </Card>

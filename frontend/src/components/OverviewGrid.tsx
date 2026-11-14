@@ -16,7 +16,8 @@ function Tile({ item, label, unit, selected, onSelect }: {
   selected: boolean
   onSelect: () => void
 }) {
-  if (item.error || item.slope_per_decade === undefined) {
+  const rate = item.sen_slope_per_decade ?? item.slope_per_decade
+  if (item.error || rate === undefined) {
     return (
       <div className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
         {label}: {t("notEnoughData")}
@@ -45,7 +46,7 @@ function Tile({ item, label, unit, selected, onSelect }: {
         {trendText(kind)}
       </div>
       <div className="text-xs text-muted-foreground">
-        {fmt(item.slope_per_decade, 2, true)} {t("perDecadeUnit", { unit })}
+        {fmt(rate, 2, true)} {t("perDecadeUnit", { unit })}
       </div>
       <div className="mt-2 h-10">
         <ResponsiveContainer width="100%" height={40} initialDimension={{ width: 200, height: 40 }}>

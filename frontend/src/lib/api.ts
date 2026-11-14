@@ -38,6 +38,8 @@ export interface Meta {
   pairs: [string, string][]
   data_downloaded_on: string
   stubs_in_use: string[]
+  mock_data: boolean
+  no_percent_variables: string[]
 }
 
 export interface Point {
@@ -50,7 +52,15 @@ export interface Point {
   ci_high: number | null
 }
 
+// B'nin analyze_trend() sonucunun tek değerli alanları (src/trend.py RESULT_KEYS).
+// Yön, anlamlılık ve yüzde değişim Sen eğiminden / mevsimsel Mann-Kendall testinden gelir;
+// slope_per_decade ve ci_low/ci_high doğrusal (OLS) eğimdir.
 export interface TrendResult {
+  n: number
+  start: string
+  end: string
+  mk_tau?: number
+  method?: string
   slope_per_decade: number
   ci_low: number
   ci_high: number
@@ -58,7 +68,7 @@ export interface TrendResult {
   mk_p: number
   sen_slope_per_decade: number
   significant: boolean
-  direction: "increasing" | "decreasing"
+  direction: "increasing" | "decreasing" | "no change"
   percent_change_per_decade: number | null
   mean_value: number
   n_years: number
@@ -100,9 +110,10 @@ export interface OverviewItem {
   variable_id: string
   error?: string
   slope_per_decade?: number
+  sen_slope_per_decade?: number
   percent_change_per_decade?: number | null
   significant?: boolean
-  direction?: "increasing" | "decreasing"
+  direction?: "increasing" | "decreasing" | "no change"
   mk_p?: number
   yearly?: { year: number; value: number | null }[]
 }

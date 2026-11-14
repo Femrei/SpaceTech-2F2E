@@ -15,8 +15,12 @@ const TEXTS = {
     tr: "Dünya'da ne, nerede, ne hızla değişiyor ve bu değişim gerçek mi?",
   },
   stubWarning: {
-    en: "Development build: placeholder modules for {modules}. Numbers are mock data.",
-    tr: "Geliştirme sürümü: {modules} için geçici modüller kullanılıyor. Sayılar sahte veridir.",
+    en: "Development build: placeholder modules for {modules}.",
+    tr: "Geliştirme sürümü: {modules} için geçici modüller kullanılıyor.",
+  },
+  mockDataWarning: {
+    en: "The numbers are synthetic test data, not real NASA measurements.",
+    tr: "Sayılar sahte test verisidir, gerçek NASA ölçümleri değildir.",
   },
   tabDetective: { en: "Detective Mode", tr: "Dedektif Modu" },
   tabExplore: { en: "Dashboard", tr: "Pano" },
@@ -53,9 +57,13 @@ const TEXTS = {
   down: { en: "Decreasing", tr: "Azalıyor" },
   flat: { en: "No clear change", tr: "Belirgin değişim yok" },
   kpiChange: { en: "Change per 10 years", tr: "10 yıldaki değişim" },
-  kpiChangeCaption: { en: "average rate", tr: "ortalama hız" },
+  kpiChangeCaption: { en: "average rate (Sen's slope)", tr: "ortalama hız (Sen eğimi)" },
   kpiPercent: { en: "Change in %", tr: "Yüzde değişim" },
   kpiPercentCaption: { en: "per 10 years, vs. long-term average", tr: "10 yılda, uzun dönem ortalamaya göre" },
+  noPercentCaption: {
+    en: "not meaningful for this measurement (its zero point is arbitrary, e.g. 0 °C)",
+    tr: "bu ölçüm için anlamlı değil (sıfır noktası keyfi, ör. 0 °C)",
+  },
   kpiReliability: { en: "Is it real?", tr: "Gerçek mi?" },
   significant: { en: "Yes, significant", tr: "Evet, anlamlı" },
   notSignificant: { en: "Not yet", tr: "Henüz değil" },
@@ -251,4 +259,9 @@ export function fmtPct(value: number, digits = 1): string {
   const body = fmt(Math.abs(value), digits)
   const sign = value < 0 ? "−" : value > 0 ? "+" : ""
   return LANG === "tr" ? `${sign}%${body}` : `${sign}${body}%`
+}
+
+// p-değerini yazar: çok küçükse "p < 0,001" (0,000 gibi yanıltıcı bir sıfır yerine).
+export function fmtP(p: number): string {
+  return p < 0.001 ? `p < ${fmt(0.001, 3)}` : `p = ${fmt(p, 3)}`
 }

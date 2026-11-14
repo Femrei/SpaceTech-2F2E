@@ -36,13 +36,14 @@ function StatRow({ label, help, value, note }: {
 //   1) "Bu ne demek?": sonucu sade dille anlatan cümleler
 //   2) "Grafik nasıl okunur?": seçili grafik görünümüne göre kısa rehber
 //   3) Açılır "İstatistik detayları": OLS eğimi + aralığı, p-değeri, Sen eğimi, yıl sayısı
-export function ExplainCard({ result, variable, region, interpretation, view, termHelp }: {
+export function ExplainCard({ result, variable, region, interpretation, view, termHelp, showPercent = true }: {
   result: TrendResult
   variable: Variable
   region: Region
   interpretation: string
   view: ChartView
   termHelp: (term: string) => string | undefined
+  showPercent?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const kind = trendKind(result)
@@ -67,7 +68,7 @@ export function ExplainCard({ result, variable, region, interpretation, view, te
             <Icon className="size-4" />
             {variableName(variable)}: {trendText(kind).toLocaleLowerCase()}
           </p>
-          {explain(result, variable, region, interpretation).map((line) => (
+          {explain(result, variable, region, interpretation, showPercent).map((line) => (
             <p key={line} className="leading-relaxed text-muted-foreground">{line}</p>
           ))}
         </div>
@@ -91,13 +92,13 @@ export function ExplainCard({ result, variable, region, interpretation, view, te
               value={`${fmt(result.slope_per_decade, 3, true)} ${perDecade}`}
               note={t("ciRange", { low: fmt(result.ci_low, 3, true), high: fmt(result.ci_high, 3, true) })}
             />
-            <StatRow label={t("mkP")} help={termHelp("p-value")} value={fmt(result.mk_p, 4)} />
+            <StatRow label={t("mkP")} help={termHelp("p-value")} value={result.mk_p < 0.0001 ? `< ${fmt(0.0001, 4)}` : fmt(result.mk_p, 4)} />
             <StatRow
               label={t("senSlope")}
               help={termHelp("Sen's slope")}
               value={`${fmt(result.sen_slope_per_decade, 3, true)} ${perDecade}`}
             />
-            <StatRow label={t("yearsOfData")} help={termHelp("area-averaged")} value={result.n_years} />
+            <StatRow label={t("yearsOfData")} help={termHelp("area-averaged")} value={fmt(result.n_years, 0)} />
           </CollapsibleContent>
         </Collapsible>
       </CardContent>

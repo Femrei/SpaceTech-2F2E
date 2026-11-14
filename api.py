@@ -42,6 +42,11 @@ detective, _stub_d = _load_module("detective")       # D
 STUBS_IN_USE = [n for n, s in [("data_loader (A)", _stub_a), ("trend (B)", _stub_b),
                                 ("detective (D)", _stub_d)] if s]
 
+# A's processed CSV is built from the raw Giovanni downloads in data/raw/. If there
+# are none, the CSV can only have come from B's `python -m src.mock_data`, so the
+# numbers are synthetic and the UI must say so.
+MOCK_DATA = not any((ROOT / "data" / "raw").glob("*.csv"))
+
 app = FastAPI(title="Earth Trend Detective API")
 
 
@@ -61,10 +66,17 @@ def _decimal_years(index: pd.DatetimeIndex) -> np.ndarray:
     return (index.year + (index.month - 1) / 12).to_numpy(dtype=float)
 
 
-# Güven bandını hesaplar: trend çizgisinin orta noktasından geçen, eğimleri
-# ci_low ve ci_high olan iki doğru. Orta noktadan uçlara doğru yelpaze gibi açılır.
+# B'nin trend_line'ı gerçek birimdedir (uzun dönem ortalama eklenmiş). Grafiklerde
+# anomali ölçeğinde (0 etrafında) bir çizgi gerekir; ortalamayı çıkararak onu elde eder.
+# Arayüz "Basit" görünümde ortalamayı geri ekler.
+def _anomaly_trend(result: dict) -> pd.Series:
+    return result["trend_line"] - result["mean_value"]
+
+
+# Güven bandını hesaplar: trend çizgisinin (anomali ölçeğinde) orta noktasından geçen,
+# eğimleri ci_low ve ci_high olan iki doğru. Orta noktadan uçlara doğru yelpaze gibi açılır.
 def _ci_fan(result: dict) -> tuple[pd.Series, pd.Series]:
-    trend_line = result["trend_line"].dropna()
+    trend_line = _anomaly_trend(result).dropna()
     t = _decimal_years(trend_line.index)
     t_mid = (t[0] + t[-1]) / 2
     y_mid = float(np.interp(t_mid, t, trend_line.to_numpy()))
@@ -99,6 +111,9 @@ def meta() -> dict:
         "pairs": [list(p) for p in data_loader.available_pairs()],
         "data_downloaded_on": data_loader.DATA_DOWNLOADED_ON,
         "stubs_in_use": STUBS_IN_USE,
+        "mock_data": MOCK_DATA,
+        # B: "% change" is meaningless on an interval scale such as °C; hide it for these.
+        "no_percent_variables": sorted(getattr(trend, "NO_PERCENT_VARIABLES", ())),
     }
 
 
@@ -111,12 +126,17 @@ def _smooth12(series: pd.Series) -> pd.Series:
 
 
 # Trend sonucundaki tek değerli alanları (Series olmayanları) JSON'a uygun tiplere çevirir.
+# Başlangıç/bitiş tarihleri "YYYY-MM-DD" metnine çevrilir; kolaylık olsun diye
+# start_year / end_year alanları da eklenir.
 def _scalars(result: dict) -> dict:
     stats = {}
     for k, v in result.items():  # Series go into the chart points instead
         if isinstance(v, pd.Series):
             continue
-        if isinstance(v, (bool, np.bool_)):
+        if isinstance(v, pd.Timestamp):
+            stats[k] = v.strftime("%Y-%m-%d")
+            stats[f"{k}_year"] = int(v.year)
+        elif isinstance(v, (bool, np.bool_)):
             stats[k] = bool(v)
         elif isinstance(v, (int, np.integer)):
             stats[k] = int(v)
@@ -151,6 +171,7 @@ def _checked(region: str, variable: str) -> tuple[dict, dict, pd.Series, dict]:
 def analysis(region: str, variable: str) -> dict:
     region_info, variable_info, series, result = _checked(region, variable)
     smooth = _smooth12(series)
+    trend_anom = _anomaly_trend(result)
     low, high = _ci_fan(result)
     points = [
         {
@@ -158,7 +179,7 @@ def analysis(region: str, variable: str) -> dict:
             "value": _num(series.get(d)),
             "smooth": _num(smooth.get(d)),
             "anomaly": _num(result["anomalies"].get(d)),
-            "trend": _num(result["trend_line"].get(d)),
+            "trend": _num(trend_anom.get(d)),
             "ci_low": _num(low.get(d)),
             "ci_high": _num(high.get(d)),
         }
@@ -167,7 +188,8 @@ def analysis(region: str, variable: str) -> dict:
     return {
         "points": points,
         "result": _scalars(result),
-        "interpretation": trend.interpret(result, variable_info, region_info),
+        # B: interpret(result, variable_id, region_name)
+        "interpretation": trend.interpret(result, variable, region_info["name"]),
         "next_step_hint": detective.next_step_hint(result, variable, region),
     }
 
@@ -177,21 +199,22 @@ def analysis(region: str, variable: str) -> dict:
 # iki bölgenin istatistikleri ve B'nin compare_trends() özeti.
 @app.get("/api/compare")
 def compare(variable: str, region_a: str, region_b: str) -> dict:
-    info_a, variable_info, _, res_a = _checked(region_a, variable)
-    info_b, _, _, res_b = _checked(region_b, variable)
+    _, _, _, res_a = _checked(region_a, variable)
+    _, _, _, res_b = _checked(region_b, variable)
     smooth_a, smooth_b = _smooth12(res_a["anomalies"]), _smooth12(res_b["anomalies"])
+    trend_a, trend_b = _anomaly_trend(res_a), _anomaly_trend(res_b)
     index = res_a["anomalies"].index.union(res_b["anomalies"].index)
     points = [
         {
             "date": d.strftime("%Y-%m-%d"),
             "a": _num(smooth_a.get(d)),
             "b": _num(smooth_b.get(d)),
-            "trend_a": _num(res_a["trend_line"].get(d)),
-            "trend_b": _num(res_b["trend_line"].get(d)),
+            "trend_a": _num(trend_a.get(d)),
+            "trend_b": _num(trend_b.get(d)),
         }
         for d in index
     ]
-    summary = trend.compare_trends(res_a, res_b, info_a, info_b)
+    summary = trend.compare_trends(res_a, res_b)  # B: compare_trends(result_a, result_b)
     return {
         "points": points,
         "result_a": _scalars(res_a),
@@ -229,6 +252,7 @@ def overview() -> list[dict]:
         yearly = yearly[yearly["count"] >= 10]["mean"]  # skip years with many gaps
         item.update({
             "slope_per_decade": _num(result["slope_per_decade"]),
+            "sen_slope_per_decade": _num(result["sen_slope_per_decade"]),
             "percent_change_per_decade": _num(result["percent_change_per_decade"]),
             "significant": bool(result["significant"]),
             "direction": result["direction"],

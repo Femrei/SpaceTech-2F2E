@@ -50,10 +50,13 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6">
-        {meta && meta.stubs_in_use.length > 0 && (
+        {meta && (meta.mock_data || meta.stubs_in_use.length > 0) && (
           <p className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
             <TriangleAlertIcon className="mt-0.5 size-3.5 shrink-0" />
-            {t("stubWarning", { modules: meta.stubs_in_use.join(", ") })}
+            <span>
+              {meta.stubs_in_use.length > 0 && `${t("stubWarning", { modules: meta.stubs_in_use.join(", ") })} `}
+              {meta.mock_data && t("mockDataWarning")}
+            </span>
           </p>
         )}
 

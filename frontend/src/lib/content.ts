@@ -109,43 +109,56 @@ export function trendKind(r: { significant: boolean; direction: string }): Trend
 
 // Trend sonucunu sade dille anlatan cümleler üretir ("Bu ne demek?" kutusu için).
 // İngilizce modda B'nin interpret() metni kullanılır; Türkçe modda cümleler
-// buradaki kalıplarla, sonuçtaki sayılardan kurulur.
+// buradaki kalıplarla, sonuçtaki sayılardan kurulur. B'nin yaklaşımına uyar:
+// yön, hız ve anlamlılık Sen eğiminden / mevsimsel Mann-Kendall testinden gelir;
+// sıcaklık gibi değişkenlerde yüzde değişim gösterilmez (showPercent=false).
 export function explain(
   result: TrendResult,
   variable: Variable,
   region: Region,
   backendText: string,
+  showPercent = true,
 ): string[] {
   if (LANG !== "tr") return [backendText]
 
   const unit = variableUnit(variable)
-  const name = variableName(variable)
-  const verb = result.direction === "increasing" ? "artıyor" : "azalıyor"
-  const pct = result.percent_change_per_decade
-  const years = result.end_year - result.start_year + 1
-  const total = (result.slope_per_decade * years) / 10
+  const name = variableName(variable).toLocaleLowerCase("tr")
+  const sen = result.sen_slope_per_decade
+  const pct = showPercent ? result.percent_change_per_decade : null
+  const pctText = pct !== null ? ` (yaklaşık %${fmt(Math.abs(pct), 1)})` : ""
+  const years = Math.round(result.n_years)
+  const total = (sen * result.n_years) / 10
+  const where = `${regionName(region)} için`
+  const p = result.mk_p < 0.001 ? "p < 0,001" : `p = ${fmt(result.mk_p, 3)}`
 
-  const lines = [
-    `${regionName(region)} için ${name.toLocaleLowerCase("tr")} her 10 yılda ortalama ` +
-      `${fmt(Math.abs(result.slope_per_decade))} ${unit} ${verb}` +
-      (pct !== null ? ` (yaklaşık %${fmt(Math.abs(pct), 1)}).` : "."),
-    `${result.start_year}–${result.end_year} arasındaki ${years} yılda bu, toplamda yaklaşık ` +
-      `${fmt(total, 2, true)} ${unit} değişim demek.`,
-  ]
+  const lines: string[] = []
   if (result.significant) {
     lines.push(
-      `Bu değişim istatistiksel olarak anlamlı (p = ${fmt(result.mk_p, 3)}): ` +
-        "sadece yıldan yıla rastgele dalgalanmayla açıklanması çok düşük bir ihtimal.",
+      `${where} ${name} her 10 yılda ortalama ${fmt(Math.abs(sen))} ${unit} ` +
+        `${sen > 0 ? "artıyor" : "azalıyor"}${pctText}.`,
+      `${result.start_year}–${result.end_year} arasındaki ${years} yılda bu, toplamda yaklaşık ` +
+        `${fmt(total, 2, true)} ${unit} değişim demek.`,
+      `Bu değişim istatistiksel olarak anlamlı (${p}): sadece yıldan yıla rastgele ` +
+        "dalgalanmayla açıklanması çok düşük bir ihtimal.",
     )
   } else {
     lines.push(
-      `Bu değişim henüz istatistiksel olarak anlamlı değil (p = ${fmt(result.mk_p, 2)}): ` +
-        "yıldan yıla doğal iniş çıkışlardan ayırt edilemiyor.",
+      sen === 0
+        ? `${where} ${name} ${result.start_year}–${result.end_year} arasında belirgin bir yön göstermiyor.`
+        : `${where} ${name} ${result.start_year}–${result.end_year} arasında 10 yılda yaklaşık ` +
+            `${fmt(Math.abs(sen))} ${unit} hafif bir ${sen > 0 ? "artış" : "azalış"} eğilimi gösteriyor${pctText}.`,
+      `Ancak bu değişim henüz istatistiksel olarak anlamlı değil (${p}): yıldan yıla doğal ` +
+        "iniş çıkışlardan ayırt edilemiyor.",
     )
-    if (result.years_needed_estimate) {
+    // B: years_needed_estimate = anlamlılık için gereken TOPLAM kayıt uzunluğu (yıl), kaba tahmin.
+    const needed = result.years_needed_estimate
+    if (needed !== null && needed > result.n_years && needed < 200) {
       lines.push(
-        `Mevcut hız sürerse, net bir sonuç için kabaca ${result.years_needed_estimate} yıllık veri gerekebilir.`,
+        `Mevcut hız sürerse, net bir sonuç için toplamda kabaca ${Math.round(needed)} yıllık veri ` +
+          `gerekebilir (şu an yaklaşık ${years} yıl var; bu kaba bir tahmindir).`,
       )
+    } else if (needed !== null && needed >= 200) {
+      lines.push("Mevcut hızla bir eğilim fark edebilmek için çok daha uzun bir kayıt gerekirdi.")
     }
   }
   lines.push("Not: Bu bir eğilim ölçümüdür; değişimin nedenini tek başına göstermez.")
@@ -273,11 +286,12 @@ export function compareSummary(
 ): string[] {
   if (LANG !== "tr") return [backendSummary]
   const name = variableName(variable).toLocaleLowerCase("tr")
-  const verb = (r: TrendResult) => (r.direction === "increasing" ? "artıyor" : "azalıyor")
+  const verb = (r: TrendResult) =>
+    r.direction === "increasing" ? "artıyor" : r.direction === "decreasing" ? "azalıyor" : "değişmiyor"
   const nameA = regionName(regionA)
   const nameB = regionName(regionB)
   const lines =
-    a.direction === b.direction
+    a.direction === b.direction && a.direction !== "no change"
       ? [`${nameA} ve ${nameB} aynı yönde: ikisinde de ${name} ${verb(a)}.`]
       : [`Zıt hikâyeler: ${nameA} için ${name} ${verb(a)}, ama ${nameB} için ${verb(b)}.`]
   if (a.significant && b.significant) {

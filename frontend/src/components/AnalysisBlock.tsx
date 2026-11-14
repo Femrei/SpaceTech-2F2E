@@ -38,10 +38,11 @@ export function AnalysisBlock({ meta, regionId, variableId, extra }: {
 
   const { data } = state
   const termHelp = makeTermHelp(meta.glossary)
+  const showPercent = !(meta.no_percent_variables ?? []).includes(variableId)
   return (
     <div className="space-y-4">
       {extra?.(data)}
-      <KpiTiles result={data.result} variable={variable} termHelp={termHelp} />
+      <KpiTiles result={data.result} variable={variable} termHelp={termHelp} showPercent={showPercent} />
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -69,6 +70,7 @@ export function AnalysisBlock({ meta, regionId, variableId, extra }: {
           interpretation={data.interpretation}
           view={view}
           termHelp={termHelp}
+          showPercent={showPercent}
         />
       </div>
     </div>

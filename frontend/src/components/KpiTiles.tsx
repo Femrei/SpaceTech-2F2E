@@ -5,7 +5,7 @@ import { InfoTip } from "@/components/InfoTip"
 import { Card, CardContent } from "@/components/ui/card"
 import type { TrendResult, Variable } from "@/lib/api"
 import { trendKind, variableUnit } from "@/lib/content"
-import { fmt, fmtPct, t } from "@/lib/i18n"
+import { fmt, fmtP, fmtPct, t } from "@/lib/i18n"
 import { TREND_COLOR, TREND_ICON, trendText } from "@/lib/trendStyle"
 
 // Tek bir KPI kutusu: küçük başlık + (i) açıklaması, büyük değer, altında
@@ -32,13 +32,14 @@ function Tile({ label, help, value, caption }: {
 
 // Panonun üstündeki 4 özet kutusu:
 //   1) Genel gidişat (artıyor / azalıyor / belirgin değişim yok)
-//   2) 10 yıldaki değişim (birimli)
-//   3) Yüzde değişim
+//   2) 10 yıldaki değişim (birimli, Sen eğimi: B'nin ana testiyle aynı yön)
+//   3) Yüzde değişim (sıcaklık gibi sıfırı keyfi ölçümlerde gizlenir)
 //   4) Gerçek mi? (istatistiksel anlamlılık + p-değeri)
-export function KpiTiles({ result, variable, termHelp }: {
+export function KpiTiles({ result, variable, termHelp, showPercent = true }: {
   result: TrendResult
   variable: Variable
   termHelp: (term: string) => string | undefined
+  showPercent?: boolean
 }) {
   const kind = trendKind(result)
   const Icon = TREND_ICON[kind]
@@ -61,13 +62,13 @@ export function KpiTiles({ result, variable, termHelp }: {
       <Tile
         label={t("kpiChange")}
         help={termHelp("per decade")}
-        value={`${fmt(result.slope_per_decade, 2, true)} ${unit}`}
+        value={`${fmt(result.sen_slope_per_decade, 2, true)} ${unit}`}
         caption={t("kpiChangeCaption")}
       />
       <Tile
         label={t("kpiPercent")}
-        value={pct === null ? t("notAvailable") : fmtPct(pct)}
-        caption={t("kpiPercentCaption")}
+        value={!showPercent || pct === null ? "—" : fmtPct(pct)}
+        caption={showPercent ? t("kpiPercentCaption") : t("noPercentCaption")}
       />
       <Tile
         label={t("kpiReliability")}
@@ -84,7 +85,7 @@ export function KpiTiles({ result, variable, termHelp }: {
             </span>
           </span>
         }
-        caption={`p = ${fmt(result.mk_p, 3)} · ${result.significant ? t("sigCaption") : t("notSigCaption")}`}
+        caption={`${fmtP(result.mk_p)} · ${result.significant ? t("sigCaption") : t("notSigCaption")}`}
       />
     </div>
   )

@@ -23,6 +23,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY api.py ./
 COPY src/ src/
 COPY data/ data/
+# No processed CSV yet (A's real data not committed)? Fall back to B's mock data
+# so the app still starts; the UI then shows a "synthetic data" warning.
+RUN [ -f data/processed/all_series.csv ] || python -m src.mock_data
 COPY --from=web /app/frontend/dist frontend/dist
 EXPOSE 8000
 CMD ["sh", "-c", "uvicorn api:app --host 0.0.0.0 --port ${PORT}"]
