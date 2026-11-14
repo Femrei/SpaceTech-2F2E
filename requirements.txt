@@ -4,3 +4,5 @@ pandas==2.2.3
 scipy==1.15.2
 pymannkendall==1.4.3
 pytest==9.2.0
+streamlit==1.67.0
+plotly==7.1.0
