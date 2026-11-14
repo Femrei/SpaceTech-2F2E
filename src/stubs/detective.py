@@ -50,10 +50,24 @@ _CATALOG = {
         "per decade": "The change over 10 years at the current rate.",
         "area-averaged": "One value per month, averaged over the whole region.",
     },
+    # Mock cases following D.md; D will rewrite the stories from the real results.
     "cases": [
         {"id": "konya_drying", "title": "Case 1: Is Konya drying out?",
-         "story": "Placeholder story (D will write this).",
+         "story": "Farmers in the Konya plain say wells must be drilled deeper every year. "
+                  "Is the soil itself getting drier, or is it just a few bad years?",
          "region_id": "konya", "variable_id": "soil_moisture", "compare_region_id": None},
+        {"id": "van_heating", "title": "Case 2: Is Lake Van's basin heating up?",
+         "story": "High, cold and remote, the Lake Van basin seems far from everything. "
+                  "Has 25 years of satellite data picked up a warming signal here?",
+         "region_id": "van", "variable_id": "temp", "compare_region_id": None},
+        {"id": "opposite_stories", "title": "Case 3: Same country, opposite stories?",
+         "story": "The Konya plain and the Eastern Black Sea coast are only a few hundred km apart, "
+                  "yet their climates could hardly be more different. Is rain changing the same way in both?",
+         "region_id": "konya", "variable_id": "precip", "compare_region_id": "black_sea"},
+        {"id": "rain_or_heat", "title": "Case 4: Rain or heat - who's the culprit?",
+         "story": "If the soil is drying, there are two usual suspects: less rain or more heat. "
+                  "Start with the rain, then follow the clues.",
+         "region_id": "konya", "variable_id": "precip", "compare_region_id": None},
     ],
 }
 
@@ -85,14 +99,26 @@ def get_region(region_id: str) -> dict:
     raise KeyError(region_id)
 
 
-# Seçilen temaya (ör. 'drought') uygun değişken + bölge önerilerini listeler.
+# Tema başına önerilerin sırası (en iyi öneri ilk) ve her değişken için gerekçe cümlesi.
+_THEME_ORDER = {
+    "drought": [("soil_moisture", "konya"), ("precip", "konya"), ("temp", "konya"),
+                ("soil_moisture", "van"), ("precip", "van")],
+    "warming": [("temp", "van"), ("temp", "konya"), ("temp", "black_sea"), ("soil_moisture", "konya")],
+    "water": [("precip", "black_sea"), ("precip", "konya"), ("soil_moisture", "konya"),
+              ("soil_moisture", "van")],
+}
+_REASONS = {
+    "soil_moisture": "Soil moisture is one of the first places drought shows up.",
+    "precip": "Rain and snow are where the water comes from: less of them can mean drier land.",
+    "temp": "Warmer air dries soil faster and pulls more water out of plants and lakes.",
+}
+
+
+# Seçilen temaya (ör. 'drought') uygun değişken + bölge önerilerini, en iyisi
+# ilk sırada olacak şekilde, her biri için bir gerekçe cümlesiyle listeler.
 def suggest(theme: str) -> list[dict]:
-    return [
-        {"variable_id": v["id"], "region_id": r["id"],
-         "reason": f"{v['name']} is a good place to look for '{THEMES[theme]}'"}
-        for v in _CATALOG["variables"] if theme in v["themes"]
-        for r in _CATALOG["regions"]
-    ]
+    return [{"variable_id": v, "region_id": r, "reason": _REASONS[v]}
+            for v, r in _THEME_ORDER[theme]]
 
 
 # Terim sözlüğünü döndürür (terim -> sade açıklama).
@@ -105,8 +131,26 @@ def get_cases() -> list[dict]:
     return _CATALOG["cases"]
 
 
-# Sonuca göre kullanıcıya bir sonraki adımı öneren dedektif cümlesi döndürür.
+# Kural tablosu: (değişken, durum) -> bir sonraki adım cümlesi.
+# Durum: "up" = anlamlı artış, "down" = anlamlı azalış, "flat" = anlamlı trend yok.
+_HINTS = {
+    ("soil_moisture", "down"): "🕵️ Clue found! Soil is drying. Is it less rain, or more heat? Check precipitation next.",
+    ("soil_moisture", "up"): "The soil is getting wetter. Does more rain explain it? Check precipitation.",
+    ("soil_moisture", "flat"): "No significant trend yet. Try comparing with the Eastern Black Sea, or ask whether 25 years is long enough.",
+    ("precip", "down"): "🕵️ Rain is decreasing. Is the soil feeling it? Check soil moisture next.",
+    ("precip", "up"): "More rain here. Is the soil getting wetter too? Check soil moisture.",
+    ("precip", "flat"): "Rain isn't clearly dropping, so what else could dry the soil? Try temperature.",
+    ("temp", "up"): "🕵️ It's getting warmer. Warmer air dries soil faster: check soil moisture next.",
+    ("temp", "down"): "Cooling here, that's unusual! Check precipitation for the full picture.",
+    ("temp", "flat"): "No clear warming signal yet. Try the same question in another region.",
+}
+
+
+# Sonuca göre kullanıcıya bir sonraki adımı öneren dedektif cümlesi döndürür
+# (yukarıdaki kural tablosundan: değişken x yön x anlamlılık).
 def next_step_hint(result: dict, variable_id: str, region_id: str) -> str:
     if not result["significant"]:
-        return "No significant trend yet: try another region, or ask whether 25 years is long enough."
-    return "🕵️ Clue found! Check a related variable next."
+        state = "flat"
+    else:
+        state = "up" if result["direction"] == "increasing" else "down"
+    return _HINTS.get((variable_id, state), "Try another variable or region to keep investigating.")

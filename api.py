@@ -102,11 +102,34 @@ def meta() -> dict:
     }
 
 
-# Explore sekmesinin verisi: grafik için aylık noktalar (ham değer, 12 aylık
-# ortalama, anomali, trend, güven bandı) + sonuç kartı için istatistikler,
-# B'nin interpret() metni ve D'nin next_step_hint() önerisi.
-@app.get("/api/analysis")
-def analysis(region: str, variable: str) -> dict:
+# 12 aylık hareketli ortalama. Sadece tam 12 aylık pencere kullanılır: kenarlarda
+# yarım pencere mevsim etkisiyle sahte bir sıçrama gösterirdi. Serinin içindeki tek
+# tük boş aylar önce komşularından doldurulur ki ortalamada 12 aylık delik açmasın.
+def _smooth12(series: pd.Series) -> pd.Series:
+    return (series.interpolate(limit_area="inside")
+            .rolling(12, center=True, min_periods=12).mean())
+
+
+# Trend sonucundaki tek değerli alanları (Series olmayanları) JSON'a uygun tiplere çevirir.
+def _scalars(result: dict) -> dict:
+    stats = {}
+    for k, v in result.items():  # Series go into the chart points instead
+        if isinstance(v, pd.Series):
+            continue
+        if isinstance(v, (bool, np.bool_)):
+            stats[k] = bool(v)
+        elif isinstance(v, (int, np.integer)):
+            stats[k] = int(v)
+        elif isinstance(v, (float, np.floating)):
+            stats[k] = _num(v)
+        else:
+            stats[k] = v
+    return stats
+
+
+# Bölge + değişkeni katalogda doğrular, analizi çalıştırır; sorun varsa uygun
+# HTTP hatasını fırlatır (404: bilinmeyen id / veri yok, 422: yetersiz veri).
+def _checked(region: str, variable: str) -> tuple[dict, dict, pd.Series, dict]:
     try:
         region_info = detective.get_region(region)
         variable_info = detective.get_variable(variable)
@@ -118,12 +141,16 @@ def analysis(region: str, variable: str) -> dict:
         series, result = _analyse(region, variable)
     except ValueError as err:  # B raises ValueError when there is not enough data
         raise HTTPException(422, str(err)) from err
+    return region_info, variable_info, series, result
 
-    # Full 12-month window only: a partial window at the edges would be biased by
-    # the seasonal cycle (e.g. only summer months) and show a fake jump. Interior
-    # single missing months are interpolated first so they don't punch 12-month holes.
-    smooth = (series.interpolate(limit_area="inside")
-              .rolling(12, center=True, min_periods=12).mean())
+
+# Pano sekmesinin verisi: grafik için aylık noktalar (ham değer, 12 aylık
+# ortalama, anomali, trend, güven bandı) + sonuç kartı için istatistikler,
+# B'nin interpret() metni ve D'nin next_step_hint() önerisi.
+@app.get("/api/analysis")
+def analysis(region: str, variable: str) -> dict:
+    region_info, variable_info, series, result = _checked(region, variable)
+    smooth = _smooth12(series)
     low, high = _ci_fan(result)
     points = [
         {
@@ -137,24 +164,51 @@ def analysis(region: str, variable: str) -> dict:
         }
         for d in series.index
     ]
-    stats = {}
-    for k, v in result.items():  # scalar fields only; Series go into `points`
-        if isinstance(v, pd.Series):
-            continue
-        if isinstance(v, (bool, np.bool_)):
-            stats[k] = bool(v)
-        elif isinstance(v, (int, np.integer)):
-            stats[k] = int(v)
-        elif isinstance(v, (float, np.floating)):
-            stats[k] = _num(v)
-        else:
-            stats[k] = v
     return {
         "points": points,
-        "result": stats,
+        "result": _scalars(result),
         "interpretation": trend.interpret(result, variable_info, region_info),
         "next_step_hint": detective.next_step_hint(result, variable, region),
     }
+
+
+# Karşılaştır sekmesinin verisi: aynı değişken için iki bölgenin anomalileri
+# (12 aylık ortalaması alınmış, okunaklı olsun diye) ve trend çizgileri,
+# iki bölgenin istatistikleri ve B'nin compare_trends() özeti.
+@app.get("/api/compare")
+def compare(variable: str, region_a: str, region_b: str) -> dict:
+    info_a, variable_info, _, res_a = _checked(region_a, variable)
+    info_b, _, _, res_b = _checked(region_b, variable)
+    smooth_a, smooth_b = _smooth12(res_a["anomalies"]), _smooth12(res_b["anomalies"])
+    index = res_a["anomalies"].index.union(res_b["anomalies"].index)
+    points = [
+        {
+            "date": d.strftime("%Y-%m-%d"),
+            "a": _num(smooth_a.get(d)),
+            "b": _num(smooth_b.get(d)),
+            "trend_a": _num(res_a["trend_line"].get(d)),
+            "trend_b": _num(res_b["trend_line"].get(d)),
+        }
+        for d in index
+    ]
+    summary = trend.compare_trends(res_a, res_b, info_a, info_b)
+    return {
+        "points": points,
+        "result_a": _scalars(res_a),
+        "result_b": _scalars(res_b),
+        "comparison": {k: (bool(v) if isinstance(v, (bool, np.bool_)) else v)
+                       for k, v in summary.items()},
+    }
+
+
+# Dedektif Modu 2. adım: seçilen temaya (ör. "drought") uygun bölge + değişken
+# önerileri, D'nin suggest() fonksiyonundan. Verisi olmayan öneriler elenir.
+@app.get("/api/suggest")
+def suggest(theme: str) -> list[dict]:
+    if theme not in detective.THEMES:
+        raise HTTPException(404, f"Unknown theme: {theme}")
+    pairs = set(data_loader.available_pairs())
+    return [s for s in detective.suggest(theme) if (s["region_id"], s["variable_id"]) in pairs]
 
 
 # Dashboard'daki "Genel bakış" ızgarası için: verisi olan her bölge + değişken
