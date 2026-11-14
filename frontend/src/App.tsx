@@ -12,6 +12,7 @@ import { AboutSheet } from "@/components/AboutSheet"
 import { LoadingPanels } from "@/components/Common"
 import { Dashboard } from "@/components/Dashboard"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { fetchMeta, type Meta } from "@/lib/api"
@@ -84,13 +85,18 @@ export default function App() {
         {failed ? (
           <Alert variant="destructive">
             <TriangleAlertIcon />
-            <AlertDescription>{t("loadError")}</AlertDescription>
+            <AlertDescription className="flex flex-wrap items-center gap-3">
+              {t("loadError")}
+              <Button size="sm" variant="outline" onClick={() => window.location.reload()}>
+                {t("retry")}
+              </Button>
+            </AlertDescription>
           </Alert>
         ) : !meta ? (
           <Skeleton className="h-96 w-full" />
         ) : (
           <Tabs value={tab} onValueChange={openTab} className="gap-5">
-            <TabsList variant="line" className="h-auto w-full flex-wrap justify-start gap-1 border-b px-0 pb-1">
+            <TabsList variant="line" className="h-auto w-full group-data-horizontal/tabs:h-auto justify-start gap-1 overflow-x-auto border-b px-0 pb-1.5 [scrollbar-width:none]">
               <TabsTrigger className="h-10 flex-none px-3" value="explore"><LayoutDashboardIcon />{t("tabExplore")}</TabsTrigger>
               <TabsTrigger className="h-10 flex-none px-3" value="detective"><SearchIcon />{t("tabDetective")}</TabsTrigger>
               <TabsTrigger className="h-10 flex-none px-3" value="cases"><FolderOpenIcon />{t("tabCases")}</TabsTrigger>

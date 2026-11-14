@@ -35,9 +35,10 @@ const TEXTS = {
     tr: "Veri: NASA Giovanni ({datasets}), önceden indirildi: {date}.",
   },
   loadError: {
-    en: "Could not reach the backend. Is `uvicorn api:app` running?",
-    tr: "Sunucuya ulaşılamadı. `uvicorn api:app` çalışıyor mu?",
+    en: "Couldn't load the data. Check your connection and try again.",
+    tr: "Veriler yüklenemedi. Bağlantını kontrol edip tekrar dene.",
   },
+  retry: { en: "Try again", tr: "Tekrar dene" },
   // --- Dashboard ----------------------------------------------------------
   intro: {
     en: "Pick a region and a measurement to see what changed over the last 25 years, and whether the change is real or just chance.",

@@ -138,6 +138,16 @@
     }
   html {
     @apply font-sans;
+    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent) transparent;
+    }
+  /* Browser-drawn surfaces follow the palette too. */
+  ::selection {
+    background: color-mix(in oklch, var(--brand) 32%, transparent);
+    color: var(--foreground);
+    }
+  body {
+    caret-color: var(--brand);
+    accent-color: var(--brand);
     }
 }
 /* Region map: darken the OpenStreetMap tiles in dark mode so the map doesn't glare. */
@@ -147,4 +157,38 @@
 .region-map .leaflet-container {
   background: var(--muted);
   font-family: inherit;
+}
+
+/* Map chrome (tooltips, zoom buttons, attribution) uses the app's surfaces in both themes. */
+.region-map .leaflet-tooltip {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 0.8);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.18);
+  font-size: 0.75rem;
+  padding: 2px 8px;
+}
+.region-map .leaflet-tooltip-top::before {
+  border-top-color: var(--popover);
+}
+.region-map .leaflet-bar {
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+.region-map .leaflet-bar a {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border-bottom-color: var(--border);
+}
+.region-map .leaflet-bar a:hover,
+.region-map .leaflet-bar a:focus-visible {
+  background: var(--muted);
+}
+.region-map .leaflet-control-attribution {
+  background: color-mix(in oklch, var(--popover) 85%, transparent);
+  color: var(--muted-foreground);
+}
+.region-map .leaflet-control-attribution a {
+  color: var(--foreground);
 }
