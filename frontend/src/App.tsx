@@ -76,13 +76,10 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6">
-        {meta && (meta.mock_data || meta.stubs_in_use.length > 0) && (
+        {meta?.mock_data && (
           <p className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
             <TriangleAlertIcon className="mt-0.5 size-3.5 shrink-0" />
-            <span>
-              {meta.stubs_in_use.length > 0 && `${t("stubWarning", { modules: meta.stubs_in_use.join(", ") })} `}
-              {meta.mock_data && t("mockDataWarning")}
-            </span>
+            {t("mockDataWarning")}
           </p>
         )}
 
@@ -109,7 +106,7 @@ export default function App() {
             <Panel value="explore" visited={visited}><Dashboard meta={meta} /></Panel>
             <Panel value="detective" visited={visited}><DetectiveTab meta={meta} /></Panel>
             <Panel value="cases" visited={visited}>
-              <CasesTab meta={meta} mock={meta.stubs_in_use.some((s) => s.startsWith("detective"))} />
+              <CasesTab meta={meta} />
             </Panel>
             <Panel value="compare" visited={visited}><CompareTab meta={meta} /></Panel>
           </Tabs>

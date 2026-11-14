@@ -88,7 +88,7 @@ export function ExplainCard({ result, variable, region, interpretation, view, te
           <CollapsibleContent className="divide-y">
             <StatRow
               label={t("olsSlope")}
-              help={termHelp("trend")}
+              help={termHelp("linear regression (OLS)") ?? termHelp("trend")}
               value={`${fmt(result.slope_per_decade, 3, true)} ${perDecade}`}
               note={t("ciRange", { low: fmt(result.ci_low, 3, true), high: fmt(result.ci_high, 3, true) })}
             />

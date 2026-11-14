@@ -2,8 +2,7 @@
 
 Wraps teammates' Python modules (A: data_loader, B: trend, D: detective) in a
 small JSON API for the React frontend in ``frontend/``. Teammates' code is
-used unchanged; while a module has not landed yet, a TEMP stub from
-``src/stubs`` is used instead.
+used unchanged.
 
 Dev:   uvicorn api:app --reload            (frontend: cd frontend && npm run dev)
 Prod:  cd frontend && npm run build, then  uvicorn api:app
@@ -11,7 +10,6 @@ Prod:  cd frontend && npm run build, then  uvicorn api:app
 """
 from __future__ import annotations
 
-import importlib
 import math
 from functools import lru_cache
 from pathlib import Path
@@ -24,23 +22,7 @@ from fastapi.staticfiles import StaticFiles
 ROOT = Path(__file__).resolve().parent
 
 
-# Takım arkadaşının modülünü yükler (ör. src.trend).
-# Gerçek modül henüz yoksa src/stubs altındaki geçici sürümü kullanır.
-# İkinci dönen değer True ise stub kullanılıyor demektir.
-def _load_module(name: str):
-    try:
-        return importlib.import_module(f"src.{name}"), False
-    except ModuleNotFoundError as err:
-        if err.name != f"src.{name}":  # the real module exists but is broken: surface it
-            raise
-        return importlib.import_module(f"src.stubs.{name}"), True
-
-
-data_loader, _stub_a = _load_module("data_loader")   # A
-trend, _stub_b = _load_module("trend")               # B
-detective, _stub_d = _load_module("detective")       # D
-STUBS_IN_USE = [n for n, s in [("data_loader (A)", _stub_a), ("trend (B)", _stub_b),
-                                ("detective (D)", _stub_d)] if s]
+from src import data_loader, detective, trend  # A, D, B (all on main now)
 
 # A's processed CSV is built from the raw Giovanni downloads in data/raw/. If there
 # are none, the CSV can only have come from B's `python -m src.mock_data`, so the
@@ -108,9 +90,10 @@ def meta() -> dict:
         "glossary": detective.glossary(),
         "cases": detective.get_cases(),
         "themes": detective.THEMES,
+        # D's hint rules, so the UI can show its own translation of the matched rule.
+        "hints": catalog.get("hints", []),
         "pairs": [list(p) for p in data_loader.available_pairs()],
         "data_downloaded_on": data_loader.DATA_DOWNLOADED_ON,
-        "stubs_in_use": STUBS_IN_USE,
         "mock_data": MOCK_DATA,
         # B: "% change" is meaningless on an interval scale such as °C; hide it for these.
         "no_percent_variables": sorted(getattr(trend, "NO_PERCENT_VARIABLES", ())),
@@ -166,7 +149,8 @@ def _checked(region: str, variable: str) -> tuple[dict, dict, pd.Series, dict]:
 
 # Pano sekmesinin verisi: grafik için aylık noktalar (ham değer, 12 aylık
 # ortalama, anomali, trend, güven bandı) + sonuç kartı için istatistikler,
-# B'nin interpret() metni ve D'nin next_step_hint() önerisi.
+# B'nin interpret() metni ve D'nin next_step() ipucu (metin + takip edilecek
+# değişken/bölge; "ipucunu takip et" butonu bunu kullanır).
 @app.get("/api/analysis")
 def analysis(region: str, variable: str) -> dict:
     region_info, variable_info, series, result = _checked(region, variable)
@@ -188,9 +172,10 @@ def analysis(region: str, variable: str) -> dict:
     return {
         "points": points,
         "result": _scalars(result),
-        # B: interpret(result, variable_id, region_name)
-        "interpretation": trend.interpret(result, variable, region_info["name"]),
-        "next_step_hint": detective.next_step_hint(result, variable, region),
+        # B: interpret(result, variable_id, region_name); D's name_in_text reads
+        # naturally in a sentence ("in the Konya Closed Basin").
+        "interpretation": trend.interpret(result, variable, region_info.get("name_in_text", region_info["name"])),
+        "next_step": detective.next_step(result, variable, region),
     }
 
 

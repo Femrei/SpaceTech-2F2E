@@ -84,6 +84,7 @@ const TEXTS = {
   anomaly: { en: "Difference from normal", tr: "Normalden fark" },
   anomalyYearly: { en: "Yearly difference from normal", tr: "Yıllık normalden fark" },
   year: { en: "Year", tr: "Yıl" },
+  periodNote: { en: "Note", tr: "Not" },
   sourceCaption: {
     en: "Source: {dataset} · monthly, averaged over the whole region",
     tr: "Kaynak: {dataset} · aylık, bölgenin tamamının ortalaması",
@@ -188,10 +189,7 @@ const TEXTS = {
   openCase: { en: "Open case", tr: "Vakayı aç" },
   backToCases: { en: "Back to cases", tr: "Vakalara dön" },
   compareCase: { en: "Two regions", tr: "İki bölge" },
-  mockCases: {
-    en: "Case stories are placeholders until the real results are in.",
-    tr: "Vaka metinleri geçici; gerçek sonuçlar gelince yeniden yazılacak.",
-  },
+  chainLabel: { en: "Suspects, in order", tr: "Şüpheliler, sırayla" },
   // --- About sheet --------------------------------------------------------
   about: { en: "About", tr: "Hakkında" },
   aboutTitle: { en: "About this app", tr: "Bu uygulama hakkında" },

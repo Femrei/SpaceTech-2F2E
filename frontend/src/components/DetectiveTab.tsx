@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { fetchSuggestions, type Analysis, type Meta, type Suggestion } from "@/lib/api"
 import {
-  hintFor,
+  hintText,
   reasonText,
   regionName,
   themeBlurb,
@@ -117,28 +117,33 @@ export function DetectiveTab({ meta }: { meta: Meta }) {
     window.scrollTo({ top: 0, behavior: scrollBehavior() })
   }
 
-  // İpucu kartı: dedektifin notu, sonraki adım butonları ve küçük harita.
+  // İpucu kartı: dedektifin notu (D'nin next_step kuralı), sonraki adım butonları
+  // ve küçük harita. İpucu aynı bölgede başka bir ölçüme ya da başka bir bölgeye
+  // (karşılaştırma bölgesine) yönlendirebilir.
   const clueCard = (analysis: Analysis) => {
     if (!current) return null
-    const hint = hintFor(analysis.result, current.variableId, analysis.next_step_hint)
-    // İpucu daha önce incelenmiş bir değişkeni gösteriyorsa döngüye girmemek için
-    // bu bölgede henüz bakılmamış ilk değişkene yönlendir; hepsine bakıldıysa karşılaştır.
-    let next = hint.next
+    const region = meta.regions.find((r) => r.id === current.regionId)!
+    const compare = meta.regions.find((r) => r.id === region.compare_with)
+    const text = hintText(meta.hints, analysis.result, current.variableId, region, compare, analysis.next_step.text)
+
+    // Takip edilecek hedef. Daha önce incelenmişse döngüye girmemek için bu bölgede
+    // henüz bakılmamış ilk ölçüme yönlendir; hepsine bakıldıysa karşılaştırma öner.
+    const { variable_id: nextVar, region_id: nextRegion } = analysis.next_step
+    let target: Step | null = nextVar && nextRegion ? { regionId: nextRegion, variableId: nextVar } : null
     let note: string | null = null
-    if (next?.kind === "variable") {
-      const visited = new Set(trail.filter((s) => s.regionId === current.regionId).map((s) => s.variableId))
-      if (visited.has(next.variableId)) {
-        const already = meta.variables.find((v) => v.id === (next as { variableId: string }).variableId)!
-        const fresh = meta.variables.find((v) => !visited.has(v.id))
-        next = fresh ? { kind: "variable", variableId: fresh.id } : { kind: "compare" }
-        note = fresh
-          ? t("alreadyVisited", { done: variableName(already), next: variableName(fresh) })
-          : t("allVisited")
-      }
+    const seen = (s: Step) => trail.some((x) => x.regionId === s.regionId && x.variableId === s.variableId)
+    if (target && seen(target)) {
+      const already = meta.variables.find((v) => v.id === target!.variableId)!
+      const visitedHere = new Set(trail.filter((s) => s.regionId === current.regionId).map((s) => s.variableId))
+      const fresh = meta.variables.find((v) => !visitedHere.has(v.id))
+      target = fresh ? { regionId: current.regionId, variableId: fresh.id } : null
+      note = fresh
+        ? t("alreadyVisited", { done: variableName(already), next: variableName(fresh) })
+        : t("allVisited")
     }
-    // Karşılaştırma önerisinde: mümkünse Doğu Karadeniz, değilse ilk farklı bölge.
-    const otherRegion = meta.regions.find((r) => r.id !== current.regionId && r.id === "black_sea")
-      ?? meta.regions.find((r) => r.id !== current.regionId)
+    const targetRegion = target ? meta.regions.find((r) => r.id === target!.regionId) : undefined
+    const targetVariable = target ? meta.variables.find((v) => v.id === target!.variableId) : undefined
+    const otherRegion = target && target.regionId !== current.regionId ? targetRegion : compare
     return (
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="border-primary/40 lg:col-span-2">
@@ -147,17 +152,18 @@ export function DetectiveTab({ meta }: { meta: Meta }) {
               <SearchIcon className="size-4" />
               {t("clueTitle")}
             </div>
-            <p className="text-base leading-relaxed">{hint.text}</p>
+            <p className="text-base leading-relaxed">{text}</p>
             {note && <p className="text-sm text-muted-foreground">{note}</p>}
             <div className="flex flex-wrap gap-2">
-              {next?.kind === "variable" && (
-                <Button onClick={() => investigate({ regionId: current.regionId, variableId: next.variableId })}>
-                  {t("followClue")}: {variableName(meta.variables.find((v) => v.id === next.variableId)!)}
+              {target && targetVariable && targetRegion && (
+                <Button onClick={() => investigate(target!)}>
+                  {t("followClue")}: {variableName(targetVariable)}
+                  {target.regionId !== current.regionId && ` · ${regionName(targetRegion)}`}
                   <ArrowRightIcon />
                 </Button>
               )}
-              {next?.kind === "compare" && otherRegion && (
-                <Button onClick={() => setCompareWith(otherRegion.id)}>
+              {otherRegion && (
+                <Button variant={target ? "outline" : "default"} onClick={() => setCompareWith(otherRegion.id)}>
                   <ScaleIcon />
                   {t("openCompare")}: {regionName(otherRegion)}
                 </Button>
@@ -224,7 +230,7 @@ export function DetectiveTab({ meta }: { meta: Meta }) {
                         <div className="font-semibold">
                           {variableName(variable)} · {regionName(region)}
                         </div>
-                        <p className="text-sm text-muted-foreground">{reasonText(s.variable_id, s.reason)}</p>
+                        <p className="text-sm text-muted-foreground">{reasonText(theme!, s.variable_id, region, s.reason)}</p>
                       </div>
                       <Button
                         className="mt-auto self-start"

@@ -12,11 +12,10 @@ import { cn } from "@/lib/utils"
 const SELECTED = "var(--brand)"
 const OTHER = "var(--trend-flat)"
 
-// Katalogdaki bbox'ı [Batı, Güney, Doğu, Kuzey] Leaflet'in beklediği
+// Katalogdaki bbox'ı ({west, south, east, north}) Leaflet'in beklediği
 // [[Güney, Batı], [Kuzey, Doğu]] köşe biçimine çevirir.
 function toBounds(bbox: Region["bbox"]): [[number, number], [number, number]] {
-  const [w, s, e, n] = bbox
-  return [[s, w], [n, e]]
+  return [[bbox.south, bbox.west], [bbox.north, bbox.east]]
 }
 
 // Harita kutusunun boyutu değişince (sekme açılınca, pencere/düzen değişince)

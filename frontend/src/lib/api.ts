@@ -1,11 +1,14 @@
 // Types and fetch helpers for the FastAPI backend (api.py).
 
+// D'nin catalog.json şeması (data/catalog.json). Sadece arayüzün kullandığı alanlar.
 export interface Variable {
   id: string
   name: string
   unit: string
   dataset: string
-  period: string
+  source?: string
+  period: { start: string; end: string }
+  period_note?: string | null
   short_description: string
   long_description: string
   themes: string[]
@@ -14,10 +17,14 @@ export interface Variable {
 export interface Region {
   id: string
   name: string
-  bbox: [number, number, number, number]
+  name_in_text?: string
+  bbox: { west: number; south: number; east: number; north: number }
   lat: number
   lon: number
   description: string
+  teaser?: string
+  themes?: string[]
+  compare_with?: string
 }
 
 export interface Case {
@@ -27,6 +34,17 @@ export interface Case {
   region_id: string
   variable_id: string
   compare_region_id: string | null
+  // Çok adımlı vaka: aynı bölgede sırayla incelenecek değişkenler (ilki variable_id).
+  chain?: string[] | null
+}
+
+// D'nin ipucu kural tablosu; "*" her değerle eşleşir.
+export interface HintRule {
+  variable_id: string
+  direction: string
+  significant: boolean | "*"
+  text: string
+  next: { variable_id: string; region_id: string } | null
 }
 
 export interface Meta {
@@ -37,7 +55,7 @@ export interface Meta {
   themes: Record<string, string>
   pairs: [string, string][]
   data_downloaded_on: string
-  stubs_in_use: string[]
+  hints: HintRule[]
   mock_data: boolean
   no_percent_variables: string[]
 }
@@ -81,7 +99,8 @@ export interface Analysis {
   points: Point[]
   result: TrendResult
   interpretation: string
-  next_step_hint: string
+  // D'nin next_step(): ipucu metni + takip edilecek değişken/bölge (yoksa null).
+  next_step: { text: string; variable_id: string | null; region_id: string | null }
 }
 
 export interface ComparePoint {

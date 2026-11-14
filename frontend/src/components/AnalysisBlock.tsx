@@ -7,7 +7,7 @@ import { TrendChart, type ChartView } from "@/components/TrendChart"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Analysis, Meta } from "@/lib/api"
-import { makeTermHelp, regionName, variableName, variableUnit } from "@/lib/content"
+import { makeTermHelp, regionName, variableName, variablePeriodNote, variableUnit } from "@/lib/content"
 import { t } from "@/lib/i18n"
 import { useAnalysis } from "@/lib/useAnalysis"
 
@@ -64,6 +64,11 @@ export function AnalysisBlock({ meta, regionId, variableId, extra }: {
           </CardHeader>
           <CardContent>
             <TrendChart points={data.points} result={data.result} unit={variableUnit(variable)} view={view} />
+            {variablePeriodNote(variable) && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                {t("periodNote")}: {variablePeriodNote(variable)}
+              </p>
+            )}
           </CardContent>
         </Card>
         <ExplainCard

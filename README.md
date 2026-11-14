@@ -1,23 +1,34 @@
-# SpaceTech-2F2E
+# SpaceTech-2F2E — Earth Trend Detective
 
 NASA Space Apps Challenge team project.
 
 ## Project structure
 
 ```
-api.py             # FastAPI backend: JSON API over the Python modules (owner: C)
-frontend/          # React + Vite + TypeScript + Tailwind + shadcn/ui UI (owner: C)
-requirements.txt   # Python dependencies
-data/              # small curated data files (e.g. catalog.json)
-src/               # Python modules: data_loader (A), trend (B), mock_data (B), detective (D)
-src/stubs/         # TEMP placeholder for D's detective module until it lands
-scripts/           # A's Giovanni processing and data checks
-tests/             # tests and validation scripts
+api.py                       # FastAPI backend: JSON API over the Python modules (C)
+frontend/                    # React + Vite + TypeScript + Tailwind + shadcn/ui UI (C)
+  DESIGN.md                  # visual direction, tokens, fonts (C)
+requirements.txt             # Python dependencies
+Dockerfile                   # one container: built UI + API (C)
+data/
+  raw/                       # 9 raw Giovanni CSVs: <region_id>__<variable_id>.csv (A)
+  processed/all_series.csv   # cleaned monthly series used by the app (A)
+  SOURCES.md                 # where and when each file was downloaded (A)
+  catalog.json               # variables, regions, themes, glossary, hints, cases (D)
+scripts/
+  process_giovanni.py        # data/raw -> data/processed/all_series.csv (A)
+  check_data.py              # data quality report (A)
+src/
+  data_loader.py             # load_series, available_pairs (A)
+  mock_data.py               # synthetic all_series.csv for testing without real data (B)
+  trend.py                   # analyze_trend, interpret, compare_trends (B)
+  detective.py               # catalog access, suggestions, next-step hints (D)
+tests/                       # pytest tests (B, D)
 ```
 
 The React UI talks to `api.py`, which imports `src.data_loader`, `src.trend`
-and `src.detective` unchanged. Until a module lands on `main`, `api.py` falls
-back to its placeholder in `src/stubs/` (the UI shows a warning when it does).
+and `src.detective` unchanged. If `data/raw/` has no Giovanni CSVs (i.e. the
+data came from `src.mock_data`), the UI shows a "synthetic data" warning.
 
 ## Getting started
 
@@ -27,9 +38,12 @@ Needs Python 3.10–3.13 (the pinned numpy/scipy/pandas have no 3.14 wheels) and
 python -m venv .venv
 # Windows: .venv\Scripts\activate    macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
-python -m src.mock_data      # writes data/processed/all_series.csv (B's synthetic data) until A's real data is in
 cd frontend && npm install && cd ..
+python -m pytest             # B's and D's tests
 ```
+
+The real data (`data/processed/all_series.csv`) is committed. To rebuild it from
+the raw Giovanni files run `python scripts/process_giovanni.py`.
 
 Development (two terminals):
 
@@ -75,8 +89,8 @@ UI language: set `LANG` in `frontend/src/lib/i18n.ts` (`"tr"` during development
 | Tab | What it does | Uses |
 |---|---|---|
 | Dashboard | Region + measurement picker with map, KPI tiles, Simple/Detailed chart, plain-language explanation, all-regions grid | A `load_series`, B `analyze_trend`, `interpret` |
-| Detective Mode | Theme → suggestions → investigation, with clue + "follow the clue" | D `THEMES`, `suggest`, `next_step_hint` |
-| Case Files | Ready-made cases; two-region cases open the compare view | D `get_cases` |
+| Detective Mode | Theme → suggestions → investigation, with clue + "follow the clue" | D `THEMES`, `suggest`, `next_step` |
+| Case Files | Ready-made cases; two-region cases open the compare view, multi-step cases walk their `chain` | D `get_cases` |
 | Compare | Same measurement, two regions, same/opposite direction summary | B `compare_trends` |
 
 API endpoints (`api.py`): `/api/meta`, `/api/analysis`, `/api/overview`,
@@ -90,4 +104,5 @@ API endpoints (`api.py`): `/api/meta`, `/api/analysis`, `/api/overview`,
 2. Create a branch: `git checkout -b feature/<role>-<short-topic>` (e.g. `feature/d-catalog-detective`)
 3. Commit your work and push the branch: `git push -u origin <branch>`
 4. Open a pull request into `main` and ask a teammate to review.
-5. If you add a dependency, add it to `requirements.txt` in the same PR.
+5. Merge with **Squash and merge**, then delete the branch.
+6. If you add a dependency, add it to `requirements.txt` in the same PR.

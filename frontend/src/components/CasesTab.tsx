@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ArrowLeftIcon, FolderOpenIcon, ScaleIcon } from "lucide-react"
+import { ArrowLeftIcon, ArrowRightIcon, FolderOpenIcon, ScaleIcon } from "lucide-react"
 
 import { AnalysisBlock } from "@/components/AnalysisBlock"
 import { CompareView } from "@/components/CompareTab"
@@ -31,16 +31,45 @@ function CaseTags({ meta, c }: { meta: Meta; c: Case }) {
   )
 }
 
+// Zincirli vakada (ör. Vaka 4: yağış -> sıcaklık -> toprak nemi) şüphelileri sırayla
+// gösteren adım düğmeleri. Seçili adım vurgulanır; her biri o ölçümün analizini açar.
+function ChainSteps({ meta, chain, step, onStep }: {
+  meta: Meta
+  chain: string[]
+  step: number
+  onStep: (i: number) => void
+}) {
+  return (
+    <nav aria-label={t("chainLabel")} className="flex flex-wrap items-center gap-2 text-sm">
+      <span className="text-muted-foreground">{t("chainLabel")}:</span>
+      {chain.map((id, i) => {
+        const variable = meta.variables.find((v) => v.id === id)
+        if (!variable) return null
+        return (
+          <span key={id} className="inline-flex items-center gap-2">
+            {i > 0 && <ArrowRightIcon className="size-3.5 text-muted-foreground" aria-hidden="true" />}
+            <Button size="sm" variant={i === step ? "default" : "outline"} aria-current={i === step ? "step" : undefined} onClick={() => onStep(i)}>
+              {i + 1}. {variableName(variable)}
+            </Button>
+          </span>
+        )
+      })}
+    </nav>
+  )
+}
+
 // Vaka Dosyaları sekmesi: D'nin get_cases() vakaları kart olarak listelenir
 // (başlık + hikâye + "Vakayı aç"). Açılan vaka tek bölgeliyse tam analiz,
 // compare_region_id doluysa iki bölgeli karşılaştırma görünümü gösterilir.
-export function CasesTab({ meta, mock }: { meta: Meta; mock: boolean }) {
+export function CasesTab({ meta }: { meta: Meta }) {
   const [openId, setOpenId] = useState<string | null>(null)
+  const [step, setStep] = useState(0)
   const opened = meta.cases.find((c) => c.id === openId)
 
-  // Bir vakayı açar ve sayfanın başına kaydırır.
+  // Bir vakayı açar (zincirli vakada ilk adımdan başlar) ve sayfanın başına kaydırır.
   const open = (id: string | null) => {
     setOpenId(id)
+    setStep(0)
     window.scrollTo({ top: 0, behavior: scrollBehavior() })
   }
 
@@ -60,6 +89,9 @@ export function CasesTab({ meta, mock }: { meta: Meta; mock: boolean }) {
             <CaseTags meta={meta} c={opened} />
           </CardContent>
         </Card>
+        {opened.chain && opened.chain.length > 1 && (
+          <ChainSteps meta={meta} chain={opened.chain} step={step} onStep={setStep} />
+        )}
         {opened.compare_region_id ? (
           <CompareView
             meta={meta}
@@ -68,7 +100,11 @@ export function CasesTab({ meta, mock }: { meta: Meta; mock: boolean }) {
             regionB={opened.compare_region_id}
           />
         ) : (
-          <AnalysisBlock meta={meta} regionId={opened.region_id} variableId={opened.variable_id} />
+          <AnalysisBlock
+            meta={meta}
+            regionId={opened.region_id}
+            variableId={opened.chain?.[step] ?? opened.variable_id}
+          />
         )}
       </div>
     )
@@ -77,7 +113,6 @@ export function CasesTab({ meta, mock }: { meta: Meta; mock: boolean }) {
   return (
     <div className="space-y-5">
       <p className="text-sm text-muted-foreground">{t("casesIntro")}</p>
-      {mock && <p className="text-xs text-muted-foreground italic">{t("mockCases")}</p>}
       <div className="grid gap-4 md:grid-cols-2">
         {meta.cases.map((c) => (
           <Card key={c.id} className="flex flex-col">
