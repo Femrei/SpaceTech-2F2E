@@ -19,11 +19,11 @@ function Tile({ label, help, value, caption }: {
   return (
     <Card size="sm" className="gap-1">
       <CardContent className="space-y-1">
-        <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+        <div className="flex items-center gap-1 text-sm text-muted-foreground">
           {label}
           <InfoTip text={help} />
         </div>
-        <div className="text-2xl font-semibold tracking-tight">{value}</div>
+        <div className="text-2xl font-semibold tracking-tight tabular-nums">{value}</div>
         <div className="text-xs text-muted-foreground">{caption}</div>
       </CardContent>
     </Card>

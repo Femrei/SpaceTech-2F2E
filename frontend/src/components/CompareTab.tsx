@@ -174,7 +174,7 @@ export function CompareView({ meta, variableId, regionA, regionB }: {
             {compareSummary(data.result_a, data.result_b, a, b, variable, data.comparison.summary).map((line) => (
               <p key={line} className="leading-relaxed text-muted-foreground">{line}</p>
             ))}
-            <div className="space-y-1.5 rounded-lg bg-muted/60 p-3">
+            <div className="space-y-1.5 border-t pt-4">
               <p className="font-semibold">{t("compareWhy")}</p>
               <p className="leading-relaxed text-muted-foreground">{t("compareWhyText")}</p>
             </div>

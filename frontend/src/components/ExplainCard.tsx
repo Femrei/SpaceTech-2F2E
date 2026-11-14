@@ -58,7 +58,7 @@ export function ExplainCard({ result, variable, region, interpretation, view, te
     <Card className="h-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <LightbulbIcon className="size-4 text-amber-500" />
+          <LightbulbIcon className="size-4 text-muted-foreground" aria-hidden="true" />
           {t("whatItMeans")}
         </CardTitle>
       </CardHeader>
@@ -80,12 +80,12 @@ export function ExplainCard({ result, variable, region, interpretation, view, te
           </ul>
         </div>
 
-        <Collapsible open={open} onOpenChange={setOpen} className="rounded-lg border">
-          <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2.5 font-medium">
+        <Collapsible open={open} onOpenChange={setOpen} className="border-t pt-1">
+          <CollapsibleTrigger className="-mx-2 flex w-[calc(100%+1rem)] items-center justify-between rounded-md px-2 py-2.5 font-medium hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring">
             {t("statsDetails")}
             <ChevronDownIcon className={cn("size-4 transition-transform", open && "rotate-180")} />
           </CollapsibleTrigger>
-          <CollapsibleContent className="divide-y border-t px-3">
+          <CollapsibleContent className="divide-y">
             <StatRow
               label={t("olsSlope")}
               help={termHelp("trend")}
