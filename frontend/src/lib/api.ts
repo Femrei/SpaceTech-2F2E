@@ -74,6 +74,18 @@ export interface Analysis {
   next_step_hint: string
 }
 
+export interface OverviewItem {
+  region_id: string
+  variable_id: string
+  error?: string
+  slope_per_decade?: number
+  percent_change_per_decade?: number | null
+  significant?: boolean
+  direction?: "increasing" | "decreasing"
+  mk_p?: number
+  yearly?: { year: number; value: number | null }[]
+}
+
 // Backend'den hata dönerse (404, 422 …) mesajı ve durum kodunu taşıyan hata tipi.
 export class ApiError extends Error {
   status: number
@@ -96,6 +108,11 @@ async function getJson<T>(url: string): Promise<T> {
 // Açılışta bir kez çağrılır: katalog, sözlük, temalar, veri çiftleri vb.
 export function fetchMeta(): Promise<Meta> {
   return getJson<Meta>("/api/meta")
+}
+
+// Genel bakış ızgarası için tüm bölge + değişken çiftlerinin trend özetini getirir.
+export function fetchOverview(): Promise<OverviewItem[]> {
+  return getJson<OverviewItem[]>("/api/overview")
 }
 
 // Seçilen bölge + değişken için grafik noktalarını ve trend sonucunu getirir.

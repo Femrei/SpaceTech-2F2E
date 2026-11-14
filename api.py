@@ -157,6 +157,34 @@ def analysis(region: str, variable: str) -> dict:
     }
 
 
+# Dashboard'daki "Genel bakış" ızgarası için: verisi olan her bölge + değişken
+# çiftinin trend özeti ve küçük çizgi grafik (sparkline) için yıllık ortalamaları.
+# Veri yetersiz olan çiftler "error" alanıyla döner, ızgara bozulmaz.
+@app.get("/api/overview")
+def overview() -> list[dict]:
+    items = []
+    for region, variable in data_loader.available_pairs():
+        item: dict = {"region_id": region, "variable_id": variable}
+        try:
+            series, result = _analyse(region, variable)
+        except ValueError as err:
+            item["error"] = str(err)
+            items.append(item)
+            continue
+        yearly = series.groupby(series.index.year).agg(["mean", "count"])
+        yearly = yearly[yearly["count"] >= 10]["mean"]  # skip years with many gaps
+        item.update({
+            "slope_per_decade": _num(result["slope_per_decade"]),
+            "percent_change_per_decade": _num(result["percent_change_per_decade"]),
+            "significant": bool(result["significant"]),
+            "direction": result["direction"],
+            "mk_p": _num(result["mk_p"]),
+            "yearly": [{"year": int(y), "value": _num(v)} for y, v in yearly.items()],
+        })
+        items.append(item)
+    return items
+
+
 # Derlenmiş React arayüzü (frontend/dist) varsa onu da bu sunucudan yayınlar;
 # böylece canlıya tek bir servis olarak alınabilir.
 _DIST = ROOT / "frontend" / "dist"

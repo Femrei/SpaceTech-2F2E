@@ -1,0 +1,91 @@
+import type { ReactNode } from "react"
+import { CircleCheckIcon, CircleDashedIcon } from "lucide-react"
+
+import { InfoTip } from "@/components/InfoTip"
+import { Card, CardContent } from "@/components/ui/card"
+import type { TrendResult, Variable } from "@/lib/api"
+import { trendKind, variableUnit } from "@/lib/content"
+import { fmt, fmtPct, t } from "@/lib/i18n"
+import { TREND_COLOR, TREND_ICON, trendText } from "@/lib/trendStyle"
+
+// Tek bir KPI kutusu: küçük başlık + (i) açıklaması, büyük değer, altında
+// değeri sade dille anlatan kısa not.
+function Tile({ label, help, value, caption }: {
+  label: string
+  help?: string
+  value: ReactNode
+  caption: ReactNode
+}) {
+  return (
+    <Card size="sm" className="gap-1">
+      <CardContent className="space-y-1">
+        <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          {label}
+          <InfoTip text={help} />
+        </div>
+        <div className="text-2xl font-semibold tracking-tight">{value}</div>
+        <div className="text-xs text-muted-foreground">{caption}</div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Panonun üstündeki 4 özet kutusu:
+//   1) Genel gidişat (artıyor / azalıyor / belirgin değişim yok)
+//   2) 10 yıldaki değişim (birimli)
+//   3) Yüzde değişim
+//   4) Gerçek mi? (istatistiksel anlamlılık + p-değeri)
+export function KpiTiles({ result, variable, termHelp }: {
+  result: TrendResult
+  variable: Variable
+  termHelp: (term: string) => string | undefined
+}) {
+  const kind = trendKind(result)
+  const Icon = TREND_ICON[kind]
+  const unit = variableUnit(variable)
+  const pct = result.percent_change_per_decade
+
+  return (
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <Tile
+        label={t("kpiDirection")}
+        help={t("kpiDirectionHelp")}
+        value={
+          <span className="inline-flex items-center gap-1.5" style={{ color: TREND_COLOR[kind] }}>
+            <Icon className="size-6 shrink-0" />
+            <span className="text-xl leading-tight">{trendText(kind)}</span>
+          </span>
+        }
+        caption={`${result.start_year}–${result.end_year}`}
+      />
+      <Tile
+        label={t("kpiChange")}
+        help={termHelp("per decade")}
+        value={`${fmt(result.slope_per_decade, 2, true)} ${unit}`}
+        caption={t("kpiChangeCaption")}
+      />
+      <Tile
+        label={t("kpiPercent")}
+        value={pct === null ? t("notAvailable") : fmtPct(pct)}
+        caption={t("kpiPercentCaption")}
+      />
+      <Tile
+        label={t("kpiReliability")}
+        help={termHelp("statistically significant")}
+        value={
+          <span className="inline-flex items-center gap-1.5">
+            {result.significant ? (
+              <CircleCheckIcon className="size-6 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            ) : (
+              <CircleDashedIcon className="size-6 shrink-0 text-muted-foreground" />
+            )}
+            <span className="text-xl leading-tight">
+              {result.significant ? t("significant") : t("notSignificant")}
+            </span>
+          </span>
+        }
+        caption={`p = ${fmt(result.mk_p, 3)} · ${result.significant ? t("sigCaption") : t("notSigCaption")}`}
+      />
+    </div>
+  )
+}
