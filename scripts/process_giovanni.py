@@ -104,8 +104,25 @@ def find_fill_value(metadata: list[str]) -> float | None:
     return None
 
 
-def detect_unit(metadata: list[str], variable_id: str) -> str:
-    """Metadata'dan birimi bulur. Bulamazsa hata verir (sessizce tahmin etmeyiz)."""
+# Giovanni'nin gerçek CSV başlığında birim YAZMIYOR. Bu yüzden birimi, indirme
+# sırasında Giovanni'nin değişken tablosundaki "Units" sütununda gördüğümüz
+# değerden alıyoruz. Değişken listesinde başka birim seçersen burayı güncelle.
+GIOVANNI_UNITS = {
+    "precip": "mm/hr",          # GPM_3IMERGM v07 precipitation (Units: mm/hr)
+    "soil_moisture": "kg/m2",   # GLDAS_NOAH025_M v2.1 SoilMoi0_10cm_inst (kg/m^2)
+    "temp": "K",                # M2TMNXSLV T2M (K)
+}
+
+
+def detect_unit(metadata: list[str], variable_id: str) -> tuple[str, str]:
+    """(birim, kaynak) döndürür. Önce metadata'ya bakar, yoksa GIOVANNI_UNITS'i kullanır."""
+    try:
+        return _unit_from_metadata(metadata, variable_id), "başlık"
+    except ValueError:
+        return GIOVANNI_UNITS[variable_id], "GIOVANNI_UNITS"
+
+
+def _unit_from_metadata(metadata: list[str], variable_id: str) -> str:
     text = " ".join(metadata).lower()
     if variable_id == "precip":
         # uzun eşleşmeler önce (mm/hr, mm/h'den önce gelmeli)
@@ -156,7 +173,7 @@ def convert_units(s: pd.Series, variable_id: str, unit: str) -> pd.Series:
 def process_file(path: Path) -> tuple[pd.DataFrame, dict]:
     region_id, variable_id = parse_filename(path)
     df, metadata = read_giovanni_csv(path)
-    unit = detect_unit(metadata, variable_id)
+    unit, unit_source = detect_unit(metadata, variable_id)
     fill_value = find_fill_value(metadata)
 
     dates = pd.to_datetime(df["time"].astype(str).str.strip(), errors="coerce")
@@ -180,7 +197,8 @@ def process_file(path: Path) -> tuple[pd.DataFrame, dict]:
         "variable_id": variable_id,
         "value": s.round(4).to_numpy(),
     })
-    info = {"file": path.name, "unit_in": unit, "fill_value": fill_value,
+    info = {"file": path.name, "unit_in": unit, "unit_source": unit_source,
+            "fill_value": fill_value,
             "bad_dates": bad_dates}
     return out, info
 
@@ -241,7 +259,8 @@ def main() -> int:
           f"({len(result)} satır)\n")
     print("Algılanan ham birimler (lütfen kontrol et):")
     for info in infos:
-        print(f"  {info['file']:<35} birim={info['unit_in']:<9} "
+        print(f"  {info['file']:<35} birim={info['unit_in']:<7} "
+              f"(kaynak: {info['unit_source']:<14}) "
               f"fill={info['fill_value']}  okunamayan tarih={info['bad_dates']}")
 
     summary = (result.groupby(["region_id", "variable_id"])["value"]
