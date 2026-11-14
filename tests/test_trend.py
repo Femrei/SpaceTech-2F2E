@@ -175,3 +175,17 @@ def test_mock_data_matches_shared_format(tmp_path):
         r = analyze_trend(s)
         assert set(RESULT_KEYS) <= set(r)
         assert interpret(r, var, region)
+
+
+def test_years_needed_uses_sen_slope():
+    # Skewed series (a few extreme wet months late in the record) makes the OLS
+    # slope much larger than the robust Sen slope, like real precipitation.
+    s = make_series(trend_per_decade=0.1, noise=2.0, seed=8)
+    s.iloc[[250, 265, 280, 290]] += 25.0
+    r = analyze_trend(s)
+    assert r["significant"] is False
+    assert abs(r["slope_per_decade"]) > 2 * abs(r["sen_slope_per_decade"])
+    # rebuild the estimate from returned values: CI half-width = t_crit * stderr
+    half_ci = (r["ci_high"] - r["ci_low"]) / 2
+    expected = r["n"] * (half_ci / abs(r["sen_slope_per_decade"])) ** (2 / 3) / 12
+    assert r["years_needed_estimate"] == pytest.approx(max(expected, r["n"] / 12), rel=1e-9)
