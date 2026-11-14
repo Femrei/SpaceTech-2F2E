@@ -74,6 +74,27 @@ export interface Analysis {
   next_step_hint: string
 }
 
+export interface ComparePoint {
+  date: string
+  a: number | null
+  b: number | null
+  trend_a: number | null
+  trend_b: number | null
+}
+
+export interface Comparison {
+  points: ComparePoint[]
+  result_a: TrendResult
+  result_b: TrendResult
+  comparison: { same_direction: boolean; both_significant: boolean; summary: string }
+}
+
+export interface Suggestion {
+  region_id: string
+  variable_id: string
+  reason: string
+}
+
 export interface OverviewItem {
   region_id: string
   variable_id: string
@@ -108,6 +129,17 @@ async function getJson<T>(url: string): Promise<T> {
 // Açılışta bir kez çağrılır: katalog, sözlük, temalar, veri çiftleri vb.
 export function fetchMeta(): Promise<Meta> {
   return getJson<Meta>("/api/meta")
+}
+
+// Karşılaştır sekmesi: aynı değişken için iki bölgenin verisini ve karşılaştırma özetini getirir.
+export function fetchCompare(variable: string, regionA: string, regionB: string): Promise<Comparison> {
+  const q = new URLSearchParams({ variable, region_a: regionA, region_b: regionB })
+  return getJson<Comparison>(`/api/compare?${q}`)
+}
+
+// Dedektif Modu: seçilen temaya uygun bölge + değişken önerilerini getirir.
+export function fetchSuggestions(theme: string): Promise<Suggestion[]> {
+  return getJson<Suggestion[]>(`/api/suggest?${new URLSearchParams({ theme })}`)
 }
 
 // Genel bakış ızgarası için tüm bölge + değişken çiftlerinin trend özetini getirir.

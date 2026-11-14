@@ -6,7 +6,7 @@
 // teammates' files never need to change. Unknown ids fall back to the backend.
 
 import type { Region, TrendResult, Variable } from "@/lib/api"
-import { LANG, fmt, fmtPct } from "@/lib/i18n"
+import { LANG, fmt } from "@/lib/i18n"
 
 const REGIONS_TR: Record<string, { name: string; description: string }> = {
   konya: {
@@ -128,7 +128,7 @@ export function explain(
   const lines = [
     `${regionName(region)} için ${name.toLocaleLowerCase("tr")} her 10 yılda ortalama ` +
       `${fmt(Math.abs(result.slope_per_decade))} ${unit} ${verb}` +
-      (pct !== null ? ` (yaklaşık ${fmtPct(Math.abs(pct))}).` : "."),
+      (pct !== null ? ` (yaklaşık %${fmt(Math.abs(pct), 1)}).` : "."),
     `${result.start_year}–${result.end_year} arasındaki ${years} yılda bu, toplamda yaklaşık ` +
       `${fmt(total, 2, true)} ${unit} değişim demek.`,
   ]
@@ -149,5 +149,143 @@ export function explain(
     }
   }
   lines.push("Not: Bu bir eğilim ölçümüdür; değişimin nedenini tek başına göstermez.")
+  return lines
+}
+
+// ---------------------------------------------------------------------------
+// Detective Mode, Case Files and Compare content
+// ---------------------------------------------------------------------------
+
+const THEMES_TR: Record<string, { label: string; blurb: string }> = {
+  drought: { label: "Kuruyor mu?", blurb: "Toprak, yağış ve sıcaklıkta kuraklık izlerini ara." },
+  warming: { label: "Isınıyor mu?", blurb: "Hava sıcaklığında uzun dönemli bir artış var mı, bul." },
+  water: { label: "Suya ne oluyor?", blurb: "Yağmur ve topraktaki su miktarı nasıl değişiyor, incele." },
+}
+
+const THEMES_EN_BLURB: Record<string, string> = {
+  drought: "Look for signs of drought in soil, rain and temperature.",
+  warming: "Find out whether air temperature shows a long-term rise.",
+  water: "See how rain and soil water are changing.",
+}
+
+// Temanın ekranda gösterilecek sorusu (ör. "Kuruyor mu?").
+export function themeLabel(key: string, backendLabel: string): string {
+  return (LANG === "tr" && THEMES_TR[key]?.label) || backendLabel
+}
+
+// Tema kartının altındaki kısa açıklama.
+export function themeBlurb(key: string): string {
+  return (LANG === "tr" ? THEMES_TR[key]?.blurb : THEMES_EN_BLURB[key]) ?? ""
+}
+
+const REASONS_TR: Record<string, string> = {
+  soil_moisture: "Kuraklık ilk önce toprak neminde kendini gösterir.",
+  precip: "Su, yağmur ve kardan gelir: yağış azalırsa toprak da kurur.",
+  temp: "Sıcak hava toprağı daha hızlı kurutur; bitkilerden ve göllerden daha çok su buharlaştırır.",
+}
+
+// Bir önerinin gerekçe cümlesi (Türkçe modda değişkene göre çeviri).
+export function reasonText(variableId: string, backendReason: string): string {
+  return (LANG === "tr" && REASONS_TR[variableId]) || backendReason
+}
+
+const CASES_TR: Record<string, { title: string; story: string }> = {
+  konya_drying: {
+    title: "Vaka 1: Konya kuruyor mu?",
+    story:
+      "Konya ovasındaki çiftçiler kuyuların her yıl daha derine kazılması gerektiğini söylüyor. " +
+      "Toprağın kendisi mi kuruyor, yoksa sadece birkaç kötü yıl mı yaşandı?",
+  },
+  van_heating: {
+    title: "Vaka 2: Van Gölü havzası ısınıyor mu?",
+    story:
+      "Yüksek, soğuk ve uzak: Van Gölü havzası her şeyden uzak görünür. " +
+      "25 yıllık uydu verisi burada bir ısınma sinyali yakalamış mı?",
+  },
+  opposite_stories: {
+    title: "Vaka 3: Aynı ülke, zıt hikâyeler mi?",
+    story:
+      "Konya ovası ile Doğu Karadeniz kıyısı arasında sadece birkaç yüz kilometre var, ama iklimleri bambaşka. " +
+      "Yağış ikisinde de aynı yönde mi değişiyor?",
+  },
+  rain_or_heat: {
+    title: "Vaka 4: Yağış mı, sıcaklık mı? Suçlu hangisi?",
+    story:
+      "Toprak kuruyorsa iki olağan şüpheli vardır: daha az yağış ya da daha çok sıcaklık. " +
+      "Yağıştan başla, sonra ipuçlarını takip et.",
+  },
+}
+
+// Vakanın başlığı (Türkçe modda çeviri, bilinmeyen vakada backend metni).
+export function caseTitle(c: { id: string; title: string }): string {
+  return (LANG === "tr" && CASES_TR[c.id]?.title) || c.title
+}
+
+// Vakanın giriş hikâyesi.
+export function caseStory(c: { id: string; story: string }): string {
+  return (LANG === "tr" && CASES_TR[c.id]?.story) || c.story
+}
+
+// Bir sonraki adım: başka bir değişkene geç, başka bölgeyle karşılaştır ya da yok.
+export type NextStep = { kind: "variable"; variableId: string } | { kind: "compare" } | null
+
+const HINTS: Record<string, Record<Trend, { tr: string; next: NextStep }>> = {
+  soil_moisture: {
+    down: { tr: "🕵️ İpucu bulundu! Toprak kuruyor. Sebep daha az yağış mı, daha çok sıcaklık mı? Sıradaki adım: yağışa bak.", next: { kind: "variable", variableId: "precip" } },
+    up: { tr: "Toprak nemleniyor. Bunu daha fazla yağış mı açıklıyor? Yağışa bak.", next: { kind: "variable", variableId: "precip" } },
+    flat: { tr: "Henüz anlamlı bir eğilim yok. Doğu Karadeniz ile karşılaştırmayı dene ya da 25 yılın yeterli olup olmadığını düşün.", next: { kind: "compare" } },
+  },
+  precip: {
+    down: { tr: "🕵️ Yağış azalıyor. Toprak bunu hissediyor mu? Sıradaki adım: toprak nemine bak.", next: { kind: "variable", variableId: "soil_moisture" } },
+    up: { tr: "Burada yağış artıyor. Toprak da nemleniyor mu? Toprak nemine bak.", next: { kind: "variable", variableId: "soil_moisture" } },
+    flat: { tr: "Yağış belirgin şekilde azalmıyor; o zaman toprağı başka ne kurutuyor olabilir? Sıcaklığa bak.", next: { kind: "variable", variableId: "temp" } },
+  },
+  temp: {
+    up: { tr: "🕵️ Hava ısınıyor. Sıcak hava toprağı daha hızlı kurutur: sıradaki adım toprak nemi.", next: { kind: "variable", variableId: "soil_moisture" } },
+    down: { tr: "Burada serinleme var, bu sıra dışı! Tam resim için yağışa bak.", next: { kind: "variable", variableId: "precip" } },
+    flat: { tr: "Henüz net bir ısınma sinyali yok. Aynı soruyu başka bir bölge için sor.", next: { kind: "compare" } },
+  },
+}
+
+// Sonuca göre dedektif ipucunu ve "ipucunu takip et" butonunun gideceği adımı verir.
+// İngilizce modda metin D'nin next_step_hint() fonksiyonundan gelir.
+export function hintFor(
+  result: TrendResult,
+  variableId: string,
+  backendText: string,
+): { text: string; next: NextStep } {
+  const rule = HINTS[variableId]?.[trendKind(result)]
+  return {
+    text: (LANG === "tr" && rule?.tr) || backendText,
+    next: rule?.next ?? null,
+  }
+}
+
+// Karşılaştırma özet cümlesi: aynı yönde mi, zıt yönde mi, hangisi anlamlı.
+// İngilizce modda B'nin compare_trends() özeti kullanılır.
+export function compareSummary(
+  a: TrendResult,
+  b: TrendResult,
+  regionA: Region,
+  regionB: Region,
+  variable: Variable,
+  backendSummary: string,
+): string[] {
+  if (LANG !== "tr") return [backendSummary]
+  const name = variableName(variable).toLocaleLowerCase("tr")
+  const verb = (r: TrendResult) => (r.direction === "increasing" ? "artıyor" : "azalıyor")
+  const nameA = regionName(regionA)
+  const nameB = regionName(regionB)
+  const lines =
+    a.direction === b.direction
+      ? [`${nameA} ve ${nameB} aynı yönde: ikisinde de ${name} ${verb(a)}.`]
+      : [`Zıt hikâyeler: ${nameA} için ${name} ${verb(a)}, ama ${nameB} için ${verb(b)}.`]
+  if (a.significant && b.significant) {
+    lines.push("İki değişim de istatistiksel olarak anlamlı.")
+  } else if (a.significant || b.significant) {
+    lines.push(`Ancak sadece ${a.significant ? nameA : nameB} için değişim istatistiksel olarak anlamlı; diğerinde henüz doğal dalgalanmadan ayırt edilemiyor.`)
+  } else {
+    lines.push("İki değişim de henüz istatistiksel olarak anlamlı değil; dikkatli yorumlamak gerek.")
+  }
   return lines
 }

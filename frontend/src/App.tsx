@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react"
 import {
-  ConstructionIcon,
   FolderOpenIcon,
   LayoutDashboardIcon,
   SatelliteIcon,
@@ -9,25 +8,24 @@ import {
   TriangleAlertIcon,
 } from "lucide-react"
 
+import { AboutSheet } from "@/components/AboutSheet"
+import { CasesTab } from "@/components/CasesTab"
+import { CompareTab } from "@/components/CompareTab"
 import { Dashboard } from "@/components/Dashboard"
+import { DetectiveTab } from "@/components/DetectiveTab"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { fetchMeta, type Meta } from "@/lib/api"
 import { t } from "@/lib/i18n"
 
-// Henüz yapılmamış sekmeler için "yakında" bilgi kutusu gösterir.
-function ComingSoon({ what }: { what: string }) {
-  return (
-    <Alert>
-      <ConstructionIcon />
-      <AlertDescription>{t("comingSoon", { what, explore: t("tabExplore") })}</AlertDescription>
-    </Alert>
-  )
-}
+// Sekme içerikleri gizlense de bellekte kalır (forceMount); böylece örneğin
+// Dedektif Modu'ndaki ilerleme sekme değiştirince kaybolmaz.
+const PANEL = "data-[state=inactive]:hidden"
 
-// Sayfanın tamamı: üst bar (logo + başlık) -> (geliştirme uyarısı) -> sekmeler -> altbilgi.
-// Açılışta backend'den katalog vb. bilgileri (meta) bir kez çeker.
+// Sayfanın tamamı: üst bar (logo + başlık + Hakkında) -> (geliştirme uyarısı)
+// -> 4 sekme -> altbilgi (veri kaynağı). Açılışta backend'den katalog vb.
+// bilgileri (meta) bir kez çeker.
 export default function App() {
   const [meta, setMeta] = useState<Meta | null>(null)
   const [failed, setFailed] = useState(false)
@@ -38,15 +36,16 @@ export default function App() {
 
   return (
     <div className="min-h-svh bg-muted/40">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <SatelliteIcon className="size-5" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="truncate text-base font-semibold leading-tight sm:text-lg">{t("appTitle")}</h1>
             <p className="truncate text-xs text-muted-foreground sm:text-sm">{t("appSubtitle")}</p>
           </div>
+          {meta && <AboutSheet downloadedOn={meta.data_downloaded_on} />}
         </div>
       </header>
 
@@ -73,10 +72,12 @@ export default function App() {
               <TabsTrigger value="cases"><FolderOpenIcon />{t("tabCases")}</TabsTrigger>
               <TabsTrigger value="compare"><ScaleIcon />{t("tabCompare")}</TabsTrigger>
             </TabsList>
-            <TabsContent value="explore"><Dashboard meta={meta} /></TabsContent>
-            <TabsContent value="detective"><ComingSoon what={t("tabDetective")} /></TabsContent>
-            <TabsContent value="cases"><ComingSoon what={t("tabCases")} /></TabsContent>
-            <TabsContent value="compare"><ComingSoon what={t("tabCompare")} /></TabsContent>
+            <TabsContent value="explore" forceMount className={PANEL}><Dashboard meta={meta} /></TabsContent>
+            <TabsContent value="detective" forceMount className={PANEL}><DetectiveTab meta={meta} /></TabsContent>
+            <TabsContent value="cases" forceMount className={PANEL}>
+              <CasesTab meta={meta} mock={meta.stubs_in_use.some((s) => s.startsWith("detective"))} />
+            </TabsContent>
+            <TabsContent value="compare" forceMount className={PANEL}><CompareTab meta={meta} /></TabsContent>
           </Tabs>
         )}
       </main>

@@ -131,3 +131,11 @@
     @apply font-sans;
     }
 }
+/* Region map: darken the OpenStreetMap tiles in dark mode so the map doesn't glare. */
+.dark .region-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
+}
+.region-map .leaflet-container {
+  background: var(--muted);
+  font-family: inherit;
+}

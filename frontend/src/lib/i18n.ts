@@ -116,6 +116,111 @@ const TEXTS = {
     tr: "Bir kutuya tıklayınca ayrıntısı yukarıda açılır.",
   },
   selected: { en: "selected", tr: "seçili" },
+  // --- Map ----------------------------------------------------------------
+  mapTitle: { en: "Regions on the map", tr: "Bölgeler haritada" },
+  mapHint: { en: "Click a region to select it.", tr: "Seçmek için bir bölgeye tıkla." },
+  // --- Compare ------------------------------------------------------------
+  compareIntro: {
+    en: "Same measurement, two regions: are they changing the same way?",
+    tr: "Aynı ölçüm, iki bölge: ikisi de aynı yönde mi değişiyor?",
+  },
+  regionA: { en: "Region 1", tr: "1. bölge" },
+  regionB: { en: "Region 2", tr: "2. bölge" },
+  sameRegion: { en: "Pick two different regions.", tr: "İki farklı bölge seç." },
+  compareChartTitle: { en: "Difference from normal (12-month average)", tr: "Normalden fark (12 aylık ortalama)" },
+  compareChartDesc: {
+    en: "Each solid line shows how far that region is from its own normal; dashed lines are the long-term trends.",
+    tr: "Her düz çizgi o bölgenin kendi normalinden ne kadar saptığını gösterir; kesikli çizgiler uzun dönem eğilimlerdir.",
+  },
+  oppositeBadge: { en: "Opposite directions!", tr: "Zıt yönler!" },
+  sameBadge: { en: "Same direction", tr: "Aynı yön" },
+  compareWhy: { en: "Why does this matter?", tr: "Bu neden önemli?" },
+  compareWhyText: {
+    en: "The same climate process can push different places in opposite directions: one region dries while another gets wetter. One region's story is not the whole country's.",
+    tr: "Aynı iklim süreci farklı yerleri zıt yönlere itebilir: bir bölge kururken diğeri nemlenebilir. Tek bir bölgenin hikâyesi bütün ülkenin hikâyesi değildir.",
+  },
+  // --- Detective Mode -----------------------------------------------------
+  detIntro: {
+    en: "Work like a detective: pick a question, follow the clues, and let the data decide.",
+    tr: "Bir dedektif gibi çalış: bir soru seç, ipuçlarını takip et, kararı veriye bırak.",
+  },
+  detStep1: { en: "Pick a question", tr: "Bir soru seç" },
+  detStep2: { en: "Where to start?", tr: "Nereden başlayalım?" },
+  detStep3: { en: "Investigate", tr: "İncele" },
+  investigate: { en: "Investigate", tr: "İncele" },
+  bestPick: { en: "Best place to start", tr: "En iyi başlangıç" },
+  followClue: { en: "Follow the clue", tr: "İpucunu takip et" },
+  openCompare: { en: "Compare regions", tr: "Bölgeleri karşılaştır" },
+  startOver: { en: "Start over", tr: "Baştan başla" },
+  backToSuggestions: { en: "Back to suggestions", tr: "Önerilere dön" },
+  clueTitle: { en: "Detective's note", tr: "Dedektifin notu" },
+  trail: { en: "Your trail", tr: "İzlediğin yol" },
+  alreadyVisited: {
+    en: "You already checked {done}. Next suspect: {next}.",
+    tr: "{done} zaten incelendi. Sıradaki şüpheli: {next}.",
+  },
+  allVisited: {
+    en: "You've checked every measurement here. Compare with another region next.",
+    tr: "Bu bölgedeki tüm ölçümlere baktın. Sırada başka bir bölgeyle karşılaştırmak var.",
+  },
+  // --- Case Files ---------------------------------------------------------
+  casesIntro: {
+    en: "Open a ready-made case and solve it like a detective.",
+    tr: "Hazır bir vakayı aç ve bir dedektif gibi çöz.",
+  },
+  openCase: { en: "Open case", tr: "Vakayı aç" },
+  backToCases: { en: "Back to cases", tr: "Vakalara dön" },
+  compareCase: { en: "Two regions", tr: "İki bölge" },
+  mockCases: {
+    en: "Case stories are placeholders until the real results are in.",
+    tr: "Vaka metinleri geçici; gerçek sonuçlar gelince yeniden yazılacak.",
+  },
+  // --- About sheet --------------------------------------------------------
+  about: { en: "About", tr: "Hakkında" },
+  aboutTitle: { en: "About this app", tr: "Bu uygulama hakkında" },
+  aboutText: {
+    en: "Earth Trend Detective lets anyone check what NASA satellite and model data say about how rain, soil moisture and temperature have changed in three regions of Türkiye since 2001, and whether those changes are statistically significant.",
+    tr: "Dünya Trend Dedektifi, NASA uydu ve model verilerinin Türkiye'deki üç bölgede 2001'den bu yana yağış, toprak nemi ve sıcaklık hakkında ne söylediğini ve bu değişimlerin istatistiksel olarak anlamlı olup olmadığını herkesin kontrol edebilmesini sağlar.",
+  },
+  howItWorks: { en: "How it works", tr: "Nasıl çalışır?" },
+  how1: {
+    en: "Monthly, area-averaged values are downloaded from NASA Giovanni for 2001–2025.",
+    tr: "2001–2025 arası aylık, bölge ortalaması değerler NASA Giovanni'den indirilir.",
+  },
+  how2: {
+    en: "The seasonal cycle is removed: each month is compared with the normal for that calendar month (anomaly).",
+    tr: "Mevsim etkisi çıkarılır: her ay, aynı takvim ayının normaliyle karşılaştırılır (anomali).",
+  },
+  how3: {
+    en: "A straight-line trend (OLS) gives the rate per decade and its 95% range.",
+    tr: "Doğrusal bir eğilim (OLS) 10 yıllık değişim hızını ve %95 aralığını verir.",
+  },
+  how4: {
+    en: "The Mann-Kendall test checks whether the trend could just be chance (significant if p < 0.05).",
+    tr: "Mann-Kendall testi eğilimin tesadüf olup olamayacağını kontrol eder (p < 0,05 ise anlamlı).",
+  },
+  dataSources: { en: "Data sources", tr: "Veri kaynakları" },
+  sourcePrecip: {
+    en: "Precipitation: GPM IMERG monthly (GPM_3IMERGM), NASA Global Precipitation Measurement mission.",
+    tr: "Yağış: GPM IMERG aylık (GPM_3IMERGM), NASA Küresel Yağış Ölçüm (GPM) görevi.",
+  },
+  sourceSoil: {
+    en: "Soil moisture (0–10 cm): GLDAS Noah 0.25° monthly (GLDAS_NOAH025_M), NASA land surface model.",
+    tr: "Toprak nemi (0–10 cm): GLDAS Noah 0,25° aylık (GLDAS_NOAH025_M), NASA kara yüzeyi modeli.",
+  },
+  sourceTemp: {
+    en: "Air temperature (2 m): MERRA-2 monthly (M2TMNXSLV), NASA atmospheric reanalysis.",
+    tr: "Hava sıcaklığı (2 m): MERRA-2 aylık (M2TMNXSLV), NASA atmosfer yeniden analizi.",
+  },
+  sourceAccess: {
+    en: "All data accessed through NASA Giovanni (giovanni.gsfc.nasa.gov), downloaded on {date}.",
+    tr: "Tüm veriler NASA Giovanni (giovanni.gsfc.nasa.gov) üzerinden alındı; indirme tarihi: {date}.",
+  },
+  limitsTitle: { en: "Keep in mind", tr: "Akılda tut" },
+  limitsText: {
+    en: "25 years is a short record for climate. A trend tells you what changed, not why. Regional averages hide local differences.",
+    tr: "25 yıl iklim için kısa bir süre. Eğilim neyin değiştiğini söyler, nedenini değil. Bölge ortalamaları yerel farkları gizler.",
+  },
 } as const
 
 export type TextKey = keyof typeof TEXTS
