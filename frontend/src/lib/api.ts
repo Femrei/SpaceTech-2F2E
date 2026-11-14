@@ -58,6 +58,8 @@ export interface Meta {
   hints: HintRule[]
   mock_data: boolean
   no_percent_variables: string[]
+  // DENEME: "Konumunu seç" sekmesindeki ölçümler (NASA POWER); backend'de yoksa boş.
+  point_variables?: Variable[]
 }
 
 export interface Point {
@@ -101,6 +103,14 @@ export interface Analysis {
   interpretation: string
   // D'nin next_step(): ipucu metni + takip edilecek değişken/bölge (yoksa null).
   next_step: { text: string; variable_id: string | null; region_id: string | null }
+}
+
+// DENEME: "Konumunu seç" sekmesi. /api/analysis ile aynı biçim + noktanın bilgisi.
+// cell = verinin geldiği MERRA-2 ızgara hücresi (yaklaşık 55 x 55 km).
+export interface PointAnalysis extends Analysis {
+  // cell: nokta modunda tek hücre, kare modunda kullanılan hücrelerin kapladığı alan;
+  // cells: kullanılan hücrelerin merkezleri [enlem, boylam].
+  point: { lat: number; lon: number; cell: Region["bbox"]; n_cells: number; cells: [number, number][]; source: string }
 }
 
 export interface ComparePoint {
@@ -181,4 +191,18 @@ export function fetchOverview(): Promise<OverviewItem[]> {
 export function fetchAnalysis(region: string, variable: string): Promise<Analysis> {
   const q = new URLSearchParams({ region, variable })
   return getJson<Analysis>(`/api/analysis?${q}`)
+}
+
+// DENEME: haritada seçilen nokta için NASA POWER verisiyle analizi getirir.
+export function fetchPointAnalysis(lat: number, lon: number, variable: string): Promise<PointAnalysis> {
+  const q = new URLSearchParams({ lat: String(lat), lon: String(lon), variable })
+  return getJson<PointAnalysis>(`/api/point?${q}`)
+}
+
+// DENEME: haritada çizilen kare için NASA POWER alan ortalamasıyla analizi getirir.
+export function fetchBoxAnalysis(box: Region["bbox"], variable: string): Promise<PointAnalysis> {
+  const q = new URLSearchParams({
+    south: String(box.south), west: String(box.west), north: String(box.north), east: String(box.east), variable,
+  })
+  return getJson<PointAnalysis>(`/api/box?${q}`)
 }

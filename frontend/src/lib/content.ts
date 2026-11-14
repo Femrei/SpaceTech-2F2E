@@ -57,6 +57,25 @@ const VARIABLES_TR: Record<string, { name: string; unit: string; short: string; 
     unit: "°C",
     short: "Yerden yaklaşık 2 metre yükseklikteki havanın sıcaklığı: insanların ve ekinlerin hissettiği yükseklik.",
   },
+  // DENEME: "Konumunu seç" sekmesindeki NASA POWER ölçümleri.
+  power_temp: {
+    name: "Hava sıcaklığı",
+    unit: "°C",
+    short: "Yerden yaklaşık 2 metre yükseklikteki havanın sıcaklığı.",
+  },
+  power_precip: {
+    name: "Yağış",
+    unit: "mm/ay",
+    short: "Her ay düşen yağmur ve kar (MERRA-2, ölçümlerle düzeltilmiş).",
+  },
+  power_soil_wetness: {
+    name: "Yüzey toprak ıslaklığı",
+    // "puan": değerin kendisi yüzde olduğu için değişim "yüzde puan"dır; yanındaki
+    // göreli değişimle (%1,6 gibi) karışmasın.
+    unit: "yüzde puan",
+    short: "Toprağın üst katmanının doygunluğa ne kadar yakın olduğu: %0 kupkuru, %100 tamamen doygun.",
+    periodNote: "NASA POWER bu değeri %1'lik adımlarla verir; çok yavaş değişimlerde eğim 0 görünebilir.",
+  },
 }
 
 const GLOSSARY_TR: Record<string, string> = {

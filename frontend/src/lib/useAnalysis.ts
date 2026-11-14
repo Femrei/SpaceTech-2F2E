@@ -1,46 +1,73 @@
 import { useEffect, useState } from "react"
 
-import { ApiError, fetchAnalysis, fetchCompare, type Analysis, type Comparison } from "@/lib/api"
+import {
+  ApiError,
+  fetchAnalysis,
+  fetchBoxAnalysis,
+  fetchCompare,
+  fetchPointAnalysis,
+  type PointAnalysis,
+} from "@/lib/api"
 import { t } from "@/lib/i18n"
 
 type State<T> = { key: string; data?: T; error?: string } | null
 
 // API hatasını kullanıcıya gösterilecek Türkçe/İngilizce mesaja çevirir.
 function errorMessage(e: unknown): string {
-  return e instanceof ApiError && e.status === 422 ? `${t("notEnoughData")} ${e.message}` : t("loadError")
+  if (e instanceof ApiError && e.status === 422) return e.message.includes("only measured over land")
+    ? t("placeNoLand")
+    : `${t("notEnoughData")} ${e.message}`
+  if (e instanceof ApiError && e.status === 502) return t("placeFetchError")
+  return t("loadError")
 }
 
-// Bir bölge + değişken için analizi backend'den çeker.
+// Üç hook'un ortak mantığı: "key" ile tanımlanan seçim için request() ile veriyi çeker.
 // Dönen değer: { data } yüklendiyse, { error } hata varsa, null hâlâ yükleniyorsa.
-// Cevap hangi seçime aitse o anahtarla saklanır; geç gelen eski bir cevap
-// yeni seçimin yerine gösterilmez.
-export function useAnalysis(regionId: string, variableId: string, enabled = true) {
-  const key = `${regionId}/${variableId}`
-  const [state, setState] = useState<State<Analysis>>(null)
+// Seçim değişince önceki isteğin cevabı artık yok sayılır (stale = true): yavaş gelen
+// eski bir cevap, yeni seçimin cevabının üzerine yazıp ekranı "yükleniyor"da
+// bırakamaz. Ayrıca her cevap kendi anahtarıyla saklanır; seçim değiştiği anda eski
+// sonuç gösterilmez.
+function useKeyedFetch<T>(key: string | null, request: () => Promise<T>): State<T> {
+  const [state, setState] = useState<State<T>>(null)
 
   useEffect(() => {
-    if (!enabled) return
-    const k = `${regionId}/${variableId}`
-    fetchAnalysis(regionId, variableId)
-      .then((data) => setState({ key: k, data }))
-      .catch((e: unknown) => setState({ key: k, error: errorMessage(e) }))
-  }, [regionId, variableId, enabled])
+    if (key === null) return
+    let stale = false
+    request()
+      .then((data) => { if (!stale) setState({ key, data }) })
+      .catch((e: unknown) => { if (!stale) setState({ key, error: errorMessage(e) }) })
+    return () => { stale = true }
+    // request her çizimde yeni bir fonksiyon; isteği yalnızca seçim (key) değişince yenile.
+  }, [key])
 
-  return state?.key === key ? state : null
+  return key !== null && state?.key === key ? state : null
+}
+
+// Bir bölge + değişken için analizi backend'den çeker (Pano, Dedektif Modu, Vaka Dosyaları).
+export function useAnalysis(regionId: string, variableId: string, enabled = true) {
+  return useKeyedFetch(enabled ? `${regionId}/${variableId}` : null, () => fetchAnalysis(regionId, variableId))
 }
 
 // Karşılaştır sekmesi için aynı mantık: iki bölgenin karşılaştırmasını çeker.
 export function useComparison(variableId: string, regionA: string, regionB: string, enabled = true) {
-  const key = `${variableId}/${regionA}/${regionB}`
-  const [state, setState] = useState<State<Comparison>>(null)
+  return useKeyedFetch(
+    enabled ? `${variableId}/${regionA}/${regionB}` : null,
+    () => fetchCompare(variableId, regionA, regionB),
+  )
+}
 
-  useEffect(() => {
-    if (!enabled) return
-    const k = `${variableId}/${regionA}/${regionB}`
-    fetchCompare(variableId, regionA, regionB)
-      .then((data) => setState({ key: k, data }))
-      .catch((e: unknown) => setState({ key: k, error: errorMessage(e) }))
-  }, [variableId, regionA, regionB, enabled])
+// "Konumunu seç" sekmesindeki seçim: tek bir nokta ya da çizilen bir kare.
+export type PlaceSelection =
+  | { kind: "point"; lat: number; lon: number }
+  | { kind: "box"; south: number; west: number; north: number; east: number }
 
-  return state?.key === key ? state : null
+// DENEME – "Konumunu seç" sekmesi: seçilen nokta ya da kare için NASA POWER analizini
+// çeker. Seçim yoksa (null; ör. henüz kare çizilmedi) hiçbir şey yapmaz ve null döner.
+export function usePlaceAnalysis(selection: PlaceSelection | null, variableId: string) {
+  return useKeyedFetch<PointAnalysis>(
+    selection ? `${JSON.stringify(selection)}/${variableId}` : null,
+    () => selection?.kind === "point"
+      ? fetchPointAnalysis(selection.lat, selection.lon, variableId)
+      : fetchBoxAnalysis(selection as Extract<PlaceSelection, { kind: "box" }>, variableId),
+  )
 }
