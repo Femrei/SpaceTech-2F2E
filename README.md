@@ -9,8 +9,9 @@ api.py             # FastAPI backend: JSON API over the Python modules (owner: C
 frontend/          # React + Vite + TypeScript + Tailwind + shadcn/ui UI (owner: C)
 requirements.txt   # Python dependencies
 data/              # small curated data files (e.g. catalog.json)
-src/               # Python modules: data_loader (A), trend (B), detective (D)
-src/stubs/         # TEMP placeholders for modules not merged yet (delete when all land)
+src/               # Python modules: data_loader (A), trend (B), mock_data (B), detective (D)
+src/stubs/         # TEMP placeholder for D's detective module until it lands
+scripts/           # A's Giovanni processing and data checks
 tests/             # tests and validation scripts
 ```
 
@@ -20,12 +21,13 @@ back to its placeholder in `src/stubs/` (the UI shows a warning when it does).
 
 ## Getting started
 
-Needs Python 3.12+ and Node.js 20+.
+Needs Python 3.10–3.13 (the pinned numpy/scipy/pandas have no 3.14 wheels) and Node.js 20+.
 
 ```bash
 python -m venv .venv
 # Windows: .venv\Scripts\activate    macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
+python -m src.mock_data      # writes data/processed/all_series.csv (B's synthetic data) until A's real data is in
 cd frontend && npm install && cd ..
 ```
 
