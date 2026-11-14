@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { Meta, OverviewItem } from "@/lib/api"
 import { regionName, trendKind, variableName, variableUnit } from "@/lib/content"
 import { fmt, t } from "@/lib/i18n"
-import { TREND_COLOR, TREND_ICON, trendText } from "@/lib/trendStyle"
+import { TREND_COLOR, TREND_ICON, TREND_TEXT, trendText } from "@/lib/trendStyle"
 import { cn } from "@/lib/utils"
 
 // Izgaradaki tek kutu: ölçüm adı, yön oku + yazısı, 10 yıllık değişim ve
@@ -27,21 +27,22 @@ function Tile({ item, label, unit, selected, onSelect }: {
   const kind = trendKind({ significant: !!item.significant, direction: item.direction ?? "" })
   const Icon = TREND_ICON[kind]
   const color = TREND_COLOR[kind]
+  const textColor = TREND_TEXT[kind]
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
       className={cn(
-        "w-full rounded-lg border p-3 text-left transition-colors hover:bg-muted/50",
-        selected && "ring-2 ring-ring",
+        "w-full rounded-lg border bg-card p-3 text-left transition-colors hover:bg-muted/60",
+        selected && "border-brand ring-1 ring-brand",
       )}
     >
       <div className="flex items-center justify-between gap-2 text-sm font-medium">
         {label}
         {selected && <span className="text-xs font-normal text-muted-foreground">{t("selected")}</span>}
       </div>
-      <div className="mt-1 flex items-center gap-1 text-sm font-semibold" style={{ color }}>
+      <div className="mt-1 flex items-center gap-1 text-sm font-semibold" style={{ color: textColor }}>
         <Icon className="size-4" />
         {trendText(kind)}
       </div>

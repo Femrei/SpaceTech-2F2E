@@ -8,7 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import type { Region, TrendResult, Variable } from "@/lib/api"
 import { explain, trendKind, variableName, variableUnit } from "@/lib/content"
 import { fmt, t } from "@/lib/i18n"
-import { TREND_COLOR, TREND_ICON, trendText } from "@/lib/trendStyle"
+import { TREND_ICON, TREND_TEXT, trendText } from "@/lib/trendStyle"
 import { cn } from "@/lib/utils"
 
 // İstatistik detaylarındaki tek satır: terim adı + (i) açıklaması solda, değer sağda.
@@ -64,7 +64,7 @@ export function ExplainCard({ result, variable, region, interpretation, view, te
       </CardHeader>
       <CardContent className="space-y-5 text-sm">
         <div className="space-y-2">
-          <p className="inline-flex items-center gap-1.5 font-semibold" style={{ color: TREND_COLOR[kind] }}>
+          <p className="inline-flex items-center gap-1.5 font-semibold" style={{ color: TREND_TEXT[kind] }}>
             <Icon className="size-4" />
             {variableName(variable)}: {trendText(kind).toLocaleLowerCase()}
           </p>

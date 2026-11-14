@@ -9,13 +9,13 @@ import { ChartContainer, type ChartConfig } from "@/components/ui/chart"
 import type { ComparePoint, Meta, Region, TrendResult, Variable } from "@/lib/api"
 import { compareSummary, regionName, trendKind, variableName, variableShort, variableUnit } from "@/lib/content"
 import { LANG, fmt, fmtP, t } from "@/lib/i18n"
-import { TREND_COLOR, TREND_ICON, trendText } from "@/lib/trendStyle"
+import { TREND_ICON, TREND_TEXT, trendText } from "@/lib/trendStyle"
 import { useComparison } from "@/lib/useAnalysis"
 
-// İki bölgeyi ayırt etmek için renk körlüğüne uygun (Okabe-Ito) iki renk.
-// Trend yönü renkleri (turuncu/mavi) ile karışmasın diye farklı tonlar seçildi.
-const COLOR_A = "#CC79A7"
-const COLOR_B = "#009E73"
+// İki bölgeyi ayırt etmek için renk körlüğüne uygun (Okabe-Ito) iki renk; değerleri
+// index.css'te. Trend yönü renkleri (turuncu/mavi) ile karışmasın diye farklı tonlar.
+const COLOR_A = "var(--region-a)"
+const COLOR_B = "var(--region-b)"
 
 // Fare grafiğin üzerine gelince iki bölgenin o ayki değerlerini gösteren kutu.
 function CompareTooltip({ active, payload, unit, nameA, nameB }: {
@@ -66,7 +66,7 @@ function RegionSummary({ region, result, unit, color }: {
           <span className="h-1 w-5 rounded-full" style={{ background: color }} />
           {regionName(region)}
         </div>
-        <div className="flex items-center gap-1.5 text-lg font-semibold" style={{ color: TREND_COLOR[kind] }}>
+        <div className="flex items-center gap-1.5 text-lg font-semibold" style={{ color: TREND_TEXT[kind] }}>
           <Icon className="size-5" />
           {trendText(kind)}
         </div>

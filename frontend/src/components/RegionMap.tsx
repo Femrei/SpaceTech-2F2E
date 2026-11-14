@@ -8,8 +8,9 @@ import { regionName } from "@/lib/content"
 import { t } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
-const SELECTED = "#2563eb"
-const OTHER = "#94a3b8"
+// Seçili bölge marka rengiyle (okra) çizilir: verideki "azalıyor" mavisiyle karışmasın.
+const SELECTED = "var(--brand)"
+const OTHER = "var(--trend-flat)"
 
 // Katalogdaki bbox'ı [Batı, Güney, Doğu, Kuzey] Leaflet'in beklediği
 // [[Güney, Batı], [Kuzey, Doğu]] köşe biçimine çevirir.

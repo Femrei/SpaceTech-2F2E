@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import type { TrendResult, Variable } from "@/lib/api"
 import { trendKind, variableUnit } from "@/lib/content"
 import { fmt, fmtP, fmtPct, t } from "@/lib/i18n"
-import { TREND_COLOR, TREND_ICON, trendText } from "@/lib/trendStyle"
+import { TREND_ICON, TREND_TEXT, trendText } from "@/lib/trendStyle"
 
 // Tek bir KPI kutusu: küçük başlık + (i) açıklaması, büyük değer, altında
 // değeri sade dille anlatan kısa not.
@@ -52,7 +52,7 @@ export function KpiTiles({ result, variable, termHelp, showPercent = true }: {
         label={t("kpiDirection")}
         help={t("kpiDirectionHelp")}
         value={
-          <span className="inline-flex items-center gap-1.5" style={{ color: TREND_COLOR[kind] }}>
+          <span className="inline-flex items-center gap-1.5" style={{ color: TREND_TEXT[kind] }}>
             <Icon className="size-6 shrink-0" />
             <span className="text-xl leading-tight">{trendText(kind)}</span>
           </span>
