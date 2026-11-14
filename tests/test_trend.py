@@ -30,7 +30,7 @@ def test_known_positive_trend_is_detected():
     assert r["direction"] == "increasing"
     assert r["sen_slope_per_decade"] == pytest.approx(0.5, abs=0.05)
     assert r["slope_per_decade"] == pytest.approx(0.5, abs=0.05)
-    assert r["slope_ci_low"] < 0.5 < r["slope_ci_high"]
+    assert r["ci_low"] < 0.5 < r["ci_high"]
 
 
 def test_known_negative_trend_is_detected():
@@ -142,3 +142,36 @@ def test_compare_trends():
     c = compare_trends(up, flat)
     assert c["both_significant"] is False
     assert "first" in c["summary"]
+
+
+def test_n_years_and_ci_bracket_slope():
+    r = analyze_trend(make_series(trend_per_decade=0.3))
+    assert r["n_years"] == pytest.approx(25.0)
+    assert r["ci_low"] <= r["slope_per_decade"] <= r["ci_high"]
+
+
+def test_interpret_temp_has_no_percent():
+    r = analyze_trend(make_series(trend_per_decade=0.5, noise=0.2, mean=11.0))
+    text = interpret(r, "temp", "the Konya Closed Basin")
+    assert "°C per decade" in text
+    assert "%" not in text
+
+
+def test_mock_data_matches_shared_format(tmp_path):
+    from src.mock_data import generate_mock
+
+    df = generate_mock(tmp_path / "all_series.csv")
+    assert list(df.columns) == ["date", "region_id", "variable_id", "value"]
+    assert len(df) == 2700
+    pairs = df.groupby(["region_id", "variable_id"]).size()
+    assert len(pairs) == 9 and (pairs == 300).all()
+    assert df["value"].isna().any()
+
+    # round-trip the same way A's load_series does (asfreq('MS')) and analyze every series
+    back = pd.read_csv(tmp_path / "all_series.csv", parse_dates=["date"])
+    for (region, var), g in back.groupby(["region_id", "variable_id"]):
+        s = g.set_index("date")["value"].asfreq("MS")
+        assert len(s) == 300
+        r = analyze_trend(s)
+        assert set(RESULT_KEYS) <= set(r)
+        assert interpret(r, var, region)

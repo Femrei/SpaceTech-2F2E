@@ -1,14 +1,17 @@
 """Trend statistics for monthly climate / land-surface series.
 
-Public API (contract used by C's plots/result card and D's ``next_step_hint``;
+Public API (contract used by C's chart/result card and D's ``next_step_hint``;
 do not rename keys without telling them):
 
     analyze_trend(series)                    -> dict  (keys: RESULT_KEYS)
     interpret(result, variable, region)      -> str
     compare_trends(result_a, result_b)       -> dict  (keys: COMPARE_KEYS)
 
-Input: a ``pd.Series`` of monthly values indexed by a ``DatetimeIndex``.
-NaNs are allowed.
+Input: the output of A's ``data_loader.load_series(region_id, variable_id)``:
+a monthly ``pd.Series`` with a ``DatetimeIndex`` (freq 'MS'); NaNs allowed.
+
+``interpret`` takes a variable id (``precip`` / ``soil_moisture`` / ``temp``)
+and a human-readable region name (e.g. D's ``get_region(id)["name"]``).
 """
 from __future__ import annotations
 
@@ -25,12 +28,13 @@ MONTHS_PER_YEAR = 12
 
 RESULT_KEYS = (
     "n",                         # number of valid (non-NaN) monthly values
+    "n_years",                   # length of the record in years (first..last valid month)
     "start",                     # first date with data (pd.Timestamp)
     "end",                       # last date with data (pd.Timestamp)
     "mean_value",                # mean of the valid values (series units)
-    "slope_per_decade",          # OLS slope on anomalies, units / 10 yr
-    "slope_ci_low",              # 95% CI lower bound of OLS slope, units / 10 yr
-    "slope_ci_high",             # 95% CI upper bound of OLS slope, units / 10 yr
+    "slope_per_decade",          # OLS slope on anomalies, units / 10 yr (= slope of trend_line)
+    "ci_low",                    # 95% CI lower bound of the OLS slope, units / 10 yr
+    "ci_high",                   # 95% CI upper bound of the OLS slope, units / 10 yr
     "ols_p",                     # OLS p-value (assumes independent residuals)
     "sen_slope_per_decade",      # Sen's slope from the seasonal MK test, units / 10 yr
     "percent_change_per_decade", # sen_slope_per_decade / |mean_value| * 100 (None if mean ~ 0)
@@ -173,14 +177,18 @@ def analyze_trend(series: pd.Series) -> dict:
         n_needed = n * (t_crit * reg.stderr / abs(reg.slope)) ** (2 / 3)
         years_needed = float(max(n_needed, n) / MONTHS_PER_YEAR)
 
+    start, end = valid.index.min(), valid.index.max()
+    n_years = ((end.year - start.year) * MONTHS_PER_YEAR + end.month - start.month + 1) / MONTHS_PER_YEAR
+
     return {
         "n": n,
-        "start": valid.index.min(),
-        "end": valid.index.max(),
+        "n_years": float(n_years),
+        "start": start,
+        "end": end,
         "mean_value": mean_value,
         "slope_per_decade": float(slope_dec),
-        "slope_ci_low": float(slope_dec - ci_half),
-        "slope_ci_high": float(slope_dec + ci_half),
+        "ci_low": float(slope_dec - ci_half),
+        "ci_high": float(slope_dec + ci_half),
         "ols_p": float(reg.pvalue),
         "sen_slope_per_decade": sen_dec,
         "percent_change_per_decade": pct,
@@ -200,12 +208,12 @@ def analyze_trend(series: pd.Series) -> dict:
 # --------------------------------------------------------------------------- #
 VARIABLE_LABELS = {
     "precip": ("Precipitation", "mm/month"),
-    "precipitation": ("Precipitation", "mm/month"),
     "soil_moisture": ("Surface soil moisture", "kg/m²"),
-    "temperature": ("Air temperature", "°C"),
-    "temp": ("Air temperature", "°C"),
-    "ndvi": ("Vegetation greenness (NDVI)", ""),
+    "temp": ("Near-surface air temperature", "°C"),
 }
+# Variables on an interval scale (arbitrary zero) where "% change" has no meaning.
+# analyze_trend still returns percent_change_per_decade; C should hide it for these.
+NO_PERCENT_VARIABLES = {"temp"}
 
 
 def _fmt(x: float) -> str:
@@ -230,7 +238,9 @@ def interpret(result: dict, variable: str, region: str) -> str:
     years = f"between {result['start'].year} and {result['end'].year}"
     sen = result["sen_slope_per_decade"]
     pct = result["percent_change_per_decade"]
-    pct_txt = f" (≈{abs(pct):.1f}% per decade)" if pct is not None else ""
+    # % of a °C value is meaningless (0 °C is an arbitrary zero), so skip it for temperature
+    show_pct = pct is not None and variable not in NO_PERCENT_VARIABLES
+    pct_txt = f" (≈{abs(pct):.1f}% per decade)" if show_pct else ""
     p_txt = _fmt_p(result["mk_p"])
 
     if result["significant"]:
@@ -255,11 +265,11 @@ def interpret(result: dict, variable: str, region: str) -> str:
     )
     yn = result["years_needed_estimate"]
     if yn is not None:
-        record = (result["end"].year - result["start"].year) + 1
-        if yn > record and yn < 200:
+        record = result["n_years"]
+        if record < yn < 200:
             text += (
                 f" At the current rate, roughly {yn:.0f} years of data in total might be needed "
-                f"to detect it (a rough estimate; we currently have about {record})."
+                f"to detect it (a rough estimate; we currently have about {record:.0f})."
             )
         elif yn >= 200:
             text += " At the current rate, a much longer record would be needed to detect any trend."
