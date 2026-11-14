@@ -22,6 +22,9 @@ st.markdown(
 # --------------------------------------------------------------------------- #
 # Module wiring: use teammates' real modules when present, else TEMP stubs.
 # --------------------------------------------------------------------------- #
+# Takım arkadaşının modülünü yükler (ör. src.trend).
+# Gerçek modül henüz yoksa src/stubs altındaki geçici sürümü kullanır.
+# İkinci dönen değer True ise stub kullanılıyor demektir.
 def _load_module(name: str):
     try:
         return importlib.import_module(f"src.{name}"), False
@@ -41,21 +44,29 @@ STUBS_IN_USE = [n for n, s in [("data_loader (A)", _stub_a), ("trend (B)", _stub
 # --------------------------------------------------------------------------- #
 # Cached data access
 # --------------------------------------------------------------------------- #
+# Seçilen bölge + değişken için aylık zaman serisini getirir.
+# @st.cache_data sayesinde aynı seçim için veri tekrar tekrar okunmaz.
 @st.cache_data(show_spinner=False)
 def get_series(region_id: str, variable_id: str):
     return data_loader.load_series(region_id, variable_id)
 
 
+# Seriyi B'nin analyze_trend fonksiyonuna verip trend sonucunu (dict) döndürür.
+# Sonuç önbellekte tutulur; aynı seçimde istatistik yeniden hesaplanmaz.
 @st.cache_data(show_spinner=False)
 def get_result(region_id: str, variable_id: str):
     return trend.analyze_trend(get_series(region_id, variable_id))
 
 
+# Verisi bulunan (bölge, değişken) çiftlerini küme olarak döndürür.
+# Explore'da seçilen kombinasyonun verisi var mı diye kontrol etmek için kullanılır.
 @st.cache_data(show_spinner=False)
 def get_pairs() -> set[tuple[str, str]]:
     return set(data_loader.available_pairs())
 
 
+# D'nin sözlüğünden (glossary) bir terimin açıklamasını bulur.
+# Metrik kutularındaki (?) ipuçlarında help= olarak gösterilir. Bulamazsa None döner.
 def term_help(term: str) -> str | None:
     """Glossary definition for a term (case-insensitive), used as a tooltip."""
     gloss = detective.glossary()
@@ -66,6 +77,11 @@ def term_help(term: str) -> str | None:
 # --------------------------------------------------------------------------- #
 # Result card
 # --------------------------------------------------------------------------- #
+# Sonuç kartını çizer:
+#   1) 3 metrik kutusu: 10 yıllık değişim, % değişim, anlamlılık (+ p-değeri)
+#   2) B'nin interpret() fonksiyonundan gelen açıklama metni
+#   3) Açılır 'Statistical details' bölümü: OLS eğimi + güven aralığı,
+#      Mann-Kendall p, Sen eğimi, yıl sayısı
 def render_result_card(result: dict, variable: dict, region: dict) -> None:
     unit = variable["unit"]
     pct = result.get("percent_change_per_decade")
@@ -102,6 +118,9 @@ def render_result_card(result: dict, variable: dict, region: dict) -> None:
 # --------------------------------------------------------------------------- #
 # Tabs
 # --------------------------------------------------------------------------- #
+# Explore sekmesinin tamamı:
+# bölge/değişken seçimi -> değişken açıklaması -> grafik -> sonuç kartı.
+# Veri yoksa ya da yetersizse (24 aydan az) kullanıcıya uyarı gösterir.
 def render_explore() -> None:
     catalog = detective.load_catalog()
     regions = [r["id"] for r in catalog["regions"]]
@@ -136,6 +155,7 @@ def render_explore() -> None:
     render_result_card(result, variable, region)
 
 
+# Henüz yapılmamış sekmeler için 'yakında' bilgi kutusu gösterir.
 def render_coming_soon(what: str) -> None:
     st.info(f"🚧 {what} is coming soon. Use **🧭 Explore** for now.")
 
@@ -143,6 +163,7 @@ def render_coming_soon(what: str) -> None:
 # --------------------------------------------------------------------------- #
 # Page
 # --------------------------------------------------------------------------- #
+# Sayfanın ana akışı: başlık -> (stub uyarısı) -> 4 sekme -> altbilgi (veri kaynağı).
 st.title("🛰️ Earth Trend Detective")
 st.markdown("Become a data detective: find out what's changing on Earth, where, how fast, "
             "and whether it's significant.")
@@ -162,6 +183,7 @@ with tab_cases:
 with tab_compare:
     render_coming_soon("Compare")
 
+# Altbilgi: her sekmede görünür; veri setleri ve indirme tarihi yazılır.
 st.divider()
 datasets = " · ".join(v["dataset"] for v in detective.load_catalog()["variables"])
 st.caption(f"Datasets: {datasets}. "

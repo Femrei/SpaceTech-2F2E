@@ -64,10 +64,12 @@ THEMES = {
 }
 
 
+# Değişken, bölge, sözlük ve vaka bilgilerinin hepsini (katalog) döndürür.
 def load_catalog() -> dict:
     return _CATALOG
 
 
+# id'si verilen değişkenin bilgilerini döndürür; bulunamazsa KeyError.
 def get_variable(variable_id: str) -> dict:
     for v in _CATALOG["variables"]:
         if v["id"] == variable_id:
@@ -75,6 +77,7 @@ def get_variable(variable_id: str) -> dict:
     raise KeyError(variable_id)
 
 
+# id'si verilen bölgenin bilgilerini döndürür; bulunamazsa KeyError.
 def get_region(region_id: str) -> dict:
     for r in _CATALOG["regions"]:
         if r["id"] == region_id:
@@ -82,6 +85,7 @@ def get_region(region_id: str) -> dict:
     raise KeyError(region_id)
 
 
+# Seçilen temaya (ör. 'drought') uygun değişken + bölge önerilerini listeler.
 def suggest(theme: str) -> list[dict]:
     return [
         {"variable_id": v["id"], "region_id": r["id"],
@@ -91,14 +95,17 @@ def suggest(theme: str) -> list[dict]:
     ]
 
 
+# Terim sözlüğünü döndürür (terim -> sade açıklama).
 def glossary() -> dict:
     return _CATALOG["glossary"]
 
 
+# Hazır dedektif vakalarını (Case Files) listeler.
 def get_cases() -> list[dict]:
     return _CATALOG["cases"]
 
 
+# Sonuca göre kullanıcıya bir sonraki adımı öneren dedektif cümlesi döndürür.
 def next_step_hint(result: dict, variable_id: str, region_id: str) -> str:
     if not result["significant"]:
         return "No significant trend yet: try another region, or ask whether 25 years is long enough."

@@ -17,10 +17,16 @@ except ImportError:  # pragma: no cover
     mk = None
 
 
+# Tarihleri ondalık yıla çevirir (ör. Temmuz 2010 -> 2010.5).
 def _decimal_years(index: pd.DatetimeIndex) -> np.ndarray:
     return (index.year + (index.month - 1) / 12).to_numpy(dtype=float)
 
 
+# Geçici trend analizi (asıl sürümü B yazacak):
+#   1) Anomali = her ay - o takvim ayının uzun dönem ortalaması
+#   2) Anomalilere doğrusal regresyon (OLS) -> eğim ve %95 güven aralığı
+#   3) Mann-Kendall testi -> p-değeri ve Sen eğimi
+# Sonuçları app.py ve charts.py'nin beklediği anahtarlarla dict olarak döndürür.
 def analyze_trend(series: pd.Series) -> dict:
     s = series.astype(float)
     valid = s.dropna()
@@ -73,6 +79,7 @@ def analyze_trend(series: pd.Series) -> dict:
     }
 
 
+# Trend sonucunu 2-3 cümlelik sade İngilizce metne çevirir.
 def interpret(result: dict, variable: dict, region: dict) -> str:
     unit = variable["unit"]
     verb = "increased" if result["direction"] == "increasing" else "decreased"
@@ -92,6 +99,7 @@ def interpret(result: dict, variable: dict, region: dict) -> str:
     return text
 
 
+# İki bölgenin sonucunu karşılaştırır: aynı yönde mi, ikisi de anlamlı mı + özet cümle.
 def compare_trends(result_a: dict, result_b: dict, region_a: dict, region_b: dict) -> dict:
     same = result_a["direction"] == result_b["direction"]
     both = result_a["significant"] and result_b["significant"]

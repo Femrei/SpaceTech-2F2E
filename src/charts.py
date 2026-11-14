@@ -20,12 +20,15 @@ COLOR_SMOOTH = "#7A7A7A"        # mid grey: readable on both light and dark them
 COLOR_ANOMALY = "rgba(140, 140, 140, 0.45)"  # neutral, so only the trend carries colour
 
 
+# Trendin rengini seçer: artan = turuncu, azalan = mavi, anlamsız = gri.
 def trend_color(result: dict) -> str:
     if not result["significant"]:
         return COLOR_NOT_SIGNIFICANT
     return COLOR_INCREASING if result["direction"] == "increasing" else COLOR_DECREASING
 
 
+# Trendi yazıyla anlatan kısa etiket üretir (ör. '▼ decreasing (significant)').
+# Renk körü kullanıcılar için anlam sadece renge bırakılmaz.
 def trend_label(result: dict) -> str:
     """Plain-text description of the trend, so colour is never the only cue."""
     arrow = "▲" if result["direction"] == "increasing" else "▼"
@@ -33,16 +36,22 @@ def trend_label(result: dict) -> str:
     return f"{arrow} {result['direction']} ({sig})"
 
 
+# '#RRGGBB' renk kodunu saydamlık (alpha) eklenmiş 'rgba(...)' metnine çevirir.
 def _rgba(hex_color: str, alpha: float) -> str:
     h = hex_color.lstrip("#")
     r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
+# Tarihleri ondalık yıla çevirir (ör. Temmuz 2010 -> 2010.5).
+# Eğim hesabında zaman ekseni olarak kullanılır.
 def _decimal_years(index: pd.DatetimeIndex) -> np.ndarray:
     return (index.year + (index.month - 1) / 12).to_numpy(dtype=float)
 
 
+# Güven bandını hesaplar: trend çizgisinin orta noktasından geçen,
+# eğimleri ci_low ve ci_high olan iki doğru çizer. Orta noktadan uçlara
+# doğru yelpaze gibi açılan bir band oluşur (alt sınır, üst sınır döner).
 def _ci_fan(result: dict) -> tuple[pd.Series, pd.Series]:
     """Band that opens like a fan around the trend line's midpoint.
 
@@ -59,6 +68,10 @@ def _ci_fan(result: dict) -> tuple[pd.Series, pd.Series]:
             pd.Series(np.maximum(low, high), index=trend.index))
 
 
+# Explore'daki ana grafik (iki panel, x ekseni ortak):
+#   Üst panel: ham aylık değerler (ince gri) + 12 aylık hareketli ortalama (kalın)
+#   Alt panel: anomaliler (çubuk), güven bandı ve kesikli trend çizgisi
+# Başlıkta 'Bölge · Değişken', eksenlerde birim gösterilir.
 def time_series_chart(series: pd.Series, result: dict, variable: dict, region: dict) -> go.Figure:
     unit = variable["unit"]
     color = trend_color(result)

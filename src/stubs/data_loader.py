@@ -31,6 +31,8 @@ _MOCK_PARAMS = {
 }
 
 
+# Gerçek veri gelene kadar sahte veri üretir: 3 bölge x 3 değişken, 2001-2025 aylık.
+# Her seri = ortalama + mevsimsel döngü + trend + rastgele gürültü; %1 NaN eklenir.
 def _generate_mock() -> pd.DataFrame:
     rng = np.random.default_rng(42)
     dates = pd.date_range("2001-01-01", "2025-12-01", freq="MS")
@@ -50,6 +52,8 @@ def _generate_mock() -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
+# Tüm veriyi tek tablo olarak döndürür (date, region_id, variable_id, value).
+# CSV dosyası varsa onu okur, yoksa sahte veri üretir.
 @lru_cache(maxsize=1)
 def load_all() -> pd.DataFrame:
     if _CSV.exists():
@@ -57,6 +61,7 @@ def load_all() -> pd.DataFrame:
     return _generate_mock()
 
 
+# Tek bir bölge + değişken için aylık seriyi (pandas Series) döndürür.
 def load_series(region_id: str, variable_id: str) -> pd.Series:
     df = load_all()
     sub = df[(df.region_id == region_id) & (df.variable_id == variable_id)]
@@ -67,6 +72,7 @@ def load_series(region_id: str, variable_id: str) -> pd.Series:
     return s
 
 
+# Verisi olan tüm (bölge, değişken) çiftlerini listeler.
 def available_pairs() -> list[tuple[str, str]]:
     df = load_all()
     return sorted(set(zip(df.region_id, df.variable_id)))
