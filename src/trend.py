@@ -124,10 +124,13 @@ def analyze_trend(series: pd.Series) -> dict:
        of the total record length needed for the current slope to become
        significant at the current noise level. Assumes the OLS stderr scales
        as n^(-3/2) (true for a linear trend with white noise):
-       ``n_needed = n * (t_crit * stderr / |slope|)^(2/3)`` months, returned in
-       years. It ignores autocorrelation and assumes the slope stays the same,
+       ``n_needed = n * (t_crit * stderr_OLS / |Sen slope|)^(2/3)`` months,
+       returned in years. The Sen slope is used (not the OLS slope) so the
+       estimate matches the rate reported by ``interpret``; for skewed data
+       such as precipitation the two slopes can differ several-fold.
+       It ignores autocorrelation and assumes the slope stays the same,
        so treat it as an order of magnitude only. ``None`` when the trend is
-       already significant or the slope is exactly zero.
+       already significant or the Sen slope is exactly zero.
 
     Raises
     ------
@@ -172,9 +175,12 @@ def analyze_trend(series: pd.Series) -> dict:
     else:
         pct = float(sen_dec / abs(mean_value) * 100)
 
+    # Use the Sen slope (the number shown to users and in interpret()) as the
+    # trend size; the OLS stderr only measures the noise level. Both are per year.
     years_needed = None
-    if not significant and reg.slope != 0 and reg.stderr > 0:
-        n_needed = n * (t_crit * reg.stderr / abs(reg.slope)) ** (2 / 3)
+    sen_per_year = float(smk.slope)
+    if not significant and sen_per_year != 0 and reg.stderr > 0:
+        n_needed = n * (t_crit * reg.stderr / abs(sen_per_year)) ** (2 / 3)
         years_needed = float(max(n_needed, n) / MONTHS_PER_YEAR)
 
     start, end = valid.index.min(), valid.index.max()
