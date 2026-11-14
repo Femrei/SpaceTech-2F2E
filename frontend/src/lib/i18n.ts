@@ -24,7 +24,6 @@ const TEXTS = {
   },
   tabDetective: { en: "Detective Mode", tr: "Dedektif Modu" },
   tabExplore: { en: "Dashboard", tr: "Pano" },
-  tabCases: { en: "Case Files", tr: "Vaka Dosyaları" },
   tabCompare: { en: "Compare", tr: "Karşılaştır" },
   tabPlace: { en: "Pick a place", tr: "Konumunu seç" },
   comingSoon: {
@@ -238,15 +237,6 @@ const TEXTS = {
     en: "You've checked every measurement here. Compare with another region next.",
     tr: "Bu bölgedeki tüm ölçümlere baktın. Sırada başka bir bölgeyle karşılaştırmak var.",
   },
-  // --- Case Files ---------------------------------------------------------
-  casesIntro: {
-    en: "Open a ready-made case and solve it like a detective.",
-    tr: "Hazır bir vakayı aç ve bir dedektif gibi çöz.",
-  },
-  openCase: { en: "Open case", tr: "Vakayı aç" },
-  backToCases: { en: "Back to cases", tr: "Vakalara dön" },
-  compareCase: { en: "Two regions", tr: "İki bölge" },
-  chainLabel: { en: "Suspects, in order", tr: "Şüpheliler, sırayla" },
   // --- About sheet --------------------------------------------------------
   about: { en: "About", tr: "Hakkında" },
   aboutTitle: { en: "About this app", tr: "Bu uygulama hakkında" },

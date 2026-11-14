@@ -15,8 +15,7 @@ import { useAnalysis } from "@/lib/useAnalysis"
 // ("Konumunu seç" sekmesindeki Nokta/Kare seçicisi de aynı görünümü kullanır).
 export const SEGMENT = "px-3 data-active:bg-card data-active:shadow-sm dark:data-active:border-transparent dark:data-active:bg-white/15"
 
-// Bir bölge + değişkenin tam analiz görünümü (Pano, Dedektif Modu ve Vaka
-// Dosyaları aynı bloğu kullanır):
+// Bir bölge + değişkenin tam analiz görünümü (Pano ve Dedektif Modu aynı bloğu kullanır):
 //   4 özet kutusu -> solda grafik (Basit/Detaylı), sağda "Bu ne demek?" kartı.
 // Veriyi kendisi çeker; beklerken iskelet, sorun varsa uyarı gösterir.
 // "extra" verilirse analiz yüklendikten sonra özet kutularının üstünde gösterilir

@@ -27,17 +27,6 @@ export interface Region {
   compare_with?: string
 }
 
-export interface Case {
-  id: string
-  title: string
-  story: string
-  region_id: string
-  variable_id: string
-  compare_region_id: string | null
-  // Çok adımlı vaka: aynı bölgede sırayla incelenecek değişkenler (ilki variable_id).
-  chain?: string[] | null
-}
-
 // D'nin ipucu kural tablosu; "*" her değerle eşleşir.
 export interface HintRule {
   variable_id: string
@@ -51,7 +40,6 @@ export interface Meta {
   variables: Variable[]
   regions: Region[]
   glossary: Record<string, string>
-  cases: Case[]
   themes: Record<string, string>
   pairs: [string, string][]
   data_downloaded_on: string

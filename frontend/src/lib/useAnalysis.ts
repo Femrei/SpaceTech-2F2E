@@ -43,7 +43,7 @@ function useKeyedFetch<T>(key: string | null, request: () => Promise<T>): State<
   return key !== null && state?.key === key ? state : null
 }
 
-// Bir bölge + değişken için analizi backend'den çeker (Pano, Dedektif Modu, Vaka Dosyaları).
+// Bir bölge + değişken için analizi backend'den çeker (Pano, Dedektif Modu).
 export function useAnalysis(regionId: string, variableId: string, enabled = true) {
   return useKeyedFetch(enabled ? `${regionId}/${variableId}` : null, () => fetchAnalysis(regionId, variableId))
 }

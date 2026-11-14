@@ -81,7 +81,7 @@ def _analyse(region_id: str, variable_id: str) -> tuple[pd.Series, dict]:
 # Endpoints
 # --------------------------------------------------------------------------- #
 # Arayüzün açılışta ihtiyaç duyduğu her şey: katalog (bölgeler, değişkenler,
-# sözlük, vakalar), temalar, verisi olan çiftler, veri indirme tarihi, stub listesi.
+# sözlük, ipuçları), temalar, verisi olan çiftler, veri indirme tarihi, stub listesi.
 @app.get("/api/meta")
 def meta() -> dict:
     catalog = detective.load_catalog()
@@ -89,7 +89,6 @@ def meta() -> dict:
         "variables": catalog["variables"],
         "regions": catalog["regions"],
         "glossary": detective.glossary(),
-        "cases": detective.get_cases(),
         "themes": detective.THEMES,
         # D's hint rules, so the UI can show its own translation of the matched rule.
         "hints": catalog.get("hints", []),

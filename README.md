@@ -90,7 +90,6 @@ UI language: set `LANG` in `frontend/src/lib/i18n.ts` (`"tr"` during development
 |---|---|---|
 | Dashboard | Region + measurement picker with map, KPI tiles, Simple/Detailed chart, plain-language explanation, all-regions grid | A `load_series`, B `analyze_trend`, `interpret` |
 | Detective Mode | Theme → suggestions → investigation, with clue + "follow the clue" | D `THEMES`, `suggest`, `next_step` |
-| Case Files | Ready-made cases; two-region cases open the compare view, multi-step cases walk their `chain` | D `get_cases` |
 | Compare | Same measurement, two regions, same/opposite direction summary | B `compare_trends` |
 
 API endpoints (`api.py`): `/api/meta`, `/api/analysis`, `/api/overview`,
