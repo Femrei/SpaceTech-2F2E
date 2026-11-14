@@ -9,12 +9,12 @@ details, not decoration.
 Follows the operating system; the header button switches light/dark and the
 choice is remembered (`src/lib/theme.ts`).
 
-| Role | Light ("paper") | Dark ("night desk") |
+| Role | Light ("paper") | Dark ("desk lamp") |
 |---|---|---|
-| Page | warm paper `oklch(0.955 0.017 85)` | brown-black `oklch(0.185 0.008 70)` |
-| Card | `oklch(0.985 0.008 85)` | `oklch(0.225 0.01 70)` |
+| Page | warm paper `oklch(0.955 0.017 85)` | charcoal `oklch(0.205 0.003 75)` |
+| Card | `oklch(0.985 0.008 85)` | `oklch(0.24 0.004 75)` |
 | Text | ink `oklch(0.24 0.01 75)` | paper `oklch(0.93 0.015 85)` |
-| Brand (selection, focus, current tab) | ink | paper |
+| Brand (selection, focus, current tab) | ink | amber lamp `oklch(0.8 0.13 80)` |
 
 All tokens live in `src/index.css`. Components never hard-code colours.
 

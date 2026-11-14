@@ -97,27 +97,27 @@
 }
 
 .dark {
-    /* Dark = "night desk": warm brown-black surfaces, paper-coloured text. */
-    --background: oklch(0.185 0.008 70);
+    /* Dark = "desk lamp": neutral charcoal surfaces, paper-coloured text, amber lamp light for current state. */
+    --background: oklch(0.205 0.003 75);
     --foreground: oklch(0.93 0.015 85);
-    --card: oklch(0.225 0.01 70);
+    --card: oklch(0.24 0.004 75);
     --card-foreground: oklch(0.93 0.015 85);
-    --popover: oklch(0.25 0.011 70);
+    --popover: oklch(0.27 0.005 75);
     --popover-foreground: oklch(0.93 0.015 85);
     --primary: oklch(0.93 0.015 85);
-    --primary-foreground: oklch(0.2 0.008 70);
-    --secondary: oklch(0.28 0.012 70);
+    --primary-foreground: oklch(0.205 0.003 75);
+    --secondary: oklch(0.29 0.005 75);
     --secondary-foreground: oklch(0.93 0.015 85);
-    --muted: oklch(0.27 0.011 70);
-    --muted-foreground: oklch(0.76 0.018 80);
-    --accent: oklch(0.29 0.012 70);
+    --muted: oklch(0.285 0.005 75);
+    --muted-foreground: oklch(0.77 0.015 80);
+    --accent: oklch(0.3 0.005 75);
     --accent-foreground: oklch(0.93 0.015 85);
     --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 11%);
+    --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 16%);
-    --brand: oklch(0.9 0.02 85);
-    --ring: oklch(0.9 0.02 85);
-    --selection: oklch(0.42 0.04 80);
+    --brand: oklch(0.8 0.13 80);
+    --ring: oklch(0.8 0.13 80);
+    --selection: oklch(0.45 0.08 80);
     --trend-up: oklch(0.72 0.16 45);
     --trend-up-text: oklch(0.77 0.14 48);
     --trend-down: oklch(0.7 0.12 238);
@@ -162,7 +162,7 @@
   filter: sepia(0.18) saturate(0.85);
 }
 .dark .region-map .leaflet-tile-pane {
-  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9) sepia(0.12);
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9) saturate(0.8);
 }
 .region-map .leaflet-container {
   background: var(--muted);
