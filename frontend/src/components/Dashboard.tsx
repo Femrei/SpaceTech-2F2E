@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { fetchOverview, type Meta, type OverviewItem } from "@/lib/api"
 import { regionDescription, regionName, variableName, variableShort } from "@/lib/content"
 import { t } from "@/lib/i18n"
+import { scrollBehavior } from "@/lib/motion"
 
 // Pano (dashboard) sekmesinin tamamı, yukarıdan aşağıya:
 //   1) Bölge + ölçüm seçimi (kısa açıklamalarıyla), altında geniş bölge haritası
@@ -31,7 +32,7 @@ export function Dashboard({ meta }: { meta: Meta }) {
   const selectFromGrid = (r: string, v: string) => {
     setRegionId(r)
     setVariableId(v)
-    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    topRef.current?.scrollIntoView({ behavior: scrollBehavior(), block: "start" })
   }
 
   return (

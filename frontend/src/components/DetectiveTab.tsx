@@ -27,6 +27,7 @@ import {
   variableName,
 } from "@/lib/content"
 import { t } from "@/lib/i18n"
+import { scrollBehavior } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 
 const THEME_ICONS: Record<string, typeof SunIcon> = {
@@ -113,7 +114,7 @@ export function DetectiveTab({ meta }: { meta: Meta }) {
   const investigate = (s: Step) => {
     setCompareWith(null)
     setTrail((prev) => [...prev, s])
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    window.scrollTo({ top: 0, behavior: scrollBehavior() })
   }
 
   // İpucu kartı: dedektifin notu, sonraki adım butonları ve küçük harita.

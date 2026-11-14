@@ -69,11 +69,11 @@ export default function App() {
           <Skeleton className="h-96 w-full" />
         ) : (
           <Tabs defaultValue="explore" className="gap-5">
-            <TabsList className="h-auto w-full flex-wrap justify-start sm:w-fit">
-              <TabsTrigger value="explore"><LayoutDashboardIcon />{t("tabExplore")}</TabsTrigger>
-              <TabsTrigger value="detective"><SearchIcon />{t("tabDetective")}</TabsTrigger>
-              <TabsTrigger value="cases"><FolderOpenIcon />{t("tabCases")}</TabsTrigger>
-              <TabsTrigger value="compare"><ScaleIcon />{t("tabCompare")}</TabsTrigger>
+            <TabsList variant="line" className="h-auto w-full flex-wrap justify-start gap-1 border-b px-0 pb-1">
+              <TabsTrigger className="h-10 flex-none px-3" value="explore"><LayoutDashboardIcon />{t("tabExplore")}</TabsTrigger>
+              <TabsTrigger className="h-10 flex-none px-3" value="detective"><SearchIcon />{t("tabDetective")}</TabsTrigger>
+              <TabsTrigger className="h-10 flex-none px-3" value="cases"><FolderOpenIcon />{t("tabCases")}</TabsTrigger>
+              <TabsTrigger className="h-10 flex-none px-3" value="compare"><ScaleIcon />{t("tabCompare")}</TabsTrigger>
             </TabsList>
             <TabsContent value="explore" forceMount className={PANEL}><Dashboard meta={meta} /></TabsContent>
             <TabsContent value="detective" forceMount className={PANEL}><DetectiveTab meta={meta} /></TabsContent>

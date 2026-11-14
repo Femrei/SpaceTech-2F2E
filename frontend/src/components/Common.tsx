@@ -1,5 +1,5 @@
 // Small building blocks shared by several tabs.
-import type { ReactNode } from "react"
+import { useId, type ReactNode } from "react"
 import { TriangleAlertIcon } from "lucide-react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -31,11 +31,12 @@ export function Picker({ label, value, onChange, options, hint }: {
   options: { id: string; name: string; disabled?: boolean }[]
   hint?: string
 }) {
+  const id = useId()
   return (
     <div className="grid content-start gap-1.5">
-      <label className="text-sm font-medium">{label}</label>
+      <label htmlFor={id} className="text-sm font-medium">{label}</label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-full" aria-label={label}>
+        <SelectTrigger id={id} className="w-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

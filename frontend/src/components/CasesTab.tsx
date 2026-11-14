@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import type { Case, Meta } from "@/lib/api"
 import { caseStory, caseTitle, regionName, variableName } from "@/lib/content"
 import { t } from "@/lib/i18n"
+import { scrollBehavior } from "@/lib/motion"
 
 // Vaka kartındaki küçük etiketler: hangi bölge(ler) ve hangi ölçüm.
 function CaseTags({ meta, c }: { meta: Meta; c: Case }) {
@@ -40,7 +41,7 @@ export function CasesTab({ meta, mock }: { meta: Meta; mock: boolean }) {
   // Bir vakayı açar ve sayfanın başına kaydırır.
   const open = (id: string | null) => {
     setOpenId(id)
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    window.scrollTo({ top: 0, behavior: scrollBehavior() })
   }
 
   if (opened) {
