@@ -272,12 +272,19 @@ def find_city(name: str) -> dict | None:
     return next((c for c in CITIES if _fold(c["name"]) == key), None)
 
 
-# Cümlede geçen şehri bulur. Türkçe ekler için sadece kelimenin başı eşleşmeli:
-# "Gaziantepte" ve "Gaziantep'te" ikisi de Gaziantep'i bulur. Uzun adlar önce denenir.
+# D: şehir adından sonra yalnızca (kesme işareti +) Türkçe hâl eki gelebilir. _fold'dan sonra
+# ünlü uyumu çeşitleri birleşir (ı→i, ü→u). Böylece "Gaziantepte", "Gaziantep'te", "Kars'ı"
+# şehri bulur ama "karşılaştır" Kars'ı, "musluk" Muş'u bulmaz (kelimenin başı yetmez).
+_CITY_SUFFIX = (r"(?:['’]?(?:ndaki|ndeki|daki|deki|taki|teki|ndan|nden|dan|den|tan|ten|nda|nde|da|de|ta|te"
+                r"|nin|nun|yla|yle|ya|ye|na|ne|yi|yu|ni|nu|in|un|la|le|li|lu|a|e|i|u))?")
+
+
+# Cümlede geçen şehri bulur: ad tam kelime olmalı ya da arkasından yalnızca bir hâl eki gelmeli.
+# Uzun adlar önce denenir ("Kahramanmaraş" "Maraş"tan önce).
 def city_in_text(text: str) -> dict | None:
     folded = _fold(text)
     for c in sorted(CITIES, key=lambda c: -len(c["name"])):
-        if re.search(r"(?<![a-z])" + re.escape(_fold(c["name"])), folded):
+        if re.search(r"(?<![a-z])" + re.escape(_fold(c["name"])) + _CITY_SUFFIX + r"(?![a-z])", folded):
             return c
     return None
 

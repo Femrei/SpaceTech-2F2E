@@ -95,3 +95,25 @@ def test_server_starts_with_non_utf8_output():
     text = output.decode("utf-8", errors="replace")
     assert "UnicodeEncodeError" not in text, text
     assert "startup complete" in text, text
+
+
+
+@pytest.mark.parametrize(("text", "city"), [
+    # a city name followed by nothing, an apostrophe or a Turkish case suffix is a city
+    ("Gaziantepte toprak ne durumda?", "Gaziantep"),
+    ("Gaziantep'te toprak ne durumda?", "Gaziantep"),
+    ("Sanliurfada yagis", "Şanlıurfa"),
+    ("Kars'ı göster", "Kars"),
+    ("Kars ne durumda", "Kars"),
+    ("Muş'ta sıcaklık", "Muş"),
+    ("Erzurum'daki kar", "Erzurum"),
+    ("İzmir'in yağışı", "İzmir"),
+    # ordinary words that only start like a city are not (offline mode used to analyse Kars / Muş)
+    ("Toprak nemini karşılaştır", None),
+    ("İki bölgeyi karşılaştır lütfen", None),
+    ("musluk suyu azaldı mı", None),
+    ("toprak ne durumda?", None),
+])
+def test_city_in_text_needs_a_whole_name(server, text, city):
+    found = server.city_in_text(text)
+    assert (found["name"] if found else None) == city
