@@ -1,12 +1,12 @@
 """Earth Trend Detective: FastAPI backend (owner: C).
 
 Wraps teammates' Python modules (A: data_loader, B: trend, D: detective) in a
-small JSON API for the React frontend in ``frontend/``. Teammates' code is
+small JSON API for the earlier React frontend in ``legacy/frontend/``. Teammates' code is
 used unchanged.
 
-Dev:   uvicorn api:app --reload            (frontend: cd frontend && npm run dev)
-Prod:  cd frontend && npm run build, then  uvicorn api:app
-       (the built frontend in frontend/dist is served by this same app)
+Dev:   uvicorn api:app --reload            (frontend: cd legacy/frontend && npm run dev)
+Prod:  cd legacy/frontend && npm run build, then  uvicorn api:app
+       (the built frontend in legacy/frontend/dist is served by this same app)
 """
 from __future__ import annotations
 
@@ -227,7 +227,7 @@ def point(lat: float, lon: float, variable: str) -> dict:
         "points": _chart_points(series, result),
         "result": _scalars(result),
         "interpretation": trend.interpret(result, power_loader.POINT_VARIABLES[variable]["interpret_as"], place),
-        "next_step": {"text": "", "variable_id": None, "region_id": None},
+        "next_step": {"text": "", "text_tr": "", "variable_id": None, "region_id": None},
         "point": {"lat": lat, "lon": lon, "cell": cell, "n_cells": 1,
                   "cells": [[(cell["south"] + cell["north"]) / 2, (cell["west"] + cell["east"]) / 2]],
                   "source": power_loader.POINT_SOURCE},
@@ -339,8 +339,8 @@ def overview() -> list[dict]:
     return items
 
 
-# Derlenmiş React arayüzü (frontend/dist) varsa onu da bu sunucudan yayınlar;
+# Derlenmiş React arayüzü (legacy/frontend/dist) varsa onu da bu sunucudan yayınlar;
 # böylece canlıya tek bir servis olarak alınabilir.
-_DIST = ROOT / "frontend" / "dist"
+_DIST = ROOT / "legacy" / "frontend" / "dist"
 if _DIST.exists():
     app.mount("/", StaticFiles(directory=_DIST, html=True), name="frontend")

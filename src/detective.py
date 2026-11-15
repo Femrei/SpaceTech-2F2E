@@ -15,8 +15,9 @@ Public API (used by the UI; do not change signatures without telling C):
     glossary()                                      -> dict[term, definition]
     get_cases()                                     -> list[dict]
     next_step_hint(result, variable_id, region_id)  -> str
-    next_step(result, variable_id, region_id)       -> {"text", "variable_id", "region_id"}
-    get_context(result, variable_id)                -> {"key", "text", "sources"}
+    next_step(result, variable_id, region_id)       -> {"text", "text_tr", "variable_id", "region_id"}
+    get_context(result, variable_id)                -> {"key", "text", "text_tr", "sources"}
+    get_actions(result, variable_id)                -> {"key", "en", "tr", "sources"}
 
 ``result`` is the dict returned by B's ``trend.analyze_trend``; only its
 ``direction`` and ``significant`` keys are read.
@@ -123,7 +124,8 @@ def next_step(result: dict, variable_id: str, region_id: str) -> dict:
     Looks up the first rule in ``catalog.json["hints"]`` matching
     (variable, direction, significant); ``"*"`` matches anything. Placeholders
     ``{region}``, ``{compare_region}``, ``{region_id}``, ``{compare_region_id}``
-    and ``{variable_id}`` are filled in. Returns the hint text plus the
+    and ``{variable_id}`` are filled in. Returns the hint text (``text``,
+    English; ``text_tr``, Turkish, with the regions' ``name_tr``) plus the
     variable/region the hint points to (``None`` when there is no follow-up),
     so the UI can offer a "follow the clue" button.
     """
@@ -145,8 +147,11 @@ def next_step(result: dict, variable_id: str, region_id: str) -> dict:
                 and _matches(rule["direction"], direction)
                 and _matches(rule["significant"], significant)):
             nxt = rule["next"]
+            values_tr = {**values, "region": region.get("name_tr", region["name"]),
+                         "compare_region": compare.get("name_tr", compare["name"])}
             return {
                 "text": rule["text"].format(**values),
+                "text_tr": rule.get("text_tr", rule["text"]).format(**values_tr),
                 "variable_id": nxt["variable_id"].format(**values) if nxt else None,
                 "region_id": nxt["region_id"].format(**values) if nxt else None,
             }
@@ -167,12 +172,35 @@ def get_context(result: dict, variable_id: str) -> dict:
     Picks ``variables[].context["increasing" | "decreasing"]`` only when the trend
     is significant; anything else (not significant, or B's "no change" direction)
     gets ``"no_clear_trend"``, so the UI never attaches a story to noise.
-    Returns ``{"key", "text", "sources": [{"title", "url"}, ...]}``.
+    Returns ``{"key", "text", "text_tr", "sources": [{"title", "url"}, ...]}``
+    (``text_tr`` is the Turkish version from ``variables[].context_tr``).
     """
-    context = get_variable(variable_id)["context"]
+    variable = get_variable(variable_id)
+    context = variable["context"]
+    key = _trend_key(result) or "no_clear_trend"
+    return {"key": key, "text": context[key], "text_tr": variable["context_tr"][key],
+            "sources": list(context["sources"])}
+
+
+def _trend_key(result: dict) -> str | None:
+    """"increasing" / "decreasing" for a significant trend, otherwise None."""
     direction = result["direction"]
     if bool(result["significant"]) and direction in ("increasing", "decreasing"):
-        key = direction
-    else:
-        key = "no_clear_trend"
-    return {"key": key, "text": context[key], "sources": list(context["sources"])}
+        return direction
+    return None
+
+
+def get_actions(result: dict, variable_id: str) -> dict:
+    """What could be done if the trend goes on ("Ne yapılabilir?"), from ``variables[].actions``.
+
+    Only for a significant increasing/decreasing trend: for anything else the
+    lists are empty (``key`` is None), so no advice is attached to noise.
+    The items are general, sourced options, never prescriptions or doses.
+    Returns ``{"key", "en": [...], "tr": [...], "sources": [{"title", "url"}, ...]}``.
+    """
+    actions = get_variable(variable_id)["actions"]
+    key = _trend_key(result)
+    if key is None:
+        return {"key": None, "en": [], "tr": [], "sources": []}
+    return {"key": key, "en": list(actions[key]["en"]), "tr": list(actions[key]["tr"]),
+            "sources": list(actions["sources"])}

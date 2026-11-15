@@ -126,15 +126,21 @@ NDVI_PARTIAL=1 python detective3d/build_ndvi.py
 - **Yere bağlı kartlar:** Her bölgede o ayın değeri, sapma, bir sparkline ve Sen trendi ile anlamlılık rozeti var.
 - **Zaman oynatıcı (2001→2025):** Hız seçilebilir. Space tuşu oynatır/durdurur, ← → tuşları birer ay ilerler/geriler.
 - **Önce/Sonra karşılaştırması:** 2001–05 ile 2021–25 ortalamaları.
-- **Sol panel ("Dedektif dosyası"):** Türkçe hikâye cümlesi, istatistikler ve tam seri grafiği.
+- **Karar kartı:** Sol panelin en üstünde. Ne / nerede / ne kadar (Sen eğimi /10 yıl ve %) / anlamlı mı (p değeri ve rozet) satırlarını gösterir. Eğilim anlamlı değilse B'nin `years_needed_estimate` alanından "yaklaşık X yıl daha veriyle anlamlı olabilir" yazar; 50 yıldan fazla ek veri gerekiyorsa sayı yerine "ayırt edilemeyecek kadar zayıf" der. Bu bir kaba tahmindir ve eğimin aynı kaldığını varsayar. "Alan seç" sonuçlarında da aynı kart çıkar.
+- **İpucu kutusu:** Değişkenin tek cümlelik tanımı (`short_description` / `short_description_tr`) ve "Bu ne anlama geliyor?" metni, kaynaklarıyla.
+- **Sıradaki ipucu:** Katalogdaki dedektif ipucu (`hints[].text` / `text_tr`) ve onu izleyen düğme; sohbetteki ipucuyla aynıdır.
+- **Güven aralıkları:** Kutudaki aralık Sen eğiminin kendi %95 güven aralığıdır (B'nin `sen_ci_low` / `sen_ci_high`; mevsimsel Kendall eğimi, Gilbert 1987). OLS eğimi ve onun aralığı altında ayrı bir satırda, adıyla yazılır.
+- **Grafiği büyüt:** Eksenli büyük grafik: y ekseni ve değer etiketleri, üzerinde gezinince ay ve değer, ham / mevsimsellikten arındırılmış geçişi, Sen eğimi ve güven aralığı bandı. Esc ya da × kapatır.
+- **Bu ne anlama geliyor? (D):** İpucu kutusundaki bağlam metni katalogdan gelir (`variables[].context` / `context_tr`), kaynaklarıyla.
+- **Sol panel ("Dedektif dosyası"):** Karar kartı, ipucu kutusu, istatistikler ve seri grafiği. Bütün yazılar TR/EN sözlüğünden gelir.
 - **NDVI katmanı:** NASA GIBS üzerinden MODIS Terra 16 günlük NDVI. Yalnızca görseldir, analizde kullanılmaz.
-- **Otomatik tur:** Genel görünümden sırayla her bölgeye uçar.
+- **Otomatik tur:** Genel görünümden sırayla her bölgeye uçar (Katmanlar menüsü).
 - **Isı haritası (yıl × ay):** Sol panelde yer alır. Her hücre, o ayın kendi ortalamasından sapmasını gösterir. "25 yıl" Giovanni, "45 yıl" NASA POWER verisidir.
 - **45 yıllık kontrol:** Aynı kutu için NASA POWER ile 1981–2025 ve 2001–2025 trendleri gösterilir.
   - İki veri seti ters yön gösteriyorsa ⚠️ uyarısı çıkar.
   - İkisi aynı yönde ve anlamlıysa ✓ işareti çıkar.
   - 45 yılda ve son 25 yılda anlamlılık farklıysa 🕵️ ipucu çıkar.
-- **Kaynaklar:** Veri seti adı, tam Giovanni isteğinin linki ve POWER API belgesi. Ajanın cevaplarının altında da kullandığı veri setleri link olarak görünür.
+- **Kaynaklar:** Veri seti adı, tam Giovanni isteğinin linki ve POWER API belgesi. Kutusu denize ya da göle taşan bölgelerde (Doğu Karadeniz ~%15 deniz, Van ~%14 göl; `scripts/check_bbox_water.py`) bunu söyleyen bir not da çıkar. Ajanın cevaplarının altında da kullandığı veri setleri link olarak görünür.
 - **Bitki örtüsü · MODIS NDVI:**
   - Sol panelde tarım penceresi, arazi örtüsü, aylık ve yıllık zirve NDVI trendleri ve zirve NDVI çubuk grafiği yer alır.
   - Pencereler haritada yeşil karelerle gösterilir.

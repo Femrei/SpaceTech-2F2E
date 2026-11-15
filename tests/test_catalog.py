@@ -14,6 +14,7 @@ from src.detective import (
     CATALOG_PATH,
     THEMES,
     CONTEXT_KEYS,
+    get_actions,
     get_cases,
     get_context,
     get_region,
@@ -303,3 +304,81 @@ def test_get_context_picks_text(variable_id, direction, significant, expected):
 def test_get_context_unknown_variable_raises():
     with pytest.raises(KeyError):
         get_context(_result("increasing", True), "wind")
+
+
+
+# --------------------------------------------------------------------------- #
+# Turkish context and "what could be done" actions (variables[].context_tr / actions)
+# --------------------------------------------------------------------------- #
+# Advice must stay general: no doses, no orders, no promises
+PRESCRIPTIVE = ("kg/ha", "dose", "must ", "guarantee", "will fix", "doz", "garanti", "kesinlikle")
+
+
+@pytest.mark.parametrize("variable_id", sorted(VARIABLE_IDS))
+def test_variable_context_tr(variable_id):
+    variable = get_variable(variable_id)
+    assert set(variable["context_tr"]) == set(CONTEXT_KEYS)
+    for key in CONTEXT_KEYS:
+        text = variable["context_tr"][key]
+        assert 40 <= len(text) <= 450, f"{variable_id}.{key}"
+        assert text != variable["context"][key], f"{variable_id}.{key}: not translated"
+
+
+@pytest.mark.parametrize("variable_id", sorted(VARIABLE_IDS))
+def test_variable_actions(variable_id):
+    actions = get_variable(variable_id)["actions"]
+    assert set(actions) == {"increasing", "decreasing", "sources"}
+    for key in ("increasing", "decreasing"):
+        en, tr = actions[key]["en"], actions[key]["tr"]
+        assert 1 <= len(en) <= 3 and len(en) == len(tr), f"{variable_id}.{key}: en/tr must match"
+        for item in en + tr:
+            assert 20 <= len(item) <= 250, item
+            lowered = item.lower()
+            assert not any(p in lowered for p in CAUSAL_PHRASES + PRESCRIPTIVE), item
+    assert actions["sources"]
+    for source in actions["sources"]:
+        assert set(source) == {"title", "url"} and source["url"].startswith("https://")
+
+
+@pytest.mark.parametrize(
+    ("direction", "significant", "expected"),
+    [
+        ("increasing", True, "increasing"),
+        ("decreasing", True, "decreasing"),
+        ("increasing", False, None),
+        ("decreasing", False, None),
+        ("no change", True, None),
+    ],
+)
+@pytest.mark.parametrize("variable_id", sorted(VARIABLE_IDS))
+def test_get_actions_only_for_significant_trends(variable_id, direction, significant, expected):
+    out = get_actions(_result(direction, significant), variable_id)
+    assert out["key"] == expected
+    if expected is None:
+        assert out["en"] == out["tr"] == out["sources"] == []
+    else:
+        actions = get_variable(variable_id)["actions"]
+        assert out["en"] == actions[expected]["en"] and out["tr"] == actions[expected]["tr"]
+        assert out["sources"] == actions["sources"]
+
+
+def test_get_context_has_turkish_text():
+    out = get_context(_result("decreasing", True), "soil_moisture")
+    assert out["text_tr"] == get_variable("soil_moisture")["context_tr"]["decreasing"]
+
+
+def test_turkish_texts_for_the_3d_app():
+    """The 3D app's hint box and "follow the clue" button need Turkish versions."""
+    catalog = load_catalog()
+    for variable in catalog["variables"]:
+        assert variable["short_description_tr"].strip(), variable["id"]
+    for region in catalog["regions"]:
+        assert region["name_tr"].strip(), region["id"]
+    for rule in catalog["hints"]:
+        assert rule["text_tr"].strip()
+        # same placeholders as the English text, so both format() calls work
+        assert ("{region}" in rule["text_tr"]) == ("{region}" in rule["text"])
+        assert ("{compare_region}" in rule["text_tr"]) == ("{compare_region}" in rule["text"])
+    step = next_step(_result("decreasing", True), "soil_moisture", "konya")
+    assert "İpucu bulundu" in step["text_tr"] and "Konya Kapalı Havzası" in step["text_tr"]
+    assert "{" not in step["text_tr"]

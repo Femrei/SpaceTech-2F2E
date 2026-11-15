@@ -7,7 +7,7 @@
 # variable on the host (never in the image), e.g. LLM_PROVIDER=groq + LLM_API_KEY=...
 # Without a key the chat runs in offline (rule-based) mode and everything else works.
 #
-# The React UI in frontend/ is kept in the repo but no longer built or served here.
+# The earlier React UI (legacy/frontend/) is kept in the repo but is not built or served here.
 
 FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PORT=8000 HOST=0.0.0.0

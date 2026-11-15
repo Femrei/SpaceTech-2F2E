@@ -117,3 +117,44 @@ def test_server_starts_with_non_utf8_output():
 def test_city_in_text_needs_a_whole_name(server, text, city):
     found = server.city_in_text(text)
     assert (found["name"] if found else None) == city
+
+
+def test_data_js_carries_hint_box_context():
+    """The hint box reads the catalog's context texts (English and Turkish) from data.js."""
+    text = (APP_DIR / "data.js").read_text(encoding="utf-8")
+    data = json.loads(text[text.index("=") + 1:].strip().rstrip(";"))
+    for variable in data["variables"]:
+        assert {"context", "context_tr"} <= set(variable), variable["id"]
+
+
+def test_page_has_no_projection_or_case():
+    """The team chose not to show 2035/2050 projections, a "what could be done" list or case files."""
+    html = (APP_DIR / "index.html").read_text(encoding="utf-8")
+    for needle in ("p2035", "p2050", "outlookOf", "olActs", "caseBtn", "goCase"):
+        assert needle not in html, needle
+    assert 'id="tourToggle"' in html
+
+
+def test_data_js_carries_decision_card_inputs():
+    """The decision card, the Sen interval tile and the "next clue" button read these from data.js."""
+    text = (APP_DIR / "data.js").read_text(encoding="utf-8")
+    data = json.loads(text[text.index("=") + 1:].strip().rstrip(";"))
+    for variable in data["variables"]:
+        assert variable["short_description_tr"]
+    for key, pair in data["pairs"].items():
+        res = pair["result"]
+        assert {"sen_ci_low", "sen_ci_high", "years_needed_estimate", "n_years", "start_year", "end_year"} <= set(res), key
+        assert res["sen_ci_low"] <= res["sen_slope_per_decade"] <= res["sen_ci_high"], key
+        # the rough "years of data needed" estimate exists exactly when the trend is not significant
+        assert (res["years_needed_estimate"] is None) == bool(res["significant"]) or res["sen_slope_per_decade"] == 0, key
+        assert {"text", "text_tr", "variable_id", "region_id"} <= set(pair["next_step"]), key
+
+
+def test_page_has_decision_card_and_chart():
+    html = (APP_DIR / "index.html").read_text(encoding="utf-8")
+    for needle in ("function verdictHTML", "function hintBoxHTML", "function nextStepHTML", "function yearsNeededHTML",
+                   'id="chartBack"', "function renderChart"):
+        assert needle in html, needle
+    assert "sen_ci_low" in html and "olsCi95" in html      # the interval is labelled by the slope it belongs to
+    for key in ("vdWhat", "ynWeak", "ynNote", "chartBig", "viewAnom", "nextBtn", "tour"):  # both languages
+        assert html.count(f"{key}:") == 2, key
