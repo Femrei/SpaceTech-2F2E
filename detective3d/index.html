@@ -350,6 +350,13 @@
     .tr .btn-txt { display: none; }  /* telefonda sadece simge; adı aria-label ve title'da */
     .tr .area-btn { padding: 7px 10px; }
   }
+  /* ---------- C: dil düğmeleri (TR / EN) ---------- */
+  .lang-seg { padding: 3px; gap: 2px; display: flex; }
+  .lang-seg button { padding: 5px 9px; font-size: 12.5px; font-weight: 600; letter-spacing: .03em; }
+  .lang-seg button.on { background: rgba(217,164,65,.22); color: #f1cf8a; }
+  .hint-txt { display: contents; }
+  .badge { white-space: nowrap; }           /* İngilizce "Not significant" iki satıra bölünmesin */
+  .fc-trend { flex-wrap: wrap; row-gap: 3px; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -357,73 +364,77 @@
 <div id="map"></div>
 
 <div class="top panel" id="top">
-  <div class="now"><small id="nowLabel">Gösterilen ay</small><b id="nowDate">—</b></div>
+  <div class="now"><small id="nowLabel"></small><b id="nowDate">—</b></div>
   <div class="legend" id="legend"></div>
 </div>
 
 <div class="tr">
   <div class="tr-row">
-    <button class="layers-btn area-btn" id="guideBtn" aria-haspopup="dialog" aria-label="Rehber" title="Site nasıl kullanılır?"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7M9 12h5"/></svg><span class="btn-txt">Rehber</span></button>
-    <button class="layers-btn area-btn" id="areaBtn" aria-pressed="false" aria-label="Alan seç" title="Haritada kendi noktanı ya da kutunu seç (NASA POWER, 1981–2025)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span class="btn-txt">Alan seç</span></button>
+    <div class="seg panel lang-seg" role="group" data-i18n-attr="aria-label:langGroup">
+      <button type="button" class="lang-btn" data-lang="tr" lang="tr" aria-label="Türkçe">TR</button>
+      <button type="button" class="lang-btn" data-lang="en" lang="en" aria-label="English">EN</button>
+    </div>
+    <button class="layers-btn area-btn" id="guideBtn" aria-haspopup="dialog" data-i18n-attr="aria-label:guide;title:guideTip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7M9 12h5"/></svg><span class="btn-txt" data-i18n="guide"></span></button>
+    <button class="layers-btn area-btn" id="areaBtn" aria-pressed="false" data-i18n-attr="aria-label:area;title:areaTip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span class="btn-txt" data-i18n="area"></span></button>
   </div>
-  <button class="layers-btn" id="layersBtn" aria-expanded="false">Katmanlar ▾</button>
+  <button class="layers-btn" id="layersBtn" aria-expanded="false"></button>
   <div class="toggles panel" id="toggles">
-    <div class="h">Taban harita</div>
-    <label><input type="radio" name="base" value="esri" checked> Uydu görüntüsü (Esri)</label>
+    <div class="h" data-i18n="baseMap"></div>
+    <label><input type="radio" name="base" value="esri" checked> <span data-i18n="esri"></span></label>
     <label><input type="radio" name="base" value="bm"> NASA Blue Marble</label>
-    <div class="h">Katmanlar</div>
-    <label><input type="checkbox" id="ndviToggle"> NDVI · MODIS 16 günlük (NASA GIBS)</label>
-    <label><input type="checkbox" id="colToggle" checked> 3B sapma sütunları</label>
-    <label><input type="checkbox" id="cityToggle" checked> Şehir adları</label>
-    <label><input type="checkbox" id="tourToggle"> Otomatik tur</label>
+    <div class="h" data-i18n="layers"></div>
+    <label><input type="checkbox" id="ndviToggle"> <span data-i18n="ndviLayer"></span></label>
+    <label><input type="checkbox" id="colToggle" checked> <span data-i18n="columns"></span></label>
+    <label><input type="checkbox" id="cityToggle" checked> <span data-i18n="cityNames"></span></label>
+    <label><input type="checkbox" id="tourToggle"> <span data-i18n="tour"></span></label>
   </div>
 </div>
 
 
-<div class="navbar panel" id="navbar" aria-label="Harita kontrolleri">
-  <button data-act="home" data-tip="Genel görünüm (Türkiye)" aria-label="Genel görünüm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg></button>
-  <button data-act="zin" data-tip="Yakınlaş" aria-label="Yakınlaş"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
-  <button data-act="zout" data-tip="Uzaklaş" aria-label="Uzaklaş"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
+<div class="navbar panel" id="navbar" data-i18n-attr="aria-label:mapControls">
+  <button data-act="home" data-i18n-attr="data-tip:navHome;aria-label:navHomeA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg></button>
+  <button data-act="zin" data-i18n-attr="data-tip:navZin;aria-label:navZin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button data-act="zout" data-i18n-attr="data-tip:navZout;aria-label:navZout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
   <hr>
-  <button data-act="rotl" data-tip="Sola döndür (sağ tık + sürükle)" aria-label="Sola döndür"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
-  <button data-act="rotr" data-tip="Sağa döndür" aria-label="Sağa döndür"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button>
-  <button data-act="north" data-tip="Kuzeyi yukarı al" aria-label="Kuzeyi yukarı al"><svg viewBox="0 0 24 24" class="compass-n" id="compassIcon"><path d="M12 3l4 9h-8z" fill="#e8553d"/><path d="M12 21l-4-9h8z" fill="#cfd8e1"/></svg></button>
+  <button data-act="rotl" data-i18n-attr="data-tip:navRotl;aria-label:navRotlA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+  <button data-act="rotr" data-i18n-attr="data-tip:navRotr;aria-label:navRotr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button>
+  <button data-act="north" data-i18n-attr="data-tip:navNorth;aria-label:navNorth"><svg viewBox="0 0 24 24" class="compass-n" id="compassIcon"><path d="M12 3l4 9h-8z" fill="#e8553d"/><path d="M12 21l-4-9h8z" fill="#cfd8e1"/></svg></button>
   <hr>
-  <button data-act="tiltup" data-tip="Daha eğik (3B)" aria-label="Daha eğik"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18 12 8l8 10"/><path d="M8 6h8"/></svg></button>
-  <button data-act="tiltdown" data-tip="Tepeden bak (2B)" aria-label="Tepeden bak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
-  <button data-act="orbit" id="orbitBtn" data-tip="Yavaşça dön (sunum modu)" aria-label="Yavaşça dön"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3a9 9 0 0 1 9 9"/><path d="M12 21a9 9 0 0 1-9-9"/></svg></button>
+  <button data-act="tiltup" data-i18n-attr="data-tip:navTiltup;aria-label:navTiltupA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18 12 8l8 10"/><path d="M8 6h8"/></svg></button>
+  <button data-act="tiltdown" data-i18n-attr="data-tip:navTiltdown;aria-label:navTiltdownA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
+  <button data-act="orbit" id="orbitBtn" data-i18n-attr="data-tip:navOrbit;aria-label:navOrbitA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3a9 9 0 0 1 9 9"/><path d="M12 21a9 9 0 0 1-9-9"/></svg></button>
   <hr>
-  <button data-act="help" data-tip="Fare kısayolları" aria-label="Fare kısayolları"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><path d="M12 17h.01"/></svg></button>
+  <button data-act="help" data-i18n-attr="data-tip:navHelp;aria-label:navHelp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><path d="M12 17h.01"/></svg></button>
 </div>
 <div class="hint panel" id="hint" role="status">
-  <span>🖱️ <b>Sürükle</b>: kaydır</span><span><b>Sağ tık + sürükle</b> (veya Ctrl + sürükle): döndür ve eğ</span><span><b>Tekerlek</b>: yakınlaş</span>
-  <button id="hintClose" aria-label="İpucunu kapat">×</button>
+  <span class="hint-txt" data-i18n-html="hint"></span>
+  <button id="hintClose" data-i18n-attr="aria-label:hintClose">×</button>
 </div>
 <div class="area-bar panel" id="areaBar" hidden>
-  <div class="seg" id="areaKind" aria-label="Seçim biçimi">
-    <button type="button" data-k="point" class="on">Nokta</button>
-    <button type="button" data-k="box">Kare çiz</button>
+  <div class="seg" id="areaKind" data-i18n-attr="aria-label:areaKind">
+    <button type="button" data-k="point" class="on" data-i18n="point"></button>
+    <button type="button" data-k="box" data-i18n="box"></button>
   </div>
   <span class="area-msg" id="areaMsg" role="status"></span>
-  <button type="button" class="ghost area-done" id="areaDone">Bitti</button>
+  <button type="button" class="ghost area-done" id="areaDone" data-i18n="done"></button>
 </div>
 <aside class="left panel" id="left"></aside>
-<button class="left-tab" id="leftTab" aria-label="Dedektif dosyasını aç">Dedektif dosyası ▸</button>
+<button class="left-tab" id="leftTab" data-i18n="leftTab" data-i18n-attr="aria-label:leftTabA"></button>
 
 <div class="timeline panel" id="timeline">
   <div class="seg tl-seg" id="modeSeg">
-    <button data-mode="time" class="on">Zaman</button>
-    <button data-mode="before">Önce<small>2001–05</small></button>
-    <button data-mode="after">Sonra<small>2021–25</small></button>
+    <button data-mode="time" class="on" data-i18n="modeTime"></button>
+    <button data-mode="before"><span data-i18n="before"></span><small>2001–05</small></button>
+    <button data-mode="after"><span data-i18n="after"></span><small>2021–25</small></button>
   </div>
-  <button class="play" id="play" aria-label="Oynat"></button>
+  <button class="play" id="play"></button>
   <div class="track">
-    <input type="range" id="slider" min="0" value="0" aria-label="Ay">
+    <input type="range" id="slider" min="0" value="0" data-i18n-attr="aria-label:monthA">
     <div class="ticks" id="ticks"></div>
   </div>
   <div class="tl-right">
     <div class="tl-date" id="tlDate">—</div>
-    <select class="speed" id="speed" aria-label="Hız">
+    <select class="speed" id="speed" data-i18n-attr="aria-label:speed">
       <option value="6">0.5×</option>
       <option value="12" selected>1×</option>
       <option value="24">2×</option>
@@ -433,29 +444,30 @@
 </div>
 
 
-<button class="ask-btn" id="askBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M8.5 11a2.5 2.5 0 0 1 2.5-2.5"/></svg> Dedektife sor</button>
-<section class="chat panel" id="chat" aria-label="Dedektif ajanı">
+<button class="ask-btn" id="askBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M8.5 11a2.5 2.5 0 0 1 2.5-2.5"/></svg> <span data-i18n="ask"></span></button>
+<section class="chat panel" id="chat" data-i18n-attr="aria-label:agentName">
   <div class="chat-head">
     <div class="av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M8.5 11a2.5 2.5 0 0 1 2.5-2.5"/></svg></div>
-    <div><b>Dedektif ajanı</b><small id="agentStatus">Bağlanıyor…</small></div>
+    <div><b data-i18n="agentName"></b><small id="agentStatus"></small></div>
     <div class="sp"></div>
-    <button class="icon-btn" id="chatReset" title="Yeni sohbet" aria-label="Yeni sohbet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
-    <button class="icon-btn" id="chatClose" title="Kapat" aria-label="Kapat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <button class="icon-btn" id="chatReset" data-i18n-attr="title:newChat;aria-label:newChat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+    <button class="icon-btn" id="chatClose" data-i18n-attr="title:close;aria-label:close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
   </div>
   <div class="chat-log" id="chatLog"></div>
   <div class="sugg" id="sugg"></div>
   <form class="chat-form" id="chatForm">
-    <textarea id="chatInput" placeholder="Örn: Konya'da toprak neden kuruyor?" aria-label="Soru"></textarea>
-    <button type="submit" id="chatSend" aria-label="Gönder"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg></button>
+    <textarea id="chatInput" data-i18n-attr="placeholder:placeholder;aria-label:questionA"></textarea>
+    <button type="submit" id="chatSend" data-i18n-attr="aria-label:sendA"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg></button>
   </form>
 </section>
 <div class="guide-back" id="guideBack" hidden>
   <section class="guide panel" id="guide" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
     <div class="guide-head">
-      <div style="flex:1"><span class="kicker">Rehber</span><h2 id="guideTitle">Trend Dedektifi nasıl kullanılır?</h2></div>
-      <button type="button" class="guide-close" id="guideClose" aria-label="Rehberi kapat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <div style="flex:1"><span class="kicker" data-i18n="guide"></span><h2 id="guideTitle" data-i18n="guideTitle"></h2></div>
+      <button type="button" class="guide-close" id="guideClose" data-i18n-attr="aria-label:guideClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="guide-body" id="guideBody" tabindex="0">
+      <div data-guide="tr" lang="tr">
       <h3>Bu site ne yapar?</h3>
       <p>NASA uydu verileriyle Konya Kapalı Havzası, Van Gölü Havzası ve Doğu Karadeniz'de <b>yağış</b>, <b>toprak nemi</b> ve <b>hava sıcaklığının</b> 2001–2025 arasında nasıl değiştiğini gösterir. Bir dedektif gibi ipuçlarını takip edersin: örneğin toprak kuruyorsa sebebi yağış mı, sıcaklık mı?</p>
 
@@ -500,31 +512,304 @@
       </ul>
 
       <div class="warn">Unutma: Veriler ~25–50 km'lik bölge ortalamalarıdır, tarla ölçümü değildir. Bir trend, sebebini tek başına söylemez; karar vermeden önce yerel ölçümlerle (ör. MGM istasyonları, toprak analizi) kontrol edilmelidir.</div>
+      </div>
+      <div data-guide="en" lang="en">
+      <h3>What does this site do?</h3>
+      <p>Using NASA satellite data, it shows how <b>precipitation</b>, <b>soil moisture</b> and <b>air temperature</b> changed from 2001 to 2025 in the Konya Closed Basin, the Lake Van Basin and the Eastern Black Sea. You follow the clues like a detective: if the soil is drying, is it less rain or more heat?</p>
+
+      <h3>1. Read the map</h3>
+      <ul>
+        <li>The dashed boxes are the three regions. The <b>colour</b> shows how far the last 12 months are from normal (legend at the top). The <b>column height</b> shows the size of that departure.</li>
+        <li>The card above each region shows that month's value and the 25-year <b>trend</b>. Click a card or a box to select the region.</li>
+        <li>Pick the variable with the buttons at the top: precipitation, soil moisture or air temperature.</li>
+      </ul>
+
+      <h3>2. Move through time</h3>
+      <ul>
+        <li>The <b>play</b> button in the bottom bar steps from 2001 to 2025 month by month. <kbd>Space</kbd> plays or pauses, <kbd>←</kbd> <kbd>→</kbd> move one month.</li>
+        <li>The <b>Before</b> (2001–05) and <b>After</b> (2021–25) buttons compare the two periods.</li>
+      </ul>
+
+      <h3>3. Read the detective file</h3>
+      <ul>
+        <li>The left panel sums up the selected region: a one-sentence story, the <b>Sen slope</b> (how much it changed per decade), the confidence interval and the <b>significance</b>.</li>
+        <li>The <b>Significant</b> badge means the change can be told apart from natural variability (p &lt; 0.05). "Not significant" does not mean "no change"; it means it can't be told apart yet.</li>
+        <li>Below are the heat map, the 45-year check with NASA POWER, vegetation (NDVI), the sources and a <b>Download CSV</b> button.</li>
+      </ul>
+
+      <h3>4. Pick your own area</h3>
+      <ul>
+        <li>With <b>Pick an area</b> (top right) you can look at any place in the world.</li>
+        <li><b>Point:</b> click the map once. <b>Draw a box:</b> click one corner, then the opposite corner (up to 10° × 10°). <kbd>Esc</kbd> cancels.</li>
+        <li>The result appears in the left panel (NASA POWER, 1981–2025). <b>Back to the regions</b> returns to the three regions.</li>
+      </ul>
+
+      <h3>5. Ask the detective</h3>
+      <ul>
+        <li>The <b>Ask the detective</b> button (bottom right) opens the chat. Type your question in English or Turkish, e.g. "Why is the soil drying in Konya?" or "How is the soil in Gaziantep?".</li>
+        <li>The detective never makes up numbers: it calls the team's analysis functions and shows the place it talks about on the map. The datasets it used are listed under each answer.</li>
+      </ul>
+
+      <h3>6. Move the map</h3>
+      <ul>
+        <li><b>Drag:</b> pan. <b>Right-click + drag</b> (or <kbd>Ctrl</kbd> + drag): rotate and tilt. <b>Wheel:</b> zoom.</li>
+        <li>Buttons on the right: overview, zoom in/out, rotate, 3D/2D and slow orbit (presentation mode).</li>
+        <li>The <b>Layers</b> menu: satellite imagery or NASA Blue Marble, the NDVI vegetation layer, city names, auto tour.</li>
+      </ul>
+
+      <div class="warn">Keep in mind: the data are regional averages over ~25–50 km, not field measurements. A trend alone does not tell its cause; check with local measurements (e.g. MGM weather stations, soil tests) before deciding.</div>
+      </div>
     </div>
   </section>
 </div>
-<div class="foot">Prototip · Giovanni bölge ortalamaları (~25 km ızgara), tarla ölçeği değil · NDVI katmanı yalnızca görsel, analizde kullanılmıyor</div>
+<div class="foot" data-i18n="foot"></div>
 
 <script>
 (() => {
+  // ------------------------------------------------------------------ C: dil seçimi (TR / EN)
+  // Sitedeki bütün yazılar bu sözlükten gelir. TR/EN düğmeleri dili sayfayı yenilemeden değiştirir;
+  // seçim tarayıcıda hatırlanır. İlk girişte tarayıcının dili Türkçe ise TR, değilse EN açılır.
+  let LANG = (() => {
+    try { const s = localStorage.getItem("td3d-lang"); if (s === "tr" || s === "en") return s; } catch (e) {}
+    return /^tr\b/i.test(navigator.language || "") ? "tr" : "en";
+  })();
+  const ND_EN = { "Çumra ovası": "Çumra plain", "Erciş ovası": "Erciş plain", "Rize kıyı yamaçları": "Rize coastal slopes",
+    "tarım": "cropland", "bitki örtüsü": "natural vegetation", "tarım alanı": "cropland", "yerleşim": "urban",
+    "çayır/mera": "grassland", "sulak alan": "wetland", "iğne yapraklı orman": "needleleaf forest",
+    "geniş yapraklı yaprak dökmeyen orman": "evergreen broadleaf forest", "geniş yapraklı yaprak döken orman": "deciduous broadleaf forest",
+    "karışık orman": "mixed forest", "odunsu savan": "woody savanna", "savan": "savanna", "tarım/doğal karışık": "cropland/natural mosaic",
+    "çıplak arazi": "barren", "su": "water" };
+  const STR = {
+    tr: {
+      pageTitle: "Trend Dedektifi 3B", noDataJs: "data.js bulunamadı. Önce build_data.py çalıştırın.", langGroup: "Dil",
+      nowMonth: "Gösterilen ay", nowPeriod: "Gösterilen dönem",
+      guide: "Rehber", guideTip: "Site nasıl kullanılır?",
+      area: "Alan seç", areaTip: "Haritada kendi noktanı ya da kutunu seç (NASA POWER, 1981–2025)",
+      layers: "Katmanlar", baseMap: "Taban harita", esri: "Uydu görüntüsü (Esri)", ndviLayer: "NDVI · MODIS 16 günlük (NASA GIBS)",
+      columns: "3B sapma sütunları", cityNames: "Şehir adları", tour: "Otomatik tur", mapControls: "Harita kontrolleri",
+      navHome: "Genel görünüm (Türkiye)", navHomeA: "Genel görünüm", navZin: "Yakınlaş", navZout: "Uzaklaş",
+      navRotl: "Sola döndür (sağ tık + sürükle)", navRotlA: "Sola döndür", navRotr: "Sağa döndür", navNorth: "Kuzeyi yukarı al",
+      navTiltup: "Daha eğik (3B)", navTiltupA: "Daha eğik", navTiltdown: "Tepeden bak (2B)", navTiltdownA: "Tepeden bak",
+      navOrbit: "Yavaşça dön (sunum modu)", navOrbitA: "Yavaşça dön", navHelp: "Fare kısayolları",
+      hint: "<span>🖱️ <b>Sürükle</b>: kaydır</span><span><b>Sağ tık + sürükle</b> (veya Ctrl + sürükle): döndür ve eğ</span><span><b>Tekerlek</b>: yakınlaş</span>",
+      hintClose: "İpucunu kapat", areaKind: "Seçim biçimi", point: "Nokta", box: "Kare çiz", done: "Bitti",
+      leftTab: "Dedektif dosyası ▸", leftTabA: "Dedektif dosyasını aç",
+      modeTime: "Zaman", before: "Önce", after: "Sonra", play: "Oynat", pause: "Duraklat", monthA: "Ay", speed: "Hız",
+      ask: "Dedektife sor", agentName: "Dedektif ajanı", connecting: "Bağlanıyor…", newChat: "Yeni sohbet", close: "Kapat",
+      placeholder: "Örn: Konya'da toprak neden kuruyor?", questionA: "Soru", sendA: "Gönder",
+      guideTitle: "Trend Dedektifi nasıl kullanılır?", guideClose: "Rehberi kapat",
+      foot: "Prototip · Giovanni bölge ortalamaları (~25 km ızgara), tarla ölçeği değil · NDVI katmanı yalnızca görsel, analizde kullanılmıyor",
+      "r.konya": "Konya Kapalı Havzası", "r.van": "Van Gölü Havzası", "r.black_sea": "Doğu Karadeniz",
+      "v.precip": "Yağış", "u.precip": "mm/ay", "h.precip": "Aylık toplam",
+      "v.soil_moisture": "Toprak nemi", "u.soil_moisture": "kg/m²", "h.soil_moisture": "Yüzey 0–10 cm",
+      "v.temp": "Hava sıcaklığı", "u.temp": "°C", "h.temp": "2 m yükseklik",
+      months: ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"],
+      monthLetters: "OŞMNMHTAEEKA", dry: "kuru", wet: "ıslak", cool: "serin", warm: "sıcak",
+      legendTitle: "Renk: normalden sapma",
+      legendTip: time => (time ? "12 aylık ortalamanın normalden sapması" : "Dönem ortalamasının normalden sapması")
+        + ". Kutu rengi sapmanın yönünü, sütun yüksekliği büyüklüğünü (σ) gösterir.",
+      noData: "Veri yok", edgeMonth: "12 ay ortalaması: kenar ay, hesaplanmadı",
+      anomLine: (c, val, unit) => `12 ay ort. normalden <b style="color:${c}">${val}</b> ${unit}`,
+      beforeMean: "2001–2005 aylık ortalaması",
+      vsBefore: (c, val, unit) => `2001–05'e göre <b style="color:${c}">${val}</b> ${unit}`,
+      tagMonthly: "aylık", tagBefore: "önce", tagAfter: "sonra",
+      trendPerDec: val => `Trend <b>${val}</b> /10 yıl`,
+      sig: "Anlamlı", notSig: "Anlamlı değil", notSigShort: "Değil", perDecade: "/10 yıl", pct: n => `%${n}`,
+      regionWhere: name => `${name} bölgesinde`, areaWhere: label => label ? `${label} çevresinde` : "Seçilen alanda",
+      story: o => {
+        if (o.direction !== "increasing" && o.direction !== "decreasing")
+          return `${o.where} ${o.what} ${o.years} arasında belirgin bir yönde değişmiyor (Sen eğimi ${o.slope} ${o.unit} / 10 yıl).`;
+        const dir = o.direction === "increasing" ? "artıyor" : "azalıyor";
+        return o.significant
+          ? `${o.where} ${o.what} ${o.years} arasında on yılda yaklaşık <b>${o.amount}</b> ${dir}. Bu eğilim istatistiksel olarak <b>anlamlı</b> (mevsimsel Mann-Kendall, p &lt; 0,05).`
+          : `${o.where} ${o.what} on yılda yaklaşık ${o.amount} ${dir} gibi görünüyor, ancak bu eğilim <b>anlamlı değil</b>: ${o.nYears} yıllık doğal dalgalanmadan ayırt edilemiyor.`;
+      },
+      "pw.T2M": "Hava sıcaklığı (T2M)", "pw.T2M_MAX": "Günlük en yüksek sıcaklık (T2M_MAX)",
+      "pw.PRECTOTCORR": "Yağış (PRECTOTCORR)", "pw.GWETROOT": "Kök bölgesi toprak ıslaklığı (GWETROOT)",
+      unit: u => u, nd: s => s,
+      cellNoData: "veri yok", vsNormal: "(normale göre)", heatAria: "Yıl-ay sapma ısı haritası",
+      noPower: "power_data.js yok. <code>build_power.py</code> çalıştırılınca 45 yıllık kontrol burada görünür.",
+      conflict: (a, b) => `⚠️ Veri setleri çelişiyor: Giovanni ${a}, POWER ${b} (2001–2025). Farklı ürünler ve derinlikler, kaba ızgara ve dağlık arazi etkili olabilir. Karar vermeden önce yerel istasyon verisiyle (MGM) kontrol edilmeli.`,
+      agree: a => `✓ İki bağımsız veri seti aynı yönü gösteriyor (${a}). Bulgu daha güvenilir.`,
+      sigSplit: (full, recent) => `🕵️ 45 yılda ${full ? "anlamlı" : "anlamlı değil"}, son 25 yılda ${recent ? "anlamlı" : "anlamlı değil"}: değişim ${recent ? "yeni bir olgu olabilir" : "uzun vadeli ama son dönemde gürültüde kaybolmuş olabilir"}.`,
+      giovanniReq: "Giovanni isteği", areaMean: (w, e, s, n) => `(alan ortalaması, ${w}–${e}°D, ${s}–${n}°K)`,
+      powerSrc: n => `NASA POWER aylık nokta API'si, 1981–2025, kutu içindeki ${n} ızgara noktasının ortalaması`,
+      apiDoc: "API belgesi", serviceDoc: "servis belgesi",
+      ndviSrc: name => `MODIS Terra MOD13Q1 v061 NDVI (250 m, 16 günlük), ORNL DAAC Land Product Subsets · ${name} penceresi`,
+      trendSrc: "Trend: B'nin mevsimsel Mann-Kendall + Sen eğimi (repodaki <code>src/trend.py</code>)",
+      noNdvi: "ndvi_data.js yok. <code>build_ndvi.py</code> çalıştırılınca MODIS NDVI trendi burada görünür.",
+      ndviMissing: name => `${name ? `<b>${name}</b> penceresi için` : "Bu bölge için"} MODIS NDVI verisi henüz indirilmedi (ORNL sunucusu yoğundu). <code>build_ndvi.py</code> tekrar çalıştırılınca kaldığı yerden tamamlanır.`,
+      ndviWindow: (kind, km, lat, lon) => `(${kind} penceresi, ${km}×${km} km, ${lat}°K ${lon}°D)`,
+      landCover: "Arazi örtüsü (MODIS 2020)", ndviMonthly: "Aylık NDVI trendi", ndviPeak: "Yıllık zirve (en yeşil ay)",
+      peakTitle: (y, v) => `${y}: zirve NDVI ${v}`, peakAria: "Yıllık zirve NDVI",
+      nonCrop: "Bu kutuda MODIS'e göre tarım alanı yok (çay/fındık bahçeleri orman sınıfında). Pencere doğal bitki örtüsünü ölçüyor.",
+      ndviCaveat: "NDVI tek başına nedeni söylemez: yeşillenme sulama artışından, kahverengileşme nadas veya kuraklıktan olabilir.",
+      noVarData: "Bu değişken için veri yok.", kicker: "Dedektif dosyası", hideFileA: "Dedektif dosyasını gizle", hide: "Gizle ◂",
+      senPerDec: "Sen eğimi / 10 yıl", ci95: "%95 güven aralığı", longMean: "Uzun dönem ortalama", pctPerDec: "% değişim / 10 yıl",
+      chartLegend: "Aylık değer (soluk), 12 aylık ortalama (beyaz), Sen trendi (sarı kesikli)",
+      heatTitle: "Isı haritası (yıl × ay)", y25: "25 yıl", y45: "45 yıl", heatNote: "her hücre o ayın kendi ortalamasından sapması",
+      longTitle: "45 yıllık kontrol · NASA POWER", vegTitle: "Bitki örtüsü · MODIS NDVI", sources: "Kaynaklar",
+      flyRegion: "Bölgeye yakınlaş", csv: "CSV indir",
+      "av.temp": "Hava sıcaklığı", "av.precip": "Yağış", "av.soil_moisture": "Yüzey toprak ıslaklığı",
+      "avu.precip": "mm/ay", "avs.soil_moisture": "yüzde puan",
+      "avh.temp": "2 m · T2M", "avh.precip": "Aylık toplam · PRECTOTCORR", "avh.soil_moisture": "Yüzey katmanı · GWETTOP",
+      N: "K", S: "G", E: "D", W: "B",
+      clickPoint: "Haritada bir noktaya tıkla.", clickCorner: "Kutunun bir köşesine tıkla.",
+      clickOpposite: (h, w, big, max) => `Karşı köşeye tıkla · ${h}° × ${w}°` + (big ? ` · en fazla ${max}° × ${max}°` : "") + " · Esc: vazgeç",
+      boxTooSmall: "Kutu çok küçük; biraz daha geniş çiz.",
+      errNoLand: "Toprak ıslaklığı yalnızca karada ölçülür; burası açık deniz. Karada bir yer seç.",
+      errPower: "NASA POWER'a şu an ulaşılamadı. Biraz sonra tekrar dene.",
+      errServer: "Sunucuya bağlanılamadı. agent_server.py çalışıyor mu?",
+      errOther: msg => `Bu alan analiz edilemedi: ${msg}`,
+      areaKicker: "Seçilen alan · NASA POWER", hidePanelA: "Paneli gizle", backRegions: "Bölgelere dön", pickAnother: "Başka bir alan seç",
+      pickTitle: "Kendi alanını seç",
+      pickBoxHow: "Haritada kutunun bir köşesine, sonra karşı köşesine tıkla (en fazla 10° × 10°).",
+      pickIntro: v => `Seçtiğin yerde <b>${v}</b> 1981–2025 arasında nasıl değişmiş, B'nin aynı trend analiziyle hesaplanır.`,
+      pickNote: "Değişkeni üstteki düğmelerden değiştirebilirsin. Veri NASA POWER'ın aylık API'sinden (MERRA-2 tabanlı, ~0,5° × 0,625° ızgara) canlı alınır; internet gerekir.",
+      around: l => `${l} çevresi`, retry: "Tekrar dene",
+      loadingPower: "NASA POWER'dan 45 yıllık veri alınıyor",
+      loadingNote: "İlk istek 5–20 saniye sürebilir; aynı yer tekrar sorulunca hızlı gelir.",
+      howPoint: (lat, lon) => `Noktayı içeren tek MERRA-2 ızgara hücresi (${lat}, ${lon}; yaklaşık 55 × 55 km). Haritadaki sarı kare bu hücre.`,
+      howOneCell: "Kutu bir ızgara hücresinden küçük olduğu için tek bir hücrenin değeri kullanıldı (haritadaki beyaz nokta).",
+      howCells: n => `Kutunun içindeki ${n} ızgara hücresinin alan ağırlıklı ortalaması (haritadaki beyaz noktalar).`,
+      gwetStep: "NASA POWER bu değeri %1'lik adımlarla verir; çok yavaş değişimlerde eğim 0 görünebilir.",
+      areaWarn: "Bu sonuç NASA POWER'dan (1981–2025) geliyor; bölge dosyalarındaki Giovanni verisinden (2001–2025) farklı bir kaynak ve dönem olduğu için sayılar birebir aynı olmayabilir. Tarla ölçeği değildir.",
+      powerDoc: "NASA POWER API belgesi", flyArea: "Alana yakınlaş",
+      welcome: "Merhaba! Ben **Trend Dedektifi**. Konya, Van ve Doğu Karadeniz'in 2001–2025 yağış, toprak nemi ve sıcaklık verilerine bakıp ipuçlarını takip ederim. Başka bir şehri de sorabilirsin (ör. Gaziantep); oraya NASA POWER'ın 1981–2025 verisiyle bakarım. Konuştuğum yeri haritada da gösteririm.\n\nAşağıdan bir soru seç ya da kendi sorunu yaz.",
+      sugg: ["Konya'da toprak neden kuruyor?", "Karadeniz ile Konya'yı karşılaştır", "Van'daki ısınma gerçek mi?", "2021–25 dönemi öncekine göre nasıl?", "Gaziantep'te toprak ne durumda?"],
+      online: "çevrimiçi", ruleBased: "Kural tabanlı yanıt", offlineMode: "çevrimdışı mod", serverDown: "Ajan sunucusu kapalı", noConn: "bağlantı yok",
+      serverNotRunning: "Ajan sunucusu çalışmıyor. Repo kökünde `python detective3d/agent_server.py` ile başlatıp sayfayı `http://localhost:8765` adresinden aç.",
+      tracing: "Dedektif iz sürüyor", emptyAnswer: "(boş yanıt)", dataLabel: "Veri:", problem: m => `Bir sorun oldu: ${m}`,
+    },
+    en: {
+      pageTitle: "Trend Detective 3D", noDataJs: "data.js not found. Run build_data.py first.", langGroup: "Language",
+      nowMonth: "Month shown", nowPeriod: "Period shown",
+      guide: "Guide", guideTip: "How to use this site",
+      area: "Pick an area", areaTip: "Pick your own point or box on the map (NASA POWER, 1981–2025)",
+      layers: "Layers", baseMap: "Base map", esri: "Satellite imagery (Esri)", ndviLayer: "NDVI · MODIS 16-day (NASA GIBS)",
+      columns: "3D anomaly columns", cityNames: "City names", tour: "Auto tour", mapControls: "Map controls",
+      navHome: "Overview (Türkiye)", navHomeA: "Overview", navZin: "Zoom in", navZout: "Zoom out",
+      navRotl: "Rotate left (right-click + drag)", navRotlA: "Rotate left", navRotr: "Rotate right", navNorth: "North up",
+      navTiltup: "Tilt more (3D)", navTiltupA: "Tilt more", navTiltdown: "Top-down view (2D)", navTiltdownA: "Top-down view",
+      navOrbit: "Slow orbit (presentation mode)", navOrbitA: "Slow orbit", navHelp: "Mouse shortcuts",
+      hint: "<span>🖱️ <b>Drag</b>: pan</span><span><b>Right-click + drag</b> (or Ctrl + drag): rotate and tilt</span><span><b>Wheel</b>: zoom</span>",
+      hintClose: "Close the tip", areaKind: "Selection type", point: "Point", box: "Draw a box", done: "Done",
+      leftTab: "Detective file ▸", leftTabA: "Open the detective file",
+      modeTime: "Time", before: "Before", after: "After", play: "Play", pause: "Pause", monthA: "Month", speed: "Speed",
+      ask: "Ask the detective", agentName: "Detective agent", connecting: "Connecting…", newChat: "New chat", close: "Close",
+      placeholder: "E.g. Why is the soil drying in Konya?", questionA: "Question", sendA: "Send",
+      guideTitle: "How to use Trend Detective", guideClose: "Close the guide",
+      foot: "Prototype · Giovanni regional averages (~25 km grid), not field scale · the NDVI layer is visual only, not used in the analysis",
+      "r.konya": "Konya Closed Basin", "r.van": "Lake Van Basin", "r.black_sea": "Eastern Black Sea",
+      "v.precip": "Precipitation", "u.precip": "mm/month", "h.precip": "Monthly total",
+      "v.soil_moisture": "Soil moisture", "u.soil_moisture": "kg/m²", "h.soil_moisture": "Surface 0–10 cm",
+      "v.temp": "Air temperature", "u.temp": "°C", "h.temp": "2 m height",
+      months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+      monthLetters: "JFMAMJJASOND", dry: "dry", wet: "wet", cool: "cool", warm: "warm",
+      legendTitle: "Colour: departure from normal",
+      legendTip: time => (time ? "Departure of the 12-month mean from normal" : "Departure of the period mean from normal")
+        + ". The box colour shows the direction, the column height the size (σ).",
+      noData: "No data", edgeMonth: "12-month mean: edge month, not computed",
+      anomLine: (c, val, unit) => `12-mo mean vs normal <b style="color:${c}">${val}</b> ${unit}`,
+      beforeMean: "2001–2005 monthly mean",
+      vsBefore: (c, val, unit) => `vs 2001–05 <b style="color:${c}">${val}</b> ${unit}`,
+      tagMonthly: "monthly", tagBefore: "before", tagAfter: "after",
+      trendPerDec: val => `Trend <b>${val}</b> /decade`,
+      sig: "Significant", notSig: "Not significant", notSigShort: "Not sig.", perDecade: "/decade", pct: n => `${n}%`,
+      regionWhere: name => `In the ${name}`, areaWhere: label => label ? `Around ${label}` : "In the selected area",
+      story: o => {
+        if (o.direction !== "increasing" && o.direction !== "decreasing")
+          return `${o.where}, ${o.what} shows no clear direction over ${o.years} (Sen slope ${o.slope} ${o.unit} per decade).`;
+        const dir = o.direction === "increasing" ? "rising" : "falling";
+        return o.significant
+          ? `${o.where}, ${o.what} is ${dir} by about <b>${o.amount}</b> per decade over ${o.years}. This trend is statistically <b>significant</b> (seasonal Mann-Kendall, p &lt; 0.05).`
+          : `${o.where}, ${o.what} seems to be ${dir} by about ${o.amount} per decade, but the trend is <b>not significant</b>: it can't yet be told apart from ${o.nYears} years of natural variability.`;
+      },
+      "pw.T2M": "Air temperature (T2M)", "pw.T2M_MAX": "Daily maximum temperature (T2M_MAX)",
+      "pw.PRECTOTCORR": "Precipitation (PRECTOTCORR)", "pw.GWETROOT": "Root-zone soil wetness (GWETROOT)",
+      unit: u => u === "mm/ay" ? "mm/month" : u, nd: s => ND_EN[s] || s,
+      cellNoData: "no data", vsNormal: "(vs normal)", heatAria: "Year × month anomaly heat map",
+      noPower: "power_data.js is missing. Run <code>build_power.py</code> to see the 45-year check here.",
+      conflict: (a, b) => `⚠️ The datasets disagree: Giovanni ${a}, POWER ${b} (2001–2025). Different products and depths, coarse grids and mountains can cause this. Check local station data (MGM) before deciding.`,
+      agree: a => `✓ Two independent datasets show the same direction (${a}). The finding is more reliable.`,
+      sigSplit: (full, recent) => `🕵️ ${full ? "Significant" : "Not significant"} over 45 years, ${recent ? "significant" : "not significant"} over the last 25: the change ${recent ? "may be a new phenomenon" : "may be long-term but lost in recent noise"}.`,
+      giovanniReq: "Giovanni request", areaMean: (w, e, s, n) => `(area mean, ${w}–${e}°E, ${s}–${n}°N)`,
+      powerSrc: n => `NASA POWER monthly point API, 1981–2025, mean of the ${n} grid points inside the box`,
+      apiDoc: "API docs", serviceDoc: "service docs",
+      ndviSrc: name => `MODIS Terra MOD13Q1 v061 NDVI (250 m, 16-day), ORNL DAAC Land Product Subsets · ${name} window`,
+      trendSrc: "Trend: the team's seasonal Mann-Kendall + Sen slope (<code>src/trend.py</code> in the repo)",
+      noNdvi: "ndvi_data.js is missing. Run <code>build_ndvi.py</code> to see the MODIS NDVI trend here.",
+      ndviMissing: name => `MODIS NDVI data ${name ? `for the <b>${name}</b> window` : "for this region"} is not downloaded yet (the ORNL server was busy). Running <code>build_ndvi.py</code> again continues where it stopped.`,
+      ndviWindow: (kind, km, lat, lon) => `(${kind} window, ${km}×${km} km, ${lat}°N ${lon}°E)`,
+      landCover: "Land cover (MODIS 2020)", ndviMonthly: "Monthly NDVI trend", ndviPeak: "Yearly peak (greenest month)",
+      peakTitle: (y, v) => `${y}: peak NDVI ${v}`, peakAria: "Yearly peak NDVI",
+      nonCrop: "MODIS shows no cropland in this box (tea and hazelnut gardens fall in the forest class). The window measures natural vegetation.",
+      ndviCaveat: "NDVI alone can't tell the cause: greening can come from more irrigation, browning from fallow or drought.",
+      noVarData: "No data for this variable.", kicker: "Detective file", hideFileA: "Hide the detective file", hide: "Hide ◂",
+      senPerDec: "Sen slope / decade", ci95: "95% confidence interval", longMean: "Long-term mean", pctPerDec: "% change / decade",
+      chartLegend: "Monthly value (faint), 12-month mean (white), Sen trend (dashed yellow)",
+      heatTitle: "Heat map (year × month)", y25: "25 yrs", y45: "45 yrs", heatNote: "each cell is the departure from that month's own mean",
+      longTitle: "45-year check · NASA POWER", vegTitle: "Vegetation · MODIS NDVI", sources: "Sources",
+      flyRegion: "Zoom to region", csv: "Download CSV",
+      "av.temp": "Air temperature", "av.precip": "Precipitation", "av.soil_moisture": "Surface soil wetness",
+      "avu.precip": "mm/month", "avs.soil_moisture": "percentage points",
+      "avh.temp": "2 m · T2M", "avh.precip": "Monthly total · PRECTOTCORR", "avh.soil_moisture": "Top layer · GWETTOP",
+      N: "N", S: "S", E: "E", W: "W",
+      clickPoint: "Click a point on the map.", clickCorner: "Click one corner of the box.",
+      clickOpposite: (h, w, big, max) => `Click the opposite corner · ${h}° × ${w}°` + (big ? ` · at most ${max}° × ${max}°` : "") + " · Esc: cancel",
+      boxTooSmall: "The box is too small; draw it a bit wider.",
+      errNoLand: "Soil wetness is only measured over land, and this place is open water. Pick a spot on land.",
+      errPower: "NASA POWER can't be reached right now. Try again in a moment.",
+      errServer: "Can't reach the server. Is agent_server.py running?",
+      errOther: msg => `This area could not be analysed: ${msg}`,
+      areaKicker: "Selected area · NASA POWER", hidePanelA: "Hide the panel", backRegions: "Back to the regions", pickAnother: "Pick another area",
+      pickTitle: "Pick your own area",
+      pickBoxHow: "Click one corner of the box on the map, then the opposite corner (up to 10° × 10°).",
+      pickIntro: v => `The team's same trend analysis then shows how <b>${v}</b> changed there between 1981 and 2025.`,
+      pickNote: "You can switch the variable with the buttons at the top. The data comes live from NASA POWER's monthly API (MERRA-2 based, ~0.5° × 0.625° grid), so an internet connection is needed.",
+      around: l => `Around ${l}`, retry: "Try again",
+      loadingPower: "Fetching 45 years of NASA POWER data",
+      loadingNote: "The first request can take 5–20 seconds; the same place loads fast the next time.",
+      howPoint: (lat, lon) => `The single MERRA-2 grid cell that contains the point (${lat}, ${lon}; about 55 × 55 km). The yellow square on the map is this cell.`,
+      howOneCell: "The box is smaller than one grid cell, so one cell's value is used (the white dot on the map).",
+      howCells: n => `Area-weighted mean of the ${n} grid cells inside the box (the white dots on the map).`,
+      gwetStep: "NASA POWER gives this value in 1% steps, so very slow changes can show a slope of 0.",
+      areaWarn: "This result comes from NASA POWER (1981–2025). The region files use Giovanni data (2001–2025), a different source and period, so the numbers may not match exactly. This is not field scale.",
+      powerDoc: "NASA POWER API docs", flyArea: "Zoom to area",
+      welcome: "Hi! I'm the **Trend Detective**. I look at 2001–2025 precipitation, soil moisture and temperature data for Konya, Van and the Eastern Black Sea and follow the clues. You can also ask about another city (e.g. Gaziantep); I'll look there with NASA POWER data for 1981–2025. I show the place I'm talking about on the map.\n\nPick a question below or type your own.",
+      sugg: ["Why is the soil drying in Konya?", "Compare the Black Sea with Konya", "Is the warming in Van real?", "How does 2021–25 compare with earlier years?", "How is the soil in Gaziantep?"],
+      online: "online", ruleBased: "Rule-based answers", offlineMode: "offline mode", serverDown: "Agent server is down", noConn: "no connection",
+      serverNotRunning: "The agent server is not running. Start it from the repo root with `python detective3d/agent_server.py` and open the page at `http://localhost:8765`.",
+      tracing: "The detective is on the trail", emptyAnswer: "(empty answer)", dataLabel: "Data:", problem: m => `Something went wrong: ${m}`,
+    },
+  };
+
+  // Sözlükten seçili dildeki yazıyı döndürür; yazı bir fonksiyonsa verilen değerlerle doldurulur.
+  function t(key, ...args) {
+    const v = STR[LANG][key] ?? STR.tr[key] ?? key;
+    return typeof v === "function" ? v(...args) : v;
+  }
+  // Metni seçili dilin kurallarıyla küçük harfe çevirir (Türkçede "I" -> "ı").
+  const lower = s => s.toLocaleLowerCase(LANG === "tr" ? "tr" : "en");
+
   const D = window.TREND_DATA;
-  if (!D) { document.body.innerHTML = "<p style='padding:2rem'>data.js bulunamadı. Önce build_data.py çalıştırın.</p>"; return; }
+  if (!D) { document.body.innerHTML = `<p style='padding:2rem'>${t("noDataJs")}</p>`; return; }
 
   // ------------------------------------------------------------------ texts
-  const REGION_TR = { konya: "Konya Kapalı Havzası", van: "Van Gölü Havzası", black_sea: "Doğu Karadeniz" };
-  const VAR_TR = {
-    precip: { name: "Yağış", unit: "mm/ay", dec: 1, wet: true, hint: "Aylık toplam" },
-    soil_moisture: { name: "Toprak nemi", unit: "kg/m²", dec: 1, wet: true, hint: "Yüzey 0–10 cm" },
-    temp: { name: "Hava sıcaklığı", unit: "°C", dec: 1, wet: false, hint: "2 m yükseklik" },
-  };
-  const MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+  // C: adlar, birimler ve ay adları seçili dile göre sözlükten okunur (getter).
+  const REGION_TR = {};
+  ["konya", "van", "black_sea"].forEach(id => Object.defineProperty(REGION_TR, id, { get: () => t("r." + id), enumerable: true }));
+  const varMeta = (id, dec, wet) => ({ dec, wet, get name() { return t("v." + id); }, get unit() { return t("u." + id); },
+    get hint() { return t("h." + id); } });
+  const VAR_TR = { precip: varMeta("precip", 1, true), soil_moisture: varMeta("soil_moisture", 1, true), temp: varMeta("temp", 1, false) };
+  const monthNames = () => t("months");
   const noPct = new Set(D.no_percent_variables || []);
-  const fmt = (x, d = 1) => x == null || Number.isNaN(x) ? "—" : x.toLocaleString("tr-TR", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const fmt = (x, d = 1) => x == null || Number.isNaN(x) ? "—" : x.toLocaleString(LANG === "en" ? "en-US" : "tr-TR", { minimumFractionDigits: d, maximumFractionDigits: d });
   const signed = (x, d = 1) => x == null ? "—" : (x > 0 ? "+" : x < 0 ? "−" : "") + fmt(Math.abs(x), d);
   const fmtP = p => p == null ? "—" : p < 0.001 ? p.toExponential(1).replace("e", "×10^") : fmt(p, 3);
 
   // ------------------------------------------------------------------ data prep
-  const regions = D.regions.map(r => ({ ...r, name_tr: REGION_TR[r.id] || r.name }));
+  const regions = D.regions.map(r => Object.defineProperty({ ...r }, "name_tr", { get: () => REGION_TR[r.id] || r.name }));
   const variables = D.variables.filter(v => VAR_TR[v.id]);
 
   // Ortak ay ekseni (en erken → en geç tarih)
@@ -578,8 +863,8 @@
   // Sıcaklıkta pozitif = kırmızı, negatif = mavi.
   function palette(v) {
     return VAR_TR[v].wet
-      ? { neg: [201, 132, 52], pos: [52, 156, 222], negName: "Normalden kuru", posName: "Normalden ıslak" }
-      : { neg: [70, 136, 230], pos: [232, 80, 58], negName: "Normalden serin", posName: "Normalden sıcak" };
+      ? { neg: [201, 132, 52], pos: [52, 156, 222], negName: t("dry"), posName: t("wet") }
+      : { neg: [70, 136, 230], pos: [232, 80, 58], negName: t("cool"), posName: t("warm") };
   }
   function colorFor(v, z) {
     if (z == null) return "rgb(140,150,160)";
@@ -640,7 +925,7 @@
       sources: {
         esri: { type: "raster", tileSize: 256, maxzoom: 18,
           tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
-          attribution: "Görüntü © Esri, Maxar, Earthstar Geographics" },
+          attribution: "© Esri, Maxar, Earthstar Geographics" },
         bm: { type: "raster", tileSize: 256, maxzoom: 8,
           tiles: ["https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_NextGeneration/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg"],
           attribution: "NASA GIBS · Blue Marble" },
@@ -648,7 +933,7 @@
           attribution: "NASA GIBS · MODIS Terra NDVI" },
         dem: { type: "raster-dem", tileSize: 256, maxzoom: 13, encoding: "terrarium",
           tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
-          attribution: "Yükseklik: Mapzen/AWS Terrain Tiles" },
+          attribution: "© Mapzen/AWS Terrain Tiles" },
         demHs: { type: "raster-dem", tileSize: 256, maxzoom: 13, encoding: "terrarium",
           tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"] },
       },
@@ -674,7 +959,6 @@
   variables.forEach(v => {
     const b = document.createElement("button");
     b.className = "chip"; b.dataset.v = v.id;
-    b.innerHTML = `<small>${VAR_TR[v.id].hint}</small><span>${VAR_TR[v.id].name}</span>`;
     b.onclick = () => { state.variable = v.id; save(); renderAll(true); };
     top.appendChild(b);
   });
@@ -710,50 +994,48 @@
     regions.forEach(r => {
       const p = P[`${r.id}|${v}`], c = cards[r.id];
       c.card.classList.toggle("sel", r.id === state.region);
-      if (!p) { c.card.innerHTML = `<div class="fc-head">${r.name_tr}</div><div class="fc-anom">Veri yok</div>`; return; }
+      if (!p) { c.card.innerHTML = `<div class="fc-head">${r.name_tr}</div><div class="fc-anom">${t("noData")}</div>`; return; }
       const z = zFor(r.id), res = p.result;
       let big, anomLine;
       if (state.mode === "time") {
         big = p.value[state.i];
         const a = p.anomS[state.i];
-        anomLine = a == null ? "12 ay ortalaması: kenar ay, hesaplanmadı" :
-          `12 ay ort. normalden <b style="color:${colorFor(v, z)}">${signed(a, meta.dec)}</b> ${meta.unit}`;
+        anomLine = a == null ? t("edgeMonth") : t("anomLine", colorFor(v, z), signed(a, meta.dec), meta.unit);
       } else {
         big = state.mode === "before" ? p.before : p.after;
         const diff = p.after != null && p.before != null ? p.after - p.before : null;
-        anomLine = state.mode === "before" ? `2001–2005 aylık ortalaması` :
-          `2001–05'e göre <b style="color:${colorFor(v, z)}">${signed(diff, meta.dec)}</b> ${meta.unit}`;
+        anomLine = state.mode === "before" ? t("beforeMean") : t("vsBefore", colorFor(v, z), signed(diff, meta.dec), meta.unit);
       }
       const sp = sparkPath(p.smooth, 190, 34);
       const cx = sp.X ? sp.X(state.i) : 0;
       const showCursor = state.mode === "time" && sp.X;
       c.card.innerHTML = `
-        <div class="fc-head">${r.name_tr}<i>${state.mode === "time" ? "aylık" : state.mode === "before" ? "önce" : "sonra"}</i></div>
+        <div class="fc-head">${r.name_tr}<i>${t(state.mode === "time" ? "tagMonthly" : state.mode === "before" ? "tagBefore" : "tagAfter")}</i></div>
         <div class="fc-val">${fmt(big, meta.dec)}<u>${meta.unit}</u></div>
         <div class="fc-anom">${anomLine}</div>
         <svg width="190" height="34" style="display:block;margin-top:6px" aria-hidden="true">
           <path d="${sp.d}" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.4"/>
           ${showCursor ? `<line x1="${cx}" x2="${cx}" y1="0" y2="34" stroke="${getComputedStyle(document.documentElement).getPropertyValue("--brand")}" stroke-width="1.5"/>` : ""}
         </svg>
-        <div class="fc-trend"><span>Trend <b>${signed(res.sen_slope_per_decade, 2)}</b> /10 yıl</span>
-          <span class="badge ${res.significant ? "sig" : "ns"}">${res.significant ? "Anlamlı" : "Anlamlı değil"}</span></div>`;
+        <div class="fc-trend"><span>${t("trendPerDec", signed(res.sen_slope_per_decade, 2))}</span>
+          <span class="badge ${res.significant ? "sig" : "ns"}">${t(res.significant ? "sig" : "notSig")}</span></div>`;
     });
   }
 
   // ------------------------------------------------------------------ left panel
   function storyTR(r, v, res) {
-    const meta = VAR_TR[v], dir = res.direction === "increasing" ? "artıyor" : res.direction === "decreasing" ? "azalıyor" : "belirgin değişmiyor";
-    const amount = `${fmt(Math.abs(res.sen_slope_per_decade), 2)} ${meta.unit}`;
-    if (res.significant)
-      return `${r.name_tr} bölgesinde ${meta.name.toLowerCase()} on yılda yaklaşık <b>${amount}</b> ${dir}. Bu eğilim istatistiksel olarak <b>anlamlı</b> (mevsimsel Mann-Kendall, p &lt; 0,05).`;
-    return `${r.name_tr} bölgesinde ${meta.name.toLowerCase()} on yılda yaklaşık ${amount} ${dir} gibi görünüyor, ancak bu eğilim <b>anlamlı değil</b>: 25 yıllık doğal dalgalanmadan ayırt edilemiyor.`;
+    const meta = VAR_TR[v];
+    return t("story", { where: t("regionWhere", r.name_tr), what: lower(meta.name), unit: meta.unit,
+      amount: `${fmt(Math.abs(res.sen_slope_per_decade), 2)} ${meta.unit}`, slope: signed(res.sen_slope_per_decade, 2),
+      years: `${res.start_year || months[0].slice(0, 4)}–${res.end_year || months[N - 1].slice(0, 4)}`,
+      nYears: res.n_years || 25, direction: res.direction, significant: res.significant });
   }
 
   // ------------------------------------------------------------------ long record (NASA POWER), heatmap, sources, CSV
   const PW = window.POWER_DATA || null;
   const POWER_PARAMS = { temp: ["T2M", "T2M_MAX"], precip: ["PRECTOTCORR"], soil_moisture: ["GWETROOT"] };
-  const PW_TR = { T2M: "Hava sıcaklığı (T2M)", T2M_MAX: "Günlük en yüksek sıcaklık (T2M_MAX)",
-    PRECTOTCORR: "Yağış (PRECTOTCORR)", GWETROOT: "Kök bölgesi toprak ıslaklığı (GWETROOT)" };
+  const PW_TR = {};
+  ["T2M", "T2M_MAX", "PRECTOTCORR", "GWETROOT"].forEach(k => Object.defineProperty(PW_TR, k, { get: () => t("pw." + k) }));
   let heatSrc = "giovanni";
   function escH(t) { return String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
   const pTxt = p => p == null ? "—" : p < 1e-15 ? "< 1×10⁻¹⁵" : fmtP(p);
@@ -778,11 +1060,11 @@
       const cur = heatSrc === "giovanni" && state.mode === "time" && monthKeys[i] === months[state.i];
       cells += `<rect x="${(left + m * cw).toFixed(1)}" y="${(top + y * ch).toFixed(1)}" width="${(cw - 0.6).toFixed(1)}" height="${(ch - 0.4).toFixed(1)}"
         fill="${a == null ? "rgba(255,255,255,.05)" : colorFor(v, a / sd)}" ${cur ? 'stroke="#fff" stroke-width="1.2"' : ""}>
-        <title>${MONTHS[m]} ${monthKeys[i].slice(0, 4)}: ${a == null ? "veri yok" : signed(a, 2) + " " + escH(unit) + " (normale göre)"}</title></rect>`;
+        <title>${monthNames()[m]} ${monthKeys[i].slice(0, 4)}: ${a == null ? t("cellNoData") : signed(a, 2) + " " + escH(unit) + " " + t("vsNormal")}</title></rect>`;
     });
-    const mLab = "OŞMNMHTAEEKA".split("").map((c, k) => `<text class="axis" x="${left + k * cw + cw / 2}" y="9" text-anchor="middle">${c}</text>`).join("");
+    const mLab = t("monthLetters").split("").map((c, k) => `<text class="axis" x="${left + k * cw + cw / 2}" y="9" text-anchor="middle">${c}</text>`).join("");
     const yLab = years.map((y, k) => (+y % 5 === 0) ? `<text class="axis" x="${left - 4}" y="${top + k * ch + ch}" text-anchor="end">${y}</text>` : "").join("");
-    return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img" aria-label="Yıl-ay sapma ısı haritası">${mLab}${yLab}${cells}</svg>`;
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img" aria-label="${t("heatAria")}">${mLab}${yLab}${cells}</svg>`;
   }
 
   function powerSeries(regionId, param) {
@@ -790,11 +1072,11 @@
   }
 
   function longRecordHTML(r, v, res) {
-    if (!PW) return `<div class="lr">power_data.js yok. <code>build_power.py</code> çalıştırılınca 45 yıllık kontrol burada görünür.</div>`;
+    if (!PW) return `<div class="lr">${t("noPower")}</div>`;
     const rows = (POWER_PARAMS[v] || []).map(param => {
       const s = powerSeries(r.id, param); if (!s) return "";
-      const unit = PW.variables[param].unit, cell = x => `${signed(x.sen_slope_per_decade, 2)} <span class="badge ${x.significant ? "sig" : "ns"}">${x.significant ? "Anlamlı" : "Değil"}</span><div class="p">p = ${pTxt(x.mk_p)}</div>`;
-      return `<tr><td colspan="2" style="padding-top:6px;text-align:left"><b>${PW_TR[param]}</b> <span class="p">${unit}/10 yıl</span></td></tr>
+      const unit = t("unit", PW.variables[param].unit), cell = x => `${signed(x.sen_slope_per_decade, 2)} <span class="badge ${x.significant ? "sig" : "ns"}">${t(x.significant ? "sig" : "notSigShort")}</span><div class="p">p = ${pTxt(x.mk_p)}</div>`;
+      return `<tr><td colspan="2" style="padding-top:6px;text-align:left"><b>${PW_TR[param]}</b> <span class="p">${unit}${t("perDecade")}</span></td></tr>
         <tr><td>1981–2025</td><td>${cell(s.full)}</td></tr><tr><td>2001–2025</td><td>${cell(s.recent)}</td></tr>`;
     }).join("");
     // Ana sonuçla (Giovanni) karşılaştır: yönler farklı ve en az biri anlamlıysa uyar.
@@ -803,21 +1085,21 @@
     if (first) {
       const a = res.direction, b = first.recent.direction, opposite = (a === "increasing" && b === "decreasing") || (a === "decreasing" && b === "increasing");
       if (opposite && (res.significant || first.recent.significant))
-        note = `<div class="warn">⚠️ Veri setleri çelişiyor: Giovanni ${dirArrow(a)}, POWER ${dirArrow(b)} (2001–2025). Farklı ürünler ve derinlikler, kaba ızgara ve dağlık arazi etkili olabilir. Karar vermeden önce yerel istasyon verisiyle (MGM) kontrol edilmeli.</div>`;
+        note = `<div class="warn">${t("conflict", dirArrow(a), dirArrow(b))}</div>`;
       else if (a === b && res.significant && first.recent.significant)
-        note = `<div class="ok">✓ İki bağımsız veri seti aynı yönü gösteriyor (${dirArrow(a)}). Bulgu daha güvenilir.</div>`;
+        note = `<div class="ok">${t("agree", dirArrow(a))}</div>`;
       if (first.full.significant !== first.recent.significant)
-        note += `<div class="warn">🕵️ 45 yılda ${first.full.significant ? "anlamlı" : "anlamlı değil"}, son 25 yılda ${first.recent.significant ? "anlamlı" : "anlamlı değil"}: değişim ${first.recent.significant ? "yeni bir olgu olabilir" : "uzun vadeli ama son dönemde gürültüde kaybolmuş olabilir"}.</div>`;
+        note += `<div class="warn">${t("sigSplit", first.full.significant, first.recent.significant)}</div>`;
     }
     return `<div class="lr"><table>${rows}</table>${note}</div>`;
   }
 
   function sourcesHTML(r, v) {
     const src = P[`${r.id}|${v}`]?.source || {};
-    const items = [`<li>${escH(src.dataset || "—")} · ${src.url ? `<a href="${escH(src.url)}" target="_blank" rel="noopener">Giovanni isteği</a>` : ""} (alan ortalaması, ${r.bbox.west}–${r.bbox.east}°D, ${r.bbox.south}–${r.bbox.north}°K)</li>`];
-    if (PW) items.push(`<li>NASA POWER aylık nokta API'si, 1981–2025, kutu içindeki ${PW.points[r.id]?.length || "?"} ızgara noktasının ortalaması · <a href="${escH(PW.source.url)}" target="_blank" rel="noopener">API belgesi</a></li>`);
-    if (ND && ND.sites[r.id]) items.push(`<li>MODIS Terra MOD13Q1 v061 NDVI (250 m, 16 günlük), ORNL DAAC Land Product Subsets · ${escH(ND.sites[r.id].name)} penceresi · <a href="${escH(ND.source.url)}" target="_blank" rel="noopener">servis belgesi</a></li>`);
-    items.push(`<li>Trend: B'nin mevsimsel Mann-Kendall + Sen eğimi (repodaki <code>src/trend.py</code>)</li>`);
+    const items = [`<li>${escH(src.dataset || "—")} · ${src.url ? `<a href="${escH(src.url)}" target="_blank" rel="noopener">${t("giovanniReq")}</a>` : ""} ${t("areaMean", r.bbox.west, r.bbox.east, r.bbox.south, r.bbox.north)}</li>`];
+    if (PW) items.push(`<li>${t("powerSrc", PW.points[r.id]?.length || "?")} · <a href="${escH(PW.source.url)}" target="_blank" rel="noopener">${t("apiDoc")}</a></li>`);
+    if (ND && ND.sites[r.id]) items.push(`<li>${t("ndviSrc", escH(t("nd", ND.sites[r.id].name)))} · <a href="${escH(ND.source.url)}" target="_blank" rel="noopener">${t("serviceDoc")}</a></li>`);
+    items.push(`<li>${t("trendSrc")}</li>`);
     return `<ul class="src">${items.join("")}</ul>`;
   }
 
@@ -845,34 +1127,34 @@
   // ------------------------------------------------------------------ MODIS NDVI (farm window)
   const ND = window.NDVI_DATA || null;
   function ndviHTML(r) {
-    if (!ND) return `<div class="lr">ndvi_data.js yok. <code>build_ndvi.py</code> çalıştırılınca MODIS NDVI trendi burada görünür.</div>`;
+    if (!ND) return `<div class="lr">${t("noNdvi")}</div>`;
     const site = ND.sites[r.id], ser = ND.series[r.id];
     if (!site || !ser) {
       const miss = ND.missing_regions?.[r.id];
-      return `<div class="lr">${miss ? `<b>${escH(miss.name)}</b> penceresi için` : "Bu bölge için"} MODIS NDVI verisi henüz indirilmedi (ORNL sunucusu yoğundu). <code>build_ndvi.py</code> tekrar çalıştırılınca kaldığı yerden tamamlanır.</div>`;
+      return `<div class="lr">${t("ndviMissing", miss ? escH(t("nd", miss.name)) : "")}</div>`;
     }
-    const t = ser.trend, pk = ser.peak;
-    const badge = x => `<span class="badge ${x.significant ? "sig" : "ns"}">${x.significant ? "Anlamlı" : "Değil"}</span>`;
+    const tr = ser.trend, pk = ser.peak;
+    const badge = x => `<span class="badge ${x.significant ? "sig" : "ns"}">${t(x.significant ? "sig" : "notSigShort")}</span>`;
     // Yıllık zirve NDVI için küçük çubuk grafik
     const W = 276, H = 54, n = pk.values.length, lo = Math.min(...pk.values) - 0.02, hi = Math.max(...pk.values) + 0.01;
     const bw = W / n;
     const bars = pk.values.map((v, i) => {
       const h = ((v - lo) / (hi - lo)) * (H - 12);
-      return `<rect x="${(i * bw).toFixed(1)}" y="${(H - 12 - h).toFixed(1)}" width="${(bw - 1).toFixed(1)}" height="${h.toFixed(1)}" fill="#5fbf6a"><title>${pk.years[i]}: zirve NDVI ${v.toFixed(3)}</title></rect>`;
+      return `<rect x="${(i * bw).toFixed(1)}" y="${(H - 12 - h).toFixed(1)}" width="${(bw - 1).toFixed(1)}" height="${h.toFixed(1)}" fill="#5fbf6a"><title>${t("peakTitle", pk.years[i], v.toFixed(3))}</title></rect>`;
     }).join("");
-    const lc = site.land_cover.map(c => `${escH(c.class)} %${c.percent}`).join(", ");
+    const lc = site.land_cover.map(c => `${escH(t("nd", c.class))} ${t("pct", c.percent)}`).join(", ");
     return `<div class="lr">
-      <div><b>${escH(site.name)}</b> <span class="p">(${site.kind} penceresi, ${ND.window_km}×${ND.window_km} km, ${site.lat}°K ${site.lon}°D)</span></div>
-      <div class="p" style="margin:2px 0 6px">Arazi örtüsü (MODIS 2020): ${lc}</div>
+      <div><b>${escH(t("nd", site.name))}</b> <span class="p">${t("ndviWindow", escH(t("nd", site.kind)), ND.window_km, site.lat, site.lon)}</span></div>
+      <div class="p" style="margin:2px 0 6px">${t("landCover")}: ${lc}</div>
       <table>
-        <tr><td>Aylık NDVI trendi</td><td>${signed(t.sen_slope_per_decade, 3)} /10 yıl ${badge(t)}<div class="p">p = ${pTxt(t.mk_p)}</div></td></tr>
-        <tr><td>Yıllık zirve (en yeşil ay)</td><td>${signed(pk.sen_slope_per_decade, 3)} /10 yıl ${badge(pk)}<div class="p">p = ${pTxt(pk.mk_p)}</div></td></tr>
+        <tr><td>${t("ndviMonthly")}</td><td>${signed(tr.sen_slope_per_decade, 3)} ${t("perDecade")} ${badge(tr)}<div class="p">p = ${pTxt(tr.mk_p)}</div></td></tr>
+        <tr><td>${t("ndviPeak")}</td><td>${signed(pk.sen_slope_per_decade, 3)} ${t("perDecade")} ${badge(pk)}<div class="p">p = ${pTxt(pk.mk_p)}</div></td></tr>
       </table>
-      <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;margin-top:6px" aria-label="Yıllık zirve NDVI">${bars}
+      <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;margin-top:6px" aria-label="${t("peakAria")}">${bars}
         <text class="axis" x="0" y="${H - 1}" style="font-size:10px;fill:var(--muted)">${pk.years[0]}</text>
         <text class="axis" x="${W}" y="${H - 1}" text-anchor="end" style="font-size:10px;fill:var(--muted)">${pk.years[n - 1]}</text></svg>
-      ${site.kind !== "tarım" ? `<div class="warn">Bu kutuda MODIS'e göre tarım alanı yok (çay/fındık bahçeleri orman sınıfında). Pencere doğal bitki örtüsünü ölçüyor.</div>` : ""}
-      <div class="p" style="margin-top:6px">NDVI tek başına nedeni söylemez: yeşillenme sulama artışından, kahverengileşme nadas veya kuraklıktan olabilir.</div>
+      ${site.kind !== "tarım" ? `<div class="warn">${t("nonCrop")}</div>` : ""}
+      <div class="p" style="margin-top:6px">${t("ndviCaveat")}</div>
     </div>`;
   }
 
@@ -880,7 +1162,7 @@
     if (area.active) { renderAreaPanel(); return; } // C: "Alan seç" modunda panel seçilen alanı gösterir
     const r = regions.find(x => x.id === state.region), v = state.variable, meta = VAR_TR[v];
     const p = P[`${r.id}|${v}`], el = document.getElementById("left");
-    if (!p) { el.innerHTML = `<h2>${r.name_tr}</h2><p class="sub">Bu değişken için veri yok.</p>`; return; }
+    if (!p) { el.innerHTML = `<h2>${r.name_tr}</h2><p class="sub">${t("noVarData")}</p>`; return; }
     const res = p.result, W = 296, H = 92;
     const sp = sparkPath(p.value, W, H), sm = sparkPath(p.smooth, W, H);
     // Ham ve düzleştirilmiş seriyi aynı ölçekte çiz
@@ -893,19 +1175,19 @@
     const tY = i => Y(p.mean + slopeM * (i - mid));
     const curX = X(state.i);
     el.innerHTML = `
-      <div class="left-head"><span class="kicker">Dedektif dosyası</span>
-        <button class="hide-btn" id="hideLeft" aria-label="Dedektif dosyasını gizle">Gizle ◂</button></div>
+      <div class="left-head"><span class="kicker">${t("kicker")}</span>
+        <button class="hide-btn" id="hideLeft" aria-label="${t("hideFileA")}">${t("hide")}</button></div>
       <h2>${r.name_tr}</h2>
       <div class="sub">${meta.name} · ${meta.hint} · ${meta.unit}</div>
       <p class="story">${storyTR(r, v, res)}</p>
       <div class="stats">
-        <div class="stat"><small>Sen eğimi / 10 yıl</small><b>${signed(res.sen_slope_per_decade, 2)} ${meta.unit}</b></div>
-        <div class="stat"><small>%95 güven aralığı</small><b>${signed(res.ci_low, 2)} … ${signed(res.ci_high, 2)}</b></div>
-        <div class="stat"><small>Mann-Kendall p</small><b>${fmtP(res.mk_p)}</b> <span class="badge ${res.significant ? "sig" : "ns"}">${res.significant ? "Anlamlı" : "Değil"}</span></div>
-        <div class="stat"><small>${noPct.has(v) ? "Uzun dönem ortalama" : "% değişim / 10 yıl"}</small><b>${noPct.has(v) ? fmt(p.mean, 1) + " " + meta.unit : signed(res.percent_change_per_decade, 1) + " %"}</b></div>
+        <div class="stat"><small>${t("senPerDec")}</small><b>${signed(res.sen_slope_per_decade, 2)} ${meta.unit}</b></div>
+        <div class="stat"><small>${t("ci95")}</small><b>${signed(res.ci_low, 2)} … ${signed(res.ci_high, 2)}</b></div>
+        <div class="stat"><small>Mann-Kendall p</small><b>${fmtP(res.mk_p)}</b> <span class="badge ${res.significant ? "sig" : "ns"}">${t(res.significant ? "sig" : "notSigShort")}</span></div>
+        <div class="stat"><small>${t(noPct.has(v) ? "longMean" : "pctPerDec")}</small><b>${noPct.has(v) ? fmt(p.mean, 1) + " " + meta.unit : signed(res.percent_change_per_decade, 1) + " %"}</b></div>
       </div>
       <div class="bigchart">
-        <small>Aylık değer (soluk), 12 aylık ortalama (beyaz), Sen trendi (sarı kesikli)</small>
+        <small>${t("chartLegend")}</small>
         <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;margin-top:4px" aria-hidden="true">
           <path d="${path(p.value)}" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
           <path d="${path(p.smooth)}" fill="none" stroke="#fff" stroke-width="1.8"/>
@@ -915,17 +1197,17 @@
         <div class="ends" style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>${months[0].slice(0, 4)}</span><span>${months[N - 1].slice(0, 4)}</span></div>
       </div>
       <div class="sec">
-        <h3>Isı haritası (yıl × ay)
-          <span class="seg-mini">${PW ? `<button data-h="giovanni" class="${heatSrc === "giovanni" ? "on" : ""}">25 yıl</button><button data-h="power" class="${heatSrc === "power" ? "on" : ""}">45 yıl</button>` : ""}</span></h3>
+        <h3>${t("heatTitle")}
+          <span class="seg-mini">${PW ? `<button data-h="giovanni" class="${heatSrc === "giovanni" ? "on" : ""}">${t("y25")}</button><button data-h="power" class="${heatSrc === "power" ? "on" : ""}">${t("y45")}</button>` : ""}</span></h3>
         <div class="hm">${heatSrc === "power" && PW && powerSeries(r.id, POWER_PARAMS[v][0])
           ? heatmapSVG(powerSeries(r.id, POWER_PARAMS[v][0]).values, PW.months, v)
           : heatmapSVG(p.value, months, v)}
-          <small style="color:var(--muted);font-size:11px">${heatSrc === "power" ? PW_TR[POWER_PARAMS[v][0]] + " · NASA POWER" : meta.name + " · Giovanni"} · her hücre o ayın kendi ortalamasından sapması</small></div>
+          <small style="color:var(--muted);font-size:11px">${heatSrc === "power" ? PW_TR[POWER_PARAMS[v][0]] + " · NASA POWER" : meta.name + " · Giovanni"} · ${t("heatNote")}</small></div>
       </div>
-      <div class="sec"><h3>45 yıllık kontrol · NASA POWER</h3>${longRecordHTML(r, v, res)}</div>
-      <div class="sec"><h3>Bitki örtüsü · MODIS NDVI</h3>${ndviHTML(r)}</div>
-      <div class="sec"><h3>Kaynaklar</h3>${sourcesHTML(r, v)}</div>
-      <div class="btn-row"><button class="fly" id="flyBtn">Bölgeye yakınlaş</button><button class="ghost" id="csvBtn">CSV indir</button></div>`;
+      <div class="sec"><h3>${t("longTitle")}</h3>${longRecordHTML(r, v, res)}</div>
+      <div class="sec"><h3>${t("vegTitle")}</h3>${ndviHTML(r)}</div>
+      <div class="sec"><h3>${t("sources")}</h3>${sourcesHTML(r, v)}</div>
+      <div class="btn-row"><button class="fly" id="flyBtn">${t("flyRegion")}</button><button class="ghost" id="csvBtn">${t("csv")}</button></div>`;
     document.getElementById("flyBtn").onclick = () => flyToRegion(r.id);
     document.getElementById("hideLeft").onclick = () => setLeft(false);
     document.getElementById("csvBtn").onclick = () => downloadCSV(r, v);
@@ -936,11 +1218,14 @@
   // Kullanıcı haritada bir noktaya tıklar ya da iki köşeye tıklayarak kutu çizer. Sunucu
   // C'nin api.py'deki point()/box() fonksiyonlarıyla NASA POWER 1981–2025 aylık verisini
   // B'nin aynı trend analizinden geçirir. Sonuç sol panelde bölge dosyasının yerine gösterilir.
+  const areaMeta = (v, id, unit, slopeUnit, pct) => ({ id, pct, get name() { return t("av." + v); },
+    get unit() { return unit || t("avu." + v); },
+    get slopeUnit() { return slopeUnit || (STR[LANG]["avs." + v] ? t("avs." + v) : this.unit); },
+    get hint() { return t("avh." + v); } });
   const AREA_VAR = {
-    temp: { id: "power_temp", name: "Hava sıcaklığı", unit: "°C", slopeUnit: "°C", hint: "2 m · T2M", pct: false },
-    precip: { id: "power_precip", name: "Yağış", unit: "mm/ay", slopeUnit: "mm/ay", hint: "Aylık toplam · PRECTOTCORR", pct: true },
-    soil_moisture: { id: "power_soil_wetness", name: "Yüzey toprak ıslaklığı", unit: "%", slopeUnit: "yüzde puan",
-      hint: "Yüzey katmanı · GWETTOP", pct: false },
+    temp: areaMeta("temp", "power_temp", "°C", "°C", false),
+    precip: areaMeta("precip", "power_precip", null, null, true),
+    soil_moisture: areaMeta("soil_moisture", "power_soil_wetness", "%", null, false),
   };
   const AREA_MAX_DEG = 10; // NASA POWER bölgesel isteğinde kutu kenarı en fazla 10°
   const area = { active: false, picking: false, kind: "point", sel: null, corner: null, hover: null, flash: null,
@@ -956,9 +1241,9 @@
     return `${v}|${sel.kind}|${c.join(",")}`;
   }
 
-  // Enlem ve boylamı Türkçe yazar: 37,87°K ve 32,49°D (G = güney, B = batı).
-  const latTxt = (x, d = 2) => `${fmt(Math.abs(x), d)}°${x >= 0 ? "K" : "G"}`;
-  const lonTxt = (x, d = 2) => `${fmt(Math.abs(x), d)}°${x >= 0 ? "D" : "B"}`;
+  // Enlem ve boylamı seçili dilde yazar: TR 37,87°K 32,49°D (G = güney, B = batı), EN 37.87°N 32.49°E.
+  const latTxt = (x, d = 2) => `${fmt(Math.abs(x), d)}°${t(x >= 0 ? "N" : "S")}`;
+  const lonTxt = (x, d = 2) => `${fmt(Math.abs(x), d)}°${t(x >= 0 ? "E" : "W")}`;
   const r2 = x => Math.round(x * 100) / 100;
 
   // Panel başlığı: nokta için koordinat, kutu için enlem ve boylam aralığı.
@@ -1023,16 +1308,15 @@
     areaBtn.setAttribute("aria-pressed", String(area.active));
     document.body.classList.toggle("picking", area.picking);
     areaBar.querySelectorAll("#areaKind button").forEach(b => b.classList.toggle("on", b.dataset.k === area.kind));
-    let msg = "Haritada bir noktaya tıkla.", bad = false;
+    let msg = t("clickPoint"), bad = false;
     if (area.kind === "box") {
-      msg = "Kutunun bir köşesine tıkla.";
+      msg = t("clickCorner");
       if (area.corner && area.hover) {
         const b = boxFrom(area.corner, area.hover);
         bad = tooBig(b);
-        msg = `Karşı köşeye tıkla · ${fmt(b.north - b.south, 1)}° × ${fmt(b.east - b.west, 1)}°`
-          + (bad ? ` · en fazla ${AREA_MAX_DEG}° × ${AREA_MAX_DEG}°` : "") + " · Esc: vazgeç";
+        msg = t("clickOpposite", fmt(b.north - b.south, 1), fmt(b.east - b.west, 1), bad, AREA_MAX_DEG);
       }
-      if (area.flash === "small") { msg = "Kutu çok küçük; biraz daha geniş çiz."; bad = true; }
+      if (area.flash === "small") { msg = t("boxTooSmall"); bad = true; }
     }
     areaMsg.textContent = msg;
     areaMsg.classList.toggle("bad", bad);
@@ -1055,7 +1339,7 @@
       area.data = j; area.dataKey = key;
     } catch (e) {
       if (seq !== area.seq) return;
-      area.data = null; area.dataKey = null; area.error = areaErrorTR(e);
+      area.data = null; area.dataKey = null; area.error = e; // metin, panel çizilirken seçili dilde üretilir
       area.canRetry = e.status !== 422; // 422: bu yer için sonuç değişmez (ör. deniz), tekrar denemek boşuna
     }
     area.loading = false;
@@ -1065,23 +1349,18 @@
   // Sunucu hatalarını kullanıcıya Türkçe ve ne yapacağını söyleyen bir cümleye çevirir.
   function areaErrorTR(e) {
     const msg = String(e.message || "");
-    if (/only measured over land/i.test(msg)) return "Toprak ıslaklığı yalnızca karada ölçülür; burası açık deniz. Karada bir yer seç.";
-    if (e.status === 502) return "NASA POWER'a şu an ulaşılamadı. Biraz sonra tekrar dene.";
-    if (!e.status) return "Sunucuya bağlanılamadı. agent_server.py çalışıyor mu?";
-    return `Bu alan analiz edilemedi: ${escH(msg)}`;
+    if (/only measured over land/i.test(msg)) return t("errNoLand");
+    if (e.status === 502) return t("errPower");
+    if (!e.status) return t("errServer");
+    return t("errOther", escH(msg));
   }
 
   // Panel hikâye cümlesi (bölge panelindeki storyTR ile aynı dil, 45 yıllık NASA POWER için).
   function areaStoryTR(res, av) {
-    const what = av.name.toLowerCase(), years = `${res.start_year}–${res.end_year}`;
-    const where = area.sel?.label ? `${escH(area.sel.label)} çevresinde` : "Seçilen alanda";
-    const amount = `${fmt(Math.abs(res.sen_slope_per_decade), 2)} ${av.slopeUnit}`;
-    if (res.direction !== "increasing" && res.direction !== "decreasing")
-      return `${where} ${what} ${years} arasında belirgin bir yönde değişmiyor (Sen eğimi ${signed(res.sen_slope_per_decade, 2)} ${av.slopeUnit} / 10 yıl).`;
-    const dir = res.direction === "increasing" ? "artıyor" : "azalıyor";
-    if (res.significant)
-      return `${where} ${what} ${years} arasında on yılda yaklaşık <b>${amount}</b> ${dir}. Bu eğilim istatistiksel olarak <b>anlamlı</b> (mevsimsel Mann-Kendall, p &lt; 0,05).`;
-    return `${where} ${what} on yılda yaklaşık ${amount} ${dir} gibi görünüyor, ancak bu eğilim <b>anlamlı değil</b>: ${res.n_years} yıllık doğal dalgalanmadan ayırt edilemiyor.`;
+    return t("story", { where: t("areaWhere", area.sel?.label ? escH(area.sel.label) : ""), what: lower(av.name),
+      unit: av.slopeUnit, amount: `${fmt(Math.abs(res.sen_slope_per_decade), 2)} ${av.slopeUnit}`,
+      slope: signed(res.sen_slope_per_decade, 2), years: `${res.start_year}–${res.end_year}`, nYears: res.n_years,
+      direction: res.direction, significant: res.significant });
   }
 
   // Seriyi SVG çizgisine çevirir; boş aylarda çizgi kesilir.
@@ -1095,31 +1374,31 @@
   function renderAreaPanel() {
     loadArea();
     const el = document.getElementById("left"), av = AREA_VAR[state.variable], s = area.sel;
-    const head = `<div class="left-head"><span class="kicker">Seçilen alan · NASA POWER</span>
-        <button class="hide-btn" id="hideLeft" aria-label="Paneli gizle">Gizle ◂</button></div>`;
-    const back = `<button class="ghost full" id="areaBack">Bölgelere dön</button>`;
-    const pickAgain = area.picking ? "" : `<button class="fly" id="areaPick">Başka bir alan seç</button>`;
+    const head = `<div class="left-head"><span class="kicker">${t("areaKicker")}</span>
+        <button class="hide-btn" id="hideLeft" aria-label="${t("hidePanelA")}">${t("hide")}</button></div>`;
+    const back = `<button class="ghost full" id="areaBack">${t("backRegions")}</button>`;
+    const pickAgain = area.picking ? "" : `<button class="fly" id="areaPick">${t("pickAnother")}</button>`;
     if (!s) {
-      el.innerHTML = `${head}<h2>Kendi alanını seç</h2>
-        <p class="story">${area.kind === "point" ? "Haritada bir noktaya tıkla." : "Haritada kutunun bir köşesine, sonra karşı köşesine tıkla (en fazla 10° × 10°)."}
-          Seçtiğin yerde <b>${av.name.toLowerCase()}</b> 1981–2025 arasında nasıl değişmiş, B'nin aynı trend analiziyle hesaplanır.</p>
-        <p class="note">Değişkeni üstteki düğmelerden değiştirebilirsin. Veri NASA POWER'ın aylık API'sinden (MERRA-2 tabanlı, ~0,5° × 0,625° ızgara) canlı alınır; internet gerekir.</p>
+      el.innerHTML = `${head}<h2>${t("pickTitle")}</h2>
+        <p class="story">${t(area.kind === "point" ? "clickPoint" : "pickBoxHow")}
+          ${t("pickIntro", lower(av.name))}</p>
+        <p class="note">${t("pickNote")}</p>
         ${pickAgain}${back}`;
       wireAreaPanel(); return;
     }
     const key = areaKey(s, state.variable), d = area.dataKey === key ? area.data : null;
     const top = s.label
-      ? `${head}<h2>${escH(s.label)} çevresi</h2><div class="sub">${areaTitle(s)}</div><div class="sub">${av.name} · ${av.hint} · ${av.unit}</div>`
+      ? `${head}<h2>${t("around", escH(s.label))}</h2><div class="sub">${areaTitle(s)}</div><div class="sub">${av.name} · ${av.hint} · ${av.unit}</div>`
       : `${head}<h2${s.kind === "box" ? ' class="box-title"' : ""}>${areaTitle(s)}</h2><div class="sub">${av.name} · ${av.hint} · ${av.unit}</div>`;
     if (!d && area.error) {
-      el.innerHTML = `${top}<div class="warn">${area.error}</div>
-        ${area.canRetry ? `<div class="btn-row"><button class="fly" id="areaRetry">Tekrar dene</button></div>` : ""}
+      el.innerHTML = `${top}<div class="warn">${areaErrorTR(area.error)}</div>
+        ${area.canRetry ? `<div class="btn-row"><button class="fly" id="areaRetry">${t("retry")}</button></div>` : ""}
         ${pickAgain ? `<div class="btn-row">${pickAgain}</div>` : ""}${back}`;
       wireAreaPanel(); return;
     }
     if (!d) {
-      el.innerHTML = `${top}<p class="story"><span class="typing">NASA POWER'dan 45 yıllık veri alınıyor <i></i><i></i><i></i></span></p>
-        <p class="note">İlk istek 5–20 saniye sürebilir; aynı yer tekrar sorulunca hızlı gelir.</p>${back}`;
+      el.innerHTML = `${top}<p class="story"><span class="typing">${t("loadingPower")} <i></i><i></i><i></i></span></p>
+        <p class="note">${t("loadingNote")}</p>${back}`;
       wireAreaPanel(); return;
     }
     const res = d.result, pts = d.points, n = pts.length, pt = d.point;
@@ -1129,21 +1408,20 @@
     const X = i => 2 + (i / (n - 1)) * (W - 4), Y = val => H - 2 - ((val - lo) / span) * (H - 4);
     const slopeM = res.sen_slope_per_decade / 120, mid = (n - 1) / 2, tY = i => Y(res.mean_value + slopeM * (i - mid));
     const how = s.kind === "point"
-      ? `Noktayı içeren tek MERRA-2 ızgara hücresi (${latTxt(pt.cell.south)}–${latTxt(pt.cell.north)}, ${lonTxt(pt.cell.west, 3)}–${lonTxt(pt.cell.east, 3)}; yaklaşık 55 × 55 km). Haritadaki sarı kare bu hücre.`
-      : pt.n_cells === 1 ? "Kutu bir ızgara hücresinden küçük olduğu için tek bir hücrenin değeri kullanıldı (haritadaki beyaz nokta)."
-      : `Kutunun içindeki ${pt.n_cells} ızgara hücresinin alan ağırlıklı ortalaması (haritadaki beyaz noktalar).`;
+      ? t("howPoint", `${latTxt(pt.cell.south)}–${latTxt(pt.cell.north)}`, `${lonTxt(pt.cell.west, 3)}–${lonTxt(pt.cell.east, 3)}`)
+      : pt.n_cells === 1 ? t("howOneCell") : t("howCells", pt.n_cells);
     el.innerHTML = `${top}
       <p class="story">${areaStoryTR(res, av)}</p>
       <div class="stats">
-        <div class="stat"><small>Sen eğimi / 10 yıl</small><b>${signed(res.sen_slope_per_decade, 2)} ${av.slopeUnit}</b></div>
-        <div class="stat"><small>%95 güven aralığı</small><b>${signed(res.ci_low, 2)} … ${signed(res.ci_high, 2)}</b></div>
-        <div class="stat"><small>Mann-Kendall p</small><b>${pTxt(res.mk_p)}</b> <span class="badge ${res.significant ? "sig" : "ns"}">${res.significant ? "Anlamlı" : "Değil"}</span></div>
-        <div class="stat"><small>${av.pct ? "% değişim / 10 yıl" : "Uzun dönem ortalama"}</small><b>${av.pct ? signed(res.percent_change_per_decade, 1) + " %" : fmt(res.mean_value, 1) + " " + av.unit}</b></div>
+        <div class="stat"><small>${t("senPerDec")}</small><b>${signed(res.sen_slope_per_decade, 2)} ${av.slopeUnit}</b></div>
+        <div class="stat"><small>${t("ci95")}</small><b>${signed(res.ci_low, 2)} … ${signed(res.ci_high, 2)}</b></div>
+        <div class="stat"><small>Mann-Kendall p</small><b>${pTxt(res.mk_p)}</b> <span class="badge ${res.significant ? "sig" : "ns"}">${t(res.significant ? "sig" : "notSigShort")}</span></div>
+        <div class="stat"><small>${t(av.pct ? "pctPerDec" : "longMean")}</small><b>${av.pct ? signed(res.percent_change_per_decade, 1) + " %" : fmt(res.mean_value, 1) + " " + av.unit}</b></div>
       </div>
-      ${state.variable === "soil_moisture" && res.sen_slope_per_decade === 0 ? `<p class="note">NASA POWER bu değeri %1'lik adımlarla verir; çok yavaş değişimlerde eğim 0 görünebilir.</p>` : ""}
+      ${state.variable === "soil_moisture" && res.sen_slope_per_decade === 0 ? `<p class="note">${t("gwetStep")}</p>` : ""}
       <p class="note">${how}</p>
       <div class="bigchart">
-        <small>Aylık değer (soluk), 12 aylık ortalama (beyaz), Sen trendi (sarı kesikli)</small>
+        <small>${t("chartLegend")}</small>
         <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;margin-top:4px" aria-hidden="true">
           <path d="${linePath(vals, X, Y)}" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
           <path d="${linePath(smooth, X, Y)}" fill="none" stroke="#fff" stroke-width="1.8"/>
@@ -1151,14 +1429,14 @@
         </svg>
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>${keys[0].slice(0, 4)}</span><span>${keys[n - 1].slice(0, 4)}</span></div>
       </div>
-      <div class="sec"><h3>Isı haritası (yıl × ay)</h3>
+      <div class="sec"><h3>${t("heatTitle")}</h3>
         <div class="hm">${heatmapSVG(vals, keys, state.variable, 296, av.unit)}
-          <small style="color:var(--muted);font-size:11px">${av.name} · NASA POWER · her hücre o ayın kendi ortalamasından sapması</small></div></div>
-      <div class="warn">Bu sonuç NASA POWER'dan (1981–2025) geliyor; bölge dosyalarındaki Giovanni verisinden (2001–2025) farklı bir kaynak ve dönem olduğu için sayılar birebir aynı olmayabilir. Tarla ölçeği değildir.</div>
-      <div class="sec"><h3>Kaynaklar</h3><ul class="src">
-        <li>${escH(pt.source)} · <a href="https://power.larc.nasa.gov/docs/services/api/" target="_blank" rel="noopener">NASA POWER API belgesi</a></li>
-        <li>Trend: B'nin mevsimsel Mann-Kendall + Sen eğimi (repodaki <code>src/trend.py</code>)</li></ul></div>
-      <div class="btn-row"><button class="fly" id="areaFly">Alana yakınlaş</button><button class="ghost" id="areaCsv">CSV indir</button></div>
+          <small style="color:var(--muted);font-size:11px">${av.name} · NASA POWER · ${t("heatNote")}</small></div></div>
+      <div class="warn">${t("areaWarn")}</div>
+      <div class="sec"><h3>${t("sources")}</h3><ul class="src">
+        <li>${escH(pt.source)} · <a href="https://power.larc.nasa.gov/docs/services/api/" target="_blank" rel="noopener">${t("powerDoc")}</a></li>
+        <li>${t("trendSrc")}</li></ul></div>
+      <div class="btn-row"><button class="fly" id="areaFly">${t("flyArea")}</button><button class="ghost" id="areaCsv">${t("csv")}</button></div>
       ${pickAgain ? `<div class="btn-row">${pickAgain}</div>` : ""}${back}`;
     wireAreaPanel();
   }
@@ -1295,22 +1573,24 @@
 
   function renderLegend() {
     const p = palette(state.variable), c = a => `rgb(${a.join(",")})`;
-    const what = state.mode === "time" ? "12 aylık ortalamanın normalden sapması" : "Dönem ortalamasının normalden sapması";
     const el = document.getElementById("legend");
-    el.title = `${what}. Kutu rengi sapmanın yönünü, sütun yüksekliği büyüklüğünü (σ) gösterir.`;
+    el.title = t("legendTip", state.mode === "time");
     el.innerHTML = `
-      <div>Renk: normalden sapma</div>
+      <div>${t("legendTitle")}</div>
       <div class="bar" style="background:linear-gradient(90deg,${c(p.neg)},#e1e4e8,${c(p.pos)})"></div>
-      <div class="ends"><span>${p.negName.replace("Normalden ", "")}</span><span>${p.posName.replace("Normalden ", "")}</span></div>`;
+      <div class="ends"><span>${p.negName}</span><span>${p.posName}</span></div>`;
   }
 
   function renderTop() {
-    document.querySelectorAll(".chip").forEach(b => b.classList.toggle("on", b.dataset.v === state.variable));
+    document.querySelectorAll(".chip").forEach(b => {
+      b.innerHTML = `<small>${VAR_TR[b.dataset.v].hint}</small><span>${VAR_TR[b.dataset.v].name}</span>`;
+      b.classList.toggle("on", b.dataset.v === state.variable);
+    });
     const [y, m] = months[state.i].split("-");
-    const label = state.mode === "time" ? `${MONTHS[+m - 1]} ${y}` : state.mode === "before" ? "2001–2005" : "2021–2025";
-    document.getElementById("nowLabel").textContent = state.mode === "time" ? "Gösterilen ay" : "Gösterilen dönem";
+    const label = state.mode === "time" ? `${monthNames()[+m - 1]} ${y}` : state.mode === "before" ? "2001–2005" : "2021–2025";
+    document.getElementById("nowLabel").textContent = t(state.mode === "time" ? "nowMonth" : "nowPeriod");
     document.getElementById("nowDate").textContent = label;
-    document.getElementById("tlDate").textContent = `${MONTHS[+m - 1]} ${y}`;
+    document.getElementById("tlDate").textContent = `${monthNames()[+m - 1]} ${y}`;
     document.getElementById("timeline").classList.toggle("disabled", state.mode !== "time");
     document.querySelectorAll("#modeSeg button").forEach(b => b.classList.toggle("on", b.dataset.mode === state.mode));
   }
@@ -1436,7 +1716,7 @@
   layersBtn.onclick = () => {
     const open = !togglesEl.classList.contains("open");
     togglesEl.classList.toggle("open", open);
-    layersBtn.textContent = open ? "Katmanlar ▴" : "Katmanlar ▾";
+    renderLayersBtn();
     layersBtn.setAttribute("aria-expanded", String(open));
   };
 
@@ -1470,7 +1750,7 @@
   const ICON_PLAY = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>`;
   const ICON_PAUSE = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>`;
   function setPlaying(on) {
-    state.playing = on; playBtn.innerHTML = on ? ICON_PAUSE : ICON_PLAY; playBtn.setAttribute("aria-label", on ? "Duraklat" : "Oynat");
+    state.playing = on; playBtn.innerHTML = on ? ICON_PAUSE : ICON_PLAY; playBtn.setAttribute("aria-label", t(on ? "pause" : "play"));
     if (on) { if (state.i >= N - 1) state.i = 0; lastT = null; requestAnimationFrame(tick); }
   }
   let lastT = null, acc = 0;
@@ -1605,45 +1885,57 @@
   }
   function welcome() {
     chatLog.innerHTML = "";
-    addMsg("bot", md("Merhaba! Ben **Trend Dedektifi**. Konya, Van ve Doğu Karadeniz'in 2001–2025 yağış, toprak nemi ve sıcaklık verilerine bakıp ipuçlarını takip ederim. Başka bir şehri de sorabilirsin (ör. Gaziantep); oraya NASA POWER'ın 1981–2025 verisiyle bakarım. Konuştuğum yeri haritada da gösteririm.\n\nAşağıdan bir soru seç ya da kendi sorunu yaz."));
+    addMsg("bot", md(t("welcome")));
   }
-  const SUGG = ["Konya'da toprak neden kuruyor?", "Karadeniz ile Konya'yı karşılaştır", "Van'daki ısınma gerçek mi?", "2021–25 dönemi öncekine göre nasıl?", "Gaziantep'te toprak ne durumda?"];
-  SUGG.forEach(q => { const b = document.createElement("button"); b.type = "button"; b.textContent = q; b.onclick = () => send(q); sugg.appendChild(b); });
+  // C: örnek soru düğmeleri seçili dilde çizilir.
+  function renderSugg() {
+    sugg.innerHTML = "";
+    t("sugg").forEach(q => { const b = document.createElement("button"); b.type = "button"; b.textContent = q; b.onclick = () => send(q); sugg.appendChild(b); });
+  }
+  renderSugg();
 
   async function checkAgent() {
     try {
       const r = await fetch("/api/agent-status"); if (!r.ok) throw new Error();
-      const j = await r.json(); serverUp = true;
-      statusEl.innerHTML = j.llm ? `${esc(j.provider || "LLM")} · ${esc(j.model || "")} <span class="pill on">çevrimiçi</span>`
-        : `Kural tabanlı yanıt <span class="pill off">çevrimdışı mod</span>`;
+      agentInfo = await r.json(); serverUp = true;
     } catch (e) {
-      serverUp = false;
-      statusEl.innerHTML = `Ajan sunucusu kapalı <span class="pill down">bağlantı yok</span>`;
+      serverUp = false; agentInfo = null;
     }
+    renderAgentStatus();
+  }
+  // C: ajan durum satırını seçili dilde çizer (dil değişince de çağrılır).
+  // agentInfo: undefined = henüz kontrol edilmedi, null = sunucu kapalı, nesne = /api/agent-status cevabı.
+  let agentInfo;
+  function renderAgentStatus() {
+    const j = agentInfo;
+    statusEl.innerHTML = j === undefined ? t("connecting")
+      : j ? (j.llm ? `${esc(j.provider || "LLM")} · ${esc(j.model || "")} <span class="pill on">${t("online")}</span>`
+        : `${t("ruleBased")} <span class="pill off">${t("offlineMode")}</span>`)
+      : `${t("serverDown")} <span class="pill down">${t("noConn")}</span>`;
   }
 
   async function send(text) {
     text = (text || "").trim(); if (!text || busy) return;
     if (!serverUp) await checkAgent();
-    if (!serverUp) { addMsg("bot", md("Ajan sunucusu çalışmıyor. Repo kökünde `python detective3d/agent_server.py` ile başlatıp sayfayı `http://localhost:8765` adresinden aç."), "err"); return; }
+    if (!serverUp) { addMsg("bot", md(t("serverNotRunning")), "err"); return; }
     busy = true; chatSend.disabled = true; sugg.style.display = "none";
     addMsg("user", esc(text)); chatInput.value = "";
-    const wait = addMsg("bot", `<span class="typing">Dedektif iz sürüyor <i></i><i></i><i></i></span>`);
+    const wait = addMsg("bot", `<span class="typing">${t("tracing")} <i></i><i></i><i></i></span>`);
     try {
       const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, session_id: sessionId,
-          ui_state: { region: state.region, variable: state.variable, month: months[state.i], mode: state.mode } }) });
+          ui_state: { region: state.region, variable: state.variable, month: months[state.i], mode: state.mode, lang: LANG } }) });
       const j = await r.json();
       if (!r.ok) throw new Error(j.detail || `HTTP ${r.status}`);
       sessionId = j.session_id;
       (j.actions || []).forEach(applyAction);
-      const steps = (j.steps || []).map(s => `<span class="step${s.startsWith("Harita") ? " map" : ""}">${esc(s)}</span>`).join("");
+      const steps = (j.steps || []).map(s => `<span class="step${/^(Harita|Map)\b/.test(s) ? " map" : ""}">${esc(s)}</span>`).join("");
       const srcs = (j.sources || []).map(s => s.url
         ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.dataset)}</a>` : esc(s.dataset)).join(" · ");
-      wait.innerHTML = (steps ? `<div class="steps">${steps}</div>` : "") + md(j.text || "(boş yanıt)")
-        + (srcs ? `<div class="srcs">Veri: ${srcs}</div>` : "");
+      wait.innerHTML = (steps ? `<div class="steps">${steps}</div>` : "") + md(j.text || t("emptyAnswer"))
+        + (srcs ? `<div class="srcs">${t("dataLabel")} ${srcs}</div>` : "");
     } catch (e) {
-      wait.classList.add("err"); wait.innerHTML = md(`Bir sorun oldu: ${e.message}`);
+      wait.classList.add("err"); wait.innerHTML = md(t("problem", e.message));
     } finally {
       busy = false; chatSend.disabled = false; chatLog.scrollTop = chatLog.scrollHeight; chatInput.focus();
     }
@@ -1659,6 +1951,39 @@
     sessionId = null; welcome(); sugg.style.display = "";
   };
   welcome(); checkAgent();
+
+  // ------------------------------------------------------------------ C: dil düğmeleri
+  // Katmanlar düğmesinin yazısı (açık/kapalı oku ile).
+  function renderLayersBtn() {
+    layersBtn.textContent = `${t("layers")} ${togglesEl.classList.contains("open") ? "▴" : "▾"}`;
+  }
+  // Sayfadaki sabit yazıları (data-i18n işaretli öğeler) seçili dilde doldurur.
+  function applyStatic() {
+    document.documentElement.lang = LANG;
+    document.title = t("pageTitle");
+    document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll("[data-i18n-html]").forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
+    document.querySelectorAll("[data-i18n-attr]").forEach(el => el.dataset.i18nAttr.split(";").forEach(pair => {
+      const [attr, key] = pair.split(":"); el.setAttribute(attr, t(key));
+    }));
+    document.querySelectorAll("[data-guide]").forEach(el => { el.hidden = el.dataset.guide !== LANG; });
+    document.querySelectorAll(".lang-btn").forEach(b => {
+      b.classList.toggle("on", b.dataset.lang === LANG); b.setAttribute("aria-pressed", String(b.dataset.lang === LANG));
+    });
+    renderLayersBtn();
+  }
+  // Dili değiştirir: sayfa yenilenmeden bütün yazılar, paneller ve sohbetin karşılama mesajı yeniden çizilir.
+  // Sohbette başlamış bir konuşma silinmez; sonraki cevaplar yeni dilde gelir.
+  function setLang(lang) {
+    if (lang === LANG || !STR[lang]) return;
+    LANG = lang;
+    try { localStorage.setItem("td3d-lang", lang); } catch (e) {}
+    applyStatic(); renderAll(true); renderAreaBar(); renderAgentStatus(); renderSugg();
+    playBtn.setAttribute("aria-label", t(state.playing ? "pause" : "play"));
+    if (!sessionId && !busy) welcome();
+  }
+  document.querySelectorAll(".lang-btn").forEach(b => b.onclick = () => setLang(b.dataset.lang));
+  applyStatic();
 
   setPlaying(false);
   renderTop(); renderCards(); renderLeft(); renderLegend();
