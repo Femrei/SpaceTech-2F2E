@@ -1120,7 +1120,7 @@
   async function send(text) {
     text = (text || "").trim(); if (!text || busy) return;
     if (!serverUp) await checkAgent();
-    if (!serverUp) { addMsg("bot", md("Ajan sunucusu çalışmıyor. Klasörde `.venv/Scripts/python agent_server.py` ile başlatıp sayfayı `http://localhost:8765` adresinden aç."), "err"); return; }
+    if (!serverUp) { addMsg("bot", md("Ajan sunucusu çalışmıyor. Repo kökünde `python detective3d/agent_server.py` ile başlatıp sayfayı `http://localhost:8765` adresinden aç."), "err"); return; }
     busy = true; chatSend.disabled = true; sugg.style.display = "none";
     addMsg("user", esc(text)); chatInput.value = "";
     const wait = addMsg("bot", `<span class="typing">Dedektif iz sürüyor <i></i><i></i><i></i></span>`);

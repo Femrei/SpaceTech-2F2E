@@ -17,7 +17,7 @@ Yöntem:
 - Trend: repodaki B'nin analyze_trend fonksiyonu (mevsimsel Mann-Kendall + Sen), salt-okunur.
 - Ek olarak her yılın en yüksek NDVI'si (yeşillenme zirvesi) için Mann-Kendall + Sen.
 
-Kullanım:  .venv/Scripts/python build_ndvi.py ../SpaceTech-2F2E
+Kullanım (repo kökünden):  python detective3d/build_ndvi.py
 """
 import collections
 import json
@@ -31,7 +31,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
-REPO = Path(sys.argv[1] if len(sys.argv) > 1 else HERE.parent / "SpaceTech-2F2E").resolve()
+REPO = Path(sys.argv[1] if len(sys.argv) > 1 else HERE.parent).resolve()
 sys.path.insert(0, str(REPO))
 _cwd = os.getcwd()
 os.chdir(REPO)

@@ -1,28 +1,28 @@
-# Trend Dedektifi 3B: yerel prototip
+# Trend Dedektifi 3B (owner: D)
 
-Bu klasör **repo dışında** duruyor. SpaceTech-2F2E'de hiçbir dosyayı değiştirmez.
+Projenin ana arayüzü. Repodaki analiz kodunu (A'nın verisi, B'nin `trend.py`'si, D'nin `detective.py`'si ve C'nin `api.py`'si) yalnızca okur, hiçbirini değiştirmez.
 
 ## Çalıştırma
 
-Harita ve dedektif ajanı tek sunucudan çalışır. Gerekli paketler klasördeki `.venv` sanal ortamında kurulu.
+Harita ve dedektif ajanı tek sunucudan çalışır. Gerekli paketler repo kökündeki `requirements.txt` ile kurulur (`pip install -r requirements.txt`).
 
 ```bash
-cd "D:/Nasa Space Apps/prototype-3d"
-.venv/Scripts/python agent_server.py
+# repo kökünden
+python detective3d/agent_server.py
 ```
 
 Ardından tarayıcıda http://localhost:8765 adresini aç.
 
-İnternet bağlantısı gerekir; harita karoları ve MapLibre kütüphanesi CDN'den yüklenir. Sadece haritaya bakmak istersen `python -m http.server 8765` da yeterli. O durumda sohbet "sunucu kapalı" der.
+İnternet bağlantısı gerekir; harita karoları ve MapLibre kütüphanesi CDN'den yüklenir. Sadece haritaya bakmak istersen `detective3d/` içinde `python -m http.server 8765` da yeterli. O durumda sohbet "sunucu kapalı" der.
 
 ## Ajan için ücretsiz LLM (önerilen: Groq)
 
 1. https://console.groq.com adresinde ücretsiz hesap aç. Kredi kartı gerekmiyor.
 2. **API Keys → Create API Key** ile bir anahtar oluştur. Anahtar `gsk_...` ile başlar.
-3. Bu klasörde `.env.example` dosyasını kopyala, adını `.env` yap ve `LLM_API_KEY=` satırına anahtarı yapıştır. `LLM_PROVIDER=groq` zaten yazılı.
+3. `detective3d/` klasöründe `.env.example` dosyasını kopyala, adını `.env` yap ve `LLM_API_KEY=` satırına anahtarı yapıştır. `LLM_PROVIDER=groq` zaten yazılı.
 4. Sunucuyu yeniden başlat. Konsolda `LLM: açık (Groq · …)` yazmalı; sohbet panelinde de "çevrimiçi" görünmeli.
 
-`.env` dosyası repo dışında durur. Asla commit etme, kimseyle paylaşma, sohbete yapıştırma.
+`.env` dosyası `.gitignore` sayesinde git'e girmez. Asla commit etme, kimseyle paylaşma, sohbete yapıştırma. Yayındaki sunucuda (Render vb.) anahtarı `.env` yerine sunucunun gizli ortam değişkeni (`LLM_PROVIDER`, `LLM_API_KEY`) olarak tanımla.
 
 ### Diğer seçenekler (hepsi `.env` ile değiştirilir)
 
@@ -56,10 +56,12 @@ Sağ alttaki **Dedektife sor** düğmesi sohbet panelini açar.
 
 ## Veriyi yenileme
 
+Uygulama, betiklerin ürettiği hazır `*.js` veri dosyalarıyla çalışır; bunlar repoda. Betiklerin ham indirme klasörleri (`power_raw/`, `ndvi_raw/`, `ne_raw/`) repoya girmez (`.gitignore`); betik tekrar çalıştırılınca yeniden indirilir.
+
 `build_data.py`, repodaki `api.py` fonksiyonlarını yalnızca okuyarak çağırır ve `data.js` dosyasını üretir. İçinde B'nin trend analizi ve D'nin kataloğu kullanılır.
 
 ```bash
-.venv/Scripts/python build_data.py ../SpaceTech-2F2E
+python detective3d/build_data.py
 ```
 
 Kaynak linkleri (veri seti adı ve tam Giovanni isteği) A'nın `data/SOURCES.md` dosyasından okunur.
@@ -71,7 +73,7 @@ Kaynak linkleri (veri seti adı ve tam Giovanni isteği) A'nın `data/SOURCES.md
 - **Analiz:** B'nin `analyze_trend` fonksiyonu 1981–2025 ve 2001–2025 dönemlerinde ayrı ayrı çalıştırılır.
 
 ```bash
-.venv/Scripts/python build_power.py ../SpaceTech-2F2E
+python detective3d/build_power.py
 ```
 
 `build_ndvi.py`, MODIS NDVI 2001–2025 verisini işleyip `ndvi_data.js` dosyasını üretir.
@@ -92,13 +94,13 @@ Kaynak linkleri (veri seti adı ve tam Giovanni isteği) A'nın `data/SOURCES.md
   - Trend için B'nin `analyze_trend` fonksiyonu kullanılır. Her yılın zirve NDVI'si için ayrıca Mann-Kendall testi ve Sen eğimi hesaplanır.
 
 ```bash
-.venv/Scripts/python build_ndvi.py ../SpaceTech-2F2E
+python detective3d/build_ndvi.py
 ```
 
 ORNL sunucusu yoğunken çok sayıda "502" hatası verir. Betik inmeyen parçaları 6 tura kadar yeniden dener; yine de eksik kalırsa durur. Sadece tamamlanmış bölgelerle sonuç üretmek için:
 
 ```bash
-NDVI_PARTIAL=1 .venv/Scripts/python build_ndvi.py ../SpaceTech-2F2E
+NDVI_PARTIAL=1 python detective3d/build_ndvi.py
 ```
 
 **Şu anki durum (2026-11-15):**

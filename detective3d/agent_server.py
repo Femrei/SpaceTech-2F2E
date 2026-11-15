@@ -1,16 +1,17 @@
-"""Trend Dedektifi ajanı: yerel prototip sunucusu.
+"""Trend Dedektifi 3B: uygulamanın sunucusu (owner: D).
 
 Bu sunucu iki iş yapar:
 1. index.html ve data.js dosyalarını yayınlar.
-2. POST /api/chat isteğini karşılar. Claude, repodaki analiz fonksiyonlarını
-   araç olarak çağırır ve sonucu açıklar. Bilimsel hesabı Claude değil, B'nin
+2. POST /api/chat isteğini karşılar. LLM, repodaki analiz fonksiyonlarını
+   araç olarak çağırır ve sonucu açıklar. Bilimsel hesabı LLM değil, B'nin
    trend analizi ve D'nin kataloğu yapar.
 
-Repo yalnızca okunur, hiçbir dosyası değiştirilmez.
+Repodaki diğer dosyalar yalnızca okunur, hiçbiri değiştirilmez.
 
-Çalıştırma (repo yolu varsayılan olarak ../SpaceTech-2F2E):
-    .venv/Scripts/python agent_server.py
+Çalıştırma (repo kökünden):
+    python detective3d/agent_server.py
 Ardından http://localhost:8765 adresini aç.
+HOST ve PORT ortam değişkenleri adresi değiştirir (Docker: HOST=0.0.0.0).
 
 LLM: .env dosyasında LLM_PROVIDER (groq, gemini, openrouter, ollama, anthropic) ve anahtarı.
 Yoksa sohbet "çevrimdışı moda" düşer. Bu modda LLM yoktur; anahtar kelimelerle
@@ -27,7 +28,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
-REPO = Path(os.environ.get("TREND_REPO", HERE.parent / "SpaceTech-2F2E")).resolve()
+REPO = Path(os.environ.get("TREND_REPO", HERE.parent)).resolve()  # repo root (this folder's parent)
 sys.path.insert(0, str(REPO))
 _cwd = os.getcwd()
 os.chdir(REPO)  # api.py / data_loader read paths relative to the repo
@@ -687,7 +688,7 @@ def run_offline(user_text: str, ui_state: dict) -> dict:
 # --------------------------------------------------------------------------- #
 # HTTP
 # --------------------------------------------------------------------------- #
-app = FastAPI(title="Trend Dedektifi ajanı (prototip)")
+app = FastAPI(title="Trend Dedektifi 3B")
 
 
 class ChatIn(BaseModel):
@@ -777,4 +778,4 @@ if __name__ == "__main__":
     import uvicorn
 
     print("LLM:", f"açık ({PROVIDER_LABEL} · {MODEL})" if _has_credentials() else "kapalı → çevrimdışı mod")
-    uvicorn.run(app, host="127.0.0.1", port=int(os.environ.get("PORT", 8765)))
+    uvicorn.run(app, host=os.environ.get("HOST", "127.0.0.1"), port=int(os.environ.get("PORT", 8765)))

@@ -5,7 +5,7 @@ https://github.com/nvkelso/natural-earth-vector (geojson/ne_10m_populated_places
 Türkiye'deki yerleşimler alınır, birkaç ad Türkçeleştirilir ve listede olmayan bazı il
 merkezleri ile NDVI pencerelerinin ilçeleri (Çumra, Erciş) elle eklenir.
 
-Kullanım:  python build_cities.py
+Kullanım (repo kökünden):  python detective3d/build_cities.py
 """
 import json
 import urllib.request

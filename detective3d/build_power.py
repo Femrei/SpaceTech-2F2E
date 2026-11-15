@@ -8,7 +8,7 @@
   için ayrı ayrı hesaplanır.
 - Çıktı: power_data.js (window.POWER_DATA).
 
-Kullanım:  .venv/Scripts/python build_power.py ../SpaceTech-2F2E
+Kullanım (repo kökünden):  python detective3d/build_power.py
 """
 import json
 import math
@@ -21,7 +21,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
-REPO = Path(sys.argv[1] if len(sys.argv) > 1 else HERE.parent / "SpaceTech-2F2E").resolve()
+REPO = Path(sys.argv[1] if len(sys.argv) > 1 else HERE.parent).resolve()
 sys.path.insert(0, str(REPO))
 _cwd = os.getcwd()
 os.chdir(REPO)

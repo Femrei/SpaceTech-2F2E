@@ -2,7 +2,7 @@
 
 Repo dosyalarına dokunmaz; api.py içindeki fonksiyonları doğrudan çağırır
 (B'nin trend analizi, D'nin kataloğu). Bytecode da yazılmaz.
-Kullanım:  python build_data.py ../SpaceTech-2F2E
+Kullanım (repo kökünden):  python detective3d/build_data.py
 """
 import json
 import os
@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
-repo = Path(sys.argv[1]).resolve()
+repo = Path(sys.argv[1] if len(sys.argv) > 1 else HERE.parent).resolve()
 sys.path.insert(0, str(repo))
 os.chdir(repo)
 import api  # noqa: E402
