@@ -1,10 +1,12 @@
 """Trend Dedektifi 3B: uygulamanın sunucusu (owner: D).
 
-Bu sunucu iki iş yapar:
+Bu sunucu üç iş yapar:
 1. index.html ve data.js dosyalarını yayınlar.
 2. POST /api/chat isteğini karşılar. LLM, repodaki analiz fonksiyonlarını
    araç olarak çağırır ve sonucu açıklar. Bilimsel hesabı LLM değil, B'nin
    trend analizi ve D'nin kataloğu yapar.
+3. GET /api/point ve /api/box: "Alan seç" modunda kullanıcının seçtiği nokta
+   ya da kutu için C'nin api.py fonksiyonlarını çağırır (NASA POWER, canlı).
 
 Repodaki diğer dosyalar yalnızca okunur, hiçbiri değiştirilmez.
 
@@ -701,6 +703,22 @@ class ChatIn(BaseModel):
 def agent_status() -> dict:
     on = _has_credentials()
     return {"llm": on, "provider": PROVIDER_LABEL if on else None, "model": MODEL if on else None}
+
+
+# C: "Alan seç" modu (haritada nokta). Seçilen noktanın NASA POWER hücresini
+# C'nin api.py'deki point() fonksiyonu ile aynen analiz eder. Hata kodları
+# (422 denizde toprak ıslaklığı, 502 POWER'a ulaşılamadı) oradan gelir.
+@app.get("/api/point")
+def area_point(lat: float, lon: float, variable: str) -> dict:
+    return api.point(lat, lon, variable)
+
+
+# C: "Alan seç" modu (haritada kutu). Çizilen kutunun içindeki NASA POWER
+# hücrelerinin alan ağırlıklı ortalamasını api.py'deki box() ile analiz eder.
+# Kutunun kenarları en fazla 10 derece olabilir (POWER kuralı).
+@app.get("/api/box")
+def area_box(south: float, west: float, north: float, east: float, variable: str) -> dict:
+    return api.box(south, west, north, east, variable)
 
 
 def _free_provider_error(err) -> HTTPException:
