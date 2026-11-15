@@ -317,6 +317,39 @@
     body.area-on .left-tab { top: auto; bottom: 16px; }
     body.area-on.picking .left { display: none; }
   }
+  /* ---------- C: kullanım rehberi (ortada açılan pencere) ---------- */
+  .tr-row { display: flex; gap: 8px; }
+  .guide-back { position: fixed; inset: 0; z-index: 20; background: rgba(5, 8, 11, .62); display: grid;
+    place-items: center; padding: 16px; }
+  .guide-back[hidden] { display: none; }
+  .guide { width: min(620px, 100%); max-height: min(82vh, 760px); display: flex; flex-direction: column;
+    background: var(--panel-solid); }
+  .guide-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .guide-head h2 { margin: 0; font-size: 18px; font-weight: 600; flex: 1; }
+  .guide-head .kicker { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--brand); display: block; }
+  .guide-close { width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--line); background: rgba(255,255,255,.06);
+    color: var(--text); display: grid; place-items: center; flex: none; }
+  .guide-close:hover, .guide-close:focus-visible { border-color: var(--brand); outline: none; }
+  .guide-close svg { width: 16px; height: 16px; }
+  .guide-body { overflow-y: auto; padding: 6px 18px 18px; font-size: 13.5px; line-height: 1.55;
+    scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.22) transparent; }
+  .guide-body h3 { margin: 16px 0 4px; font-size: 14px; font-weight: 600; color: #f1cf8a; }
+  .guide-body p { margin: 0 0 6px; color: #d6dde4; }
+  .guide-body ul { margin: 0 0 6px; padding-left: 18px; color: #d6dde4; }
+  .guide-body li { margin: 2px 0; }
+  .guide-body b { color: var(--text); }
+  .guide-body kbd { font: inherit; font-size: 12px; padding: 0 5px; border: 1px solid var(--line); border-radius: 4px;
+    background: rgba(255,255,255,.06); }
+  .guide-body .warn { margin-top: 12px; }
+  @media (max-width: 760px) {
+    .guide-body { padding: 4px 14px 14px; }
+    /* Telefonda Rehber, Alan seç ve Katmanlar tek satırda; açılan katman listesi satırın üstünde. */
+    .tr { flex-direction: row; flex-wrap: wrap; justify-content: flex-end; align-items: flex-end;
+      bottom: 196px; right: 72px; max-width: calc(100% - 88px); }
+    .tr .toggles { order: -1; flex-basis: 100%; }
+    .tr .btn-txt { display: none; }  /* telefonda sadece simge; adı aria-label ve title'da */
+    .tr .area-btn { padding: 7px 10px; }
+  }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -329,7 +362,10 @@
 </div>
 
 <div class="tr">
-  <button class="layers-btn area-btn" id="areaBtn" aria-pressed="false" title="Haritada kendi noktanı ya da kutunu seç (NASA POWER, 1981–2025)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg> Alan seç</button>
+  <div class="tr-row">
+    <button class="layers-btn area-btn" id="guideBtn" aria-haspopup="dialog" aria-label="Rehber" title="Site nasıl kullanılır?"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7M9 12h5"/></svg><span class="btn-txt">Rehber</span></button>
+    <button class="layers-btn area-btn" id="areaBtn" aria-pressed="false" aria-label="Alan seç" title="Haritada kendi noktanı ya da kutunu seç (NASA POWER, 1981–2025)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span class="btn-txt">Alan seç</span></button>
+  </div>
   <button class="layers-btn" id="layersBtn" aria-expanded="false">Katmanlar ▾</button>
   <div class="toggles panel" id="toggles">
     <div class="h">Taban harita</div>
@@ -413,6 +449,60 @@
     <button type="submit" id="chatSend" aria-label="Gönder"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg></button>
   </form>
 </section>
+<div class="guide-back" id="guideBack" hidden>
+  <section class="guide panel" id="guide" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+    <div class="guide-head">
+      <div style="flex:1"><span class="kicker">Rehber</span><h2 id="guideTitle">Trend Dedektifi nasıl kullanılır?</h2></div>
+      <button type="button" class="guide-close" id="guideClose" aria-label="Rehberi kapat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="guide-body" id="guideBody" tabindex="0">
+      <h3>Bu site ne yapar?</h3>
+      <p>NASA uydu verileriyle Konya Kapalı Havzası, Van Gölü Havzası ve Doğu Karadeniz'de <b>yağış</b>, <b>toprak nemi</b> ve <b>hava sıcaklığının</b> 2001–2025 arasında nasıl değiştiğini gösterir. Bir dedektif gibi ipuçlarını takip edersin: örneğin toprak kuruyorsa sebebi yağış mı, sıcaklık mı?</p>
+
+      <h3>1. Haritayı oku</h3>
+      <ul>
+        <li>Kesikli kutular üç bölgedir. <b>Renk</b>, son 12 ayın normalden ne kadar saptığını gösterir (renk açıklaması üstte). <b>Sütunun yüksekliği</b> sapmanın büyüklüğüdür.</li>
+        <li>Her bölgenin üstündeki kartta o ayın değeri ve 25 yıllık <b>trend</b> yazar. Karta ya da kutuya tıklayınca bölge seçilir.</li>
+        <li>Üstteki düğmelerle değişkeni seç: yağış, toprak nemi ya da hava sıcaklığı.</li>
+      </ul>
+
+      <h3>2. Zamanda gez</h3>
+      <ul>
+        <li>Alttaki çubukta <b>oynat</b> düğmesi 2001'den 2025'e ay ay ilerler. <kbd>Boşluk</kbd> oynatır/durdurur, <kbd>←</kbd> <kbd>→</kbd> birer ay geçer.</li>
+        <li><b>Önce</b> (2001–05) ve <b>Sonra</b> (2021–25) düğmeleri iki dönemi karşılaştırır.</li>
+      </ul>
+
+      <h3>3. Dedektif dosyasını incele</h3>
+      <ul>
+        <li>Soldaki panel seçili bölgenin özetidir: tek cümlelik hikâye, <b>Sen eğimi</b> (on yılda ne kadar değişmiş), güven aralığı ve <b>anlamlılık</b>.</li>
+        <li><b>Anlamlı</b> rozeti, değişimin doğal dalgalanmadan ayırt edilebildiğini söyler (p &lt; 0,05). "Anlamlı değil" ise "değişim yok" demek değildir; henüz ayırt edilemiyordur.</li>
+        <li>Aşağıda ısı haritası, NASA POWER ile 45 yıllık kontrol, bitki örtüsü (NDVI), kaynaklar ve <b>CSV indir</b> düğmesi var.</li>
+      </ul>
+
+      <h3>4. Kendi alanını seç</h3>
+      <ul>
+        <li>Sağ üstteki <b>Alan seç</b> ile dünyanın herhangi bir yerine bakabilirsin.</li>
+        <li><b>Nokta:</b> haritaya bir kez tıkla. <b>Kare çiz:</b> bir köşeye, sonra karşı köşeye tıkla (en fazla 10° × 10°). <kbd>Esc</kbd> vazgeçer.</li>
+        <li>Sonuç soldaki panelde çıkar (NASA POWER, 1981–2025). <b>Bölgelere dön</b> ile üç bölgeye geri dönersin.</li>
+      </ul>
+
+      <h3>5. Dedektife sor</h3>
+      <ul>
+        <li>Sağ alttaki <b>Dedektife sor</b> düğmesi sohbeti açar. Sorunu Türkçe yaz: "Konya'da toprak neden kuruyor?" ya da "Gaziantep'te toprak ne durumda?".</li>
+        <li>Dedektif sayıları kendisi uydurmaz; ekibin analiz fonksiyonlarını çağırır ve konuştuğu yeri haritada gösterir. Cevabın altında kullanılan veri setleri yazar.</li>
+      </ul>
+
+      <h3>6. Haritayı yönet</h3>
+      <ul>
+        <li><b>Sürükle:</b> kaydır. <b>Sağ tık + sürükle</b> (veya <kbd>Ctrl</kbd> + sürükle): döndür ve eğ. <b>Tekerlek:</b> yakınlaş.</li>
+        <li>Sağdaki düğmeler: genel görünüm, yakınlaş/uzaklaş, döndür, 3B/2B ve yavaşça dönme (sunum modu).</li>
+        <li><b>Katmanlar</b> menüsü: uydu görüntüsü ya da NASA Blue Marble, NDVI bitki örtüsü katmanı, şehir adları, otomatik tur.</li>
+      </ul>
+
+      <div class="warn">Unutma: Veriler ~25–50 km'lik bölge ortalamalarıdır, tarla ölçümü değildir. Bir trend, sebebini tek başına söylemez; karar vermeden önce yerel ölçümlerle (ör. MGM istasyonları, toprak analizi) kontrol edilmelidir.</div>
+    </div>
+  </section>
+</div>
 <div class="foot">Prototip · Giovanni bölge ortalamaları (~25 km ızgara), tarla ölçeği değil · NDVI katmanı yalnızca görsel, analizde kullanılmıyor</div>
 
 <script>
@@ -1165,6 +1255,32 @@
     a.href = URL.createObjectURL(blob); a.download = `trend_dedektifi_alan_${av.id}.csv`;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
+
+  // ------------------------------------------------------------------ C: kullanım rehberi
+  // "Rehber" düğmesi sayfanın ortasında okunabilir bir pencere açar. × düğmesi, Esc tuşu ya da
+  // pencerenin dışına tıklamak kapatır; kapanınca odak tekrar "Rehber" düğmesine döner.
+  const guideBtn = document.getElementById("guideBtn"), guideBack = document.getElementById("guideBack");
+  const guideClose = document.getElementById("guideClose");
+
+  // Rehberi açar ya da kapatır.
+  function setGuide(open) {
+    guideBack.hidden = !open;
+    if (open) { setPlaying(false); guideClose.focus(); }
+    else guideBtn.focus();
+  }
+  guideBtn.onclick = () => setGuide(true);
+  guideClose.onclick = () => setGuide(false);
+  guideBack.addEventListener("click", e => { if (e.target === guideBack) setGuide(false); });
+  // Pencere açıkken klavye: Esc kapatır, Tab odağı pencerenin içinde tutar, harita kısayolları çalışmaz.
+  window.addEventListener("keydown", e => {
+    if (guideBack.hidden) return;
+    if (e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); setGuide(false); return; }
+    if (e.key === "Tab") {  // odak sadece × düğmesi ile metin arasında gidip gelir
+      e.preventDefault();
+      (document.activeElement === guideClose ? document.getElementById("guideBody") : guideClose).focus();
+    }
+    if (e.code === "Space" || e.key.startsWith("Arrow")) e.stopImmediatePropagation();
+  }, true);
 
   areaBtn.onclick = () => { if (area.active) closeArea(); else openArea(); };
   document.getElementById("areaDone").onclick = () => { setPicking(false); renderLeft(); };
