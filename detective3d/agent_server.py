@@ -136,6 +136,7 @@ def tool_get_trend(region: str, variable: str) -> dict:
         else _round(r["percent_change_per_decade"], 2),
         "mann_kendall_p": r["mk_p"],
         "significant_at_0_05": r["significant"],
+        "robustness_check": _annual_check(r),
         "direction": r["direction"],
         "long_term_mean": _round(r["mean_value"]),
         "interpretation": a["interpretation"],
@@ -265,11 +266,18 @@ def city_in_text(text: str) -> dict | None:
 
 
 # Bir trend sonucunun ajana gereken kısmını seçer (B'nin analyze_trend çıktısından).
+def _annual_check(r: dict) -> dict:
+    """B's robustness check: Hamed-Rao modified Mann-Kendall on yearly mean anomalies."""
+    return {"yearly_means_p": _round(r.get("annual_p"), 4), "significant_at_0_05": r.get("annual_significant"),
+            "years": r.get("annual_n_years")}
+
+
 def _trend_summary(r: dict) -> dict:
     return {"period": f'{r.get("start_year")}–{r.get("end_year")}',
             "sen_slope_per_decade": _round(r["sen_slope_per_decade"]),
             "ci95_per_decade": [_round(r["ci_low"]), _round(r["ci_high"])],
             "mann_kendall_p": r["mk_p"], "significant_at_0_05": bool(r["significant"]),
+            "robustness_check": _annual_check(r),
             "direction": r["direction"]}
 
 
@@ -582,7 +590,10 @@ call analyze_place (it moves the map itself). Follow the clue chain there too by
 other variables at the same place (e.g. drying soil -> was it less rain or more heat?). Say that it is NASA POWER \
 as a ~1° area average, not the city's own station, and compare 1981-2025 with 2001-2025 when they differ.
 - Be honest about limits: these are regional averages, not field measurements; a trend is not a cause; \
-"not significant" means it can't yet be told apart from natural variability, not "no change". For farm \
+"not significant" means it can't yet be told apart from natural variability, not "no change". The seasonal \
+Mann-Kendall p-value is over-confident because the months of one year are not independent; when you give a p-value, \
+quote robustness_check.yearly_means_p (one value per year, autocorrelation-corrected), and if it disagrees with \
+the seasonal test, say the trend is uncertain. For farm \
 advice (irrigation, crops, fertiliser) explain what the data suggests and what local measurement \
 (soil test, field sensors) would be needed; never prescribe doses.
 - Answer in the page language given as lang in the map note (tr = Turkish, en = English); if the user \

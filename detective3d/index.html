@@ -687,6 +687,8 @@
       vdSigHead: dir => `${dir} · anlamlı eğilim`, vdNsHead: "Anlamlı bir eğilim yok",
       vdWhat: "Ne", vdWhere: "Nerede", vdHowMuch: "Ne kadar", vdSigQ: "Anlamlı mı", vdWhen: "Ne zaman belli olur",
       vdYes: "Evet", vdNo: "Hayır", vdApparent: "(görünen eğim; anlamlı değil)",
+      annualSame: (sig, p) => `Yıllık kontrol (her yıl tek değer, otokorelasyona dayanıklı): ${sig ? "yine anlamlı" : "yine anlamlı değil"}, ${p}.`,
+      annualDiff: (sig, p) => `Yıllık kontrol (her yıl tek değer, otokorelasyona dayanıklı): ${sig ? "anlamlı" : "anlamlı değil"}, ${p}. İki test ayrıştığı için bu eğilimi temkinli yorumla.`,
       ynWeak: n => "Bu eğilim ayırt edilemeyecek kadar zayıf; şu an belirgin bir değişim yok" + (n ? ` (bu hızla yaklaşık ${n} yıllık veri gerekirdi).` : "."),
       ynSoon: "Eğilim anlamlılık sınırına yakın; birkaç yıl daha veriyle netleşebilir.",
       ynMore: (extra, total) => `Bu hızla sürerse yaklaşık ${extra} yıl daha veriyle (toplam ~${total} yıl) anlamlı hale gelebilir.`,
@@ -810,6 +812,8 @@
       vdSigHead: dir => `${dir} · significant trend`, vdNsHead: "No significant trend",
       vdWhat: "What", vdWhere: "Where", vdHowMuch: "How much", vdSigQ: "Significant?", vdWhen: "When will we know",
       vdYes: "Yes", vdNo: "No", vdApparent: "(apparent slope; not significant)",
+      annualSame: (sig, p) => `Yearly check (one value per year, robust to autocorrelation): ${sig ? "still significant" : "still not significant"}, ${p}.`,
+      annualDiff: (sig, p) => `Yearly check (one value per year, robust to autocorrelation): ${sig ? "significant" : "not significant"}, ${p}. The two tests disagree, so read this trend with caution.`,
       ynWeak: n => "This trend is too weak to tell apart; there is no clear change right now" + (n ? ` (at this rate about ${n} years of data would be needed).` : "."),
       ynSoon: "The trend is close to the significance threshold; a few more years of data may settle it.",
       ynMore: (extra, total) => `If it continues at this rate, about ${extra} more years of data (~${total} years in total) could make it significant.`,
@@ -1273,6 +1277,15 @@
     return `<div><dt>${t("vdWhen")}</dt><dd>${text}${yn == null ? "" : `<small>${t("ynNote")}</small>`}</dd></div>`;
   }
 
+  // B'nin sağlamlık kontrolü: her yıl tek değer (yıllık ortalama sapma) + Hamed-Rao düzeltmeli Mann-Kendall.
+  // Mevsimsel testin p değeri, bir yılın ayları birbirinden bağımsız olmadığı için fazla iyimserdir.
+  function annualCheckHTML(res) {
+    if (res.annual_p == null || res.annual_significant == null) return "";
+    const p = res.annual_p < 0.001 ? "p < " + fmt(0.001, 3) : "p = " + fmt(res.annual_p, 3);
+    const same = !!res.annual_significant === !!res.significant;
+    return `<small>${t(same ? "annualSame" : "annualDiff", !!res.annual_significant, p)}</small>`;
+  }
+
   // Karar kartı: ne / nerede / ne kadar / anlamlı mı / (değilse) ne zaman belli olur.
   // o: { what, where, years, unit, pct, story } (bölge ve "Alan seç" panelleri aynı kartı kullanır).
   function verdictHTML(res, v, o) {
@@ -1289,7 +1302,7 @@
         <div><dt>${t("vdWhat")}</dt><dd>${o.what}</dd></div>
         <div><dt>${t("vdWhere")}</dt><dd>${o.where} · ${o.years}</dd></div>
         <div><dt>${t("vdHowMuch")}</dt><dd><b>${signed(res.sen_slope_per_decade, 2)} ${o.unit}</b> ${t("perDecade")}${pct}${res.significant ? "" : ` <span class="p">${t("vdApparent")}</span>`}</dd></div>
-        <div><dt>${t("vdSigQ")}</dt><dd>${t(res.significant ? "vdYes" : "vdNo")} · Mann-Kendall p = ${pTxt(res.mk_p)}</dd></div>
+        <div><dt>${t("vdSigQ")}</dt><dd>${t(res.significant ? "vdYes" : "vdNo")} · Mann-Kendall p = ${pTxt(res.mk_p)}${annualCheckHTML(res)}</dd></div>
         ${yearsNeededHTML(res)}
       </dl></div>`;
   }
