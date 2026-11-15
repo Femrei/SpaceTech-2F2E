@@ -13,7 +13,9 @@ import pytest
 from src.detective import (
     CATALOG_PATH,
     THEMES,
+    CONTEXT_KEYS,
     get_cases,
+    get_context,
     get_region,
     get_variable,
     glossary,
@@ -247,3 +249,57 @@ def test_works_with_real_analyze_trend_output():
                   + rng.normal(0, 0.5, len(idx)), index=idx)
     hint = next_step_hint(analyze_trend(s), "soil_moisture", "konya")
     assert "drying" in hint
+
+
+# --------------------------------------------------------------------------- #
+# "What does this mean?" context texts (variables[].context)
+# --------------------------------------------------------------------------- #
+# Phrases that would claim a cause instead of describing what a trend can mean
+CAUSAL_PHRASES = ("caused by", "is causing", "proves", "due to", "because of climate change")
+
+
+@pytest.mark.parametrize("variable_id", sorted(VARIABLE_IDS))
+def test_variable_context_texts(variable_id):
+    context = get_variable(variable_id)["context"]
+    assert set(context) == set(CONTEXT_KEYS) | {"sources"}
+    for key in CONTEXT_KEYS:
+        text = context[key]
+        assert isinstance(text, str) and 40 <= len(text) <= 400, f"{variable_id}.{key}: length {len(text)}"
+        assert text.count(". ") <= 1, f"{variable_id}.{key}: keep it to 1-2 sentences"
+        lowered = text.lower()
+        assert not any(p in lowered for p in CAUSAL_PHRASES), f"{variable_id}.{key}: causal wording"
+
+
+@pytest.mark.parametrize("variable_id", sorted(VARIABLE_IDS))
+def test_variable_context_sources(variable_id):
+    sources = get_variable(variable_id)["context"]["sources"]
+    assert sources, f"{variable_id}: context needs at least one source"
+    for source in sources:
+        assert set(source) == {"title", "url"}
+        assert source["title"].strip()
+        assert source["url"].startswith("https://")
+
+
+@pytest.mark.parametrize(
+    ("direction", "significant", "expected"),
+    [
+        ("increasing", True, "increasing"),
+        ("decreasing", True, "decreasing"),
+        ("increasing", False, "no_clear_trend"),
+        ("decreasing", False, "no_clear_trend"),
+        ("no change", True, "no_clear_trend"),
+        ("no change", False, "no_clear_trend"),
+    ],
+)
+@pytest.mark.parametrize("variable_id", sorted(VARIABLE_IDS))
+def test_get_context_picks_text(variable_id, direction, significant, expected):
+    out = get_context(_result(direction, significant), variable_id)
+    context = get_variable(variable_id)["context"]
+    assert out["key"] == expected
+    assert out["text"] == context[expected]
+    assert out["sources"] == context["sources"]
+
+
+def test_get_context_unknown_variable_raises():
+    with pytest.raises(KeyError):
+        get_context(_result("increasing", True), "wind")
