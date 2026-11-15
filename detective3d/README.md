@@ -104,19 +104,19 @@ ORNL sunucusu yoğunken çok sayıda "502" hatası verir. Betik inmeyen parçala
 NDVI_PARTIAL=1 python detective3d/build_ndvi.py
 ```
 
-**Şu anki durum (2026-11-15):**
-- Konya ve Van tamamlandı.
-- Doğu Karadeniz'in 58 parçasından 11'i indi. Panel ve ajan "veri henüz yok" diyor.
-- Betiği normal çalıştırınca Karadeniz kaldığı yerden tamamlanır.
+**Şu anki durum (2026-11-15):** Üç bölge de tamamlandı (Doğu Karadeniz dahil).
 
-**İlk sonuçlar:**
+**Sonuçlar:**
 
 | Pencere | Aylık NDVI trendi | Yıllık zirve trendi |
 |---|---|---|
 | Konya · Çumra | +0,029 /10 yıl, p≈5e-10 | +0,076 /10 yıl, p≈5e-5 |
 | Van · Erciş | +0,021 /10 yıl, p≈2e-11 | +0,035 /10 yıl, p≈6e-4 |
+| Doğu Karadeniz · Rize kıyı yamaçları | −0,006 /10 yıl, p≈4e-3 | −0,004 /10 yıl, p≈0,047 |
 
-İki pencerede de anlamlı yeşillenme var.
+Konya ve Van'ın tarım pencerelerinde anlamlı yeşillenme var. Rize penceresi tarım değil, doğal bitki örtüsü
+(odunsu savan ve orman) ölçüyor; oradaki düşüş anlamlı ama çok küçük, yıllık zirvede ise anlamlılık sınırında
+(p≈0,047). Bu yüzden "kahverengileşme" diye abartılmamalı.
 
 ## Ekranda neler var
 
