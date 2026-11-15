@@ -984,13 +984,14 @@
   // Panel hikâye cümlesi (bölge panelindeki storyTR ile aynı dil, 45 yıllık NASA POWER için).
   function areaStoryTR(res, av) {
     const what = av.name.toLowerCase(), years = `${res.start_year}–${res.end_year}`;
+    const where = area.sel?.label ? `${escH(area.sel.label)} çevresinde` : "Seçilen alanda";
     const amount = `${fmt(Math.abs(res.sen_slope_per_decade), 2)} ${av.slopeUnit}`;
     if (res.direction !== "increasing" && res.direction !== "decreasing")
-      return `Seçilen alanda ${what} ${years} arasında belirgin bir yönde değişmiyor (Sen eğimi ${signed(res.sen_slope_per_decade, 2)} ${av.slopeUnit} / 10 yıl).`;
+      return `${where} ${what} ${years} arasında belirgin bir yönde değişmiyor (Sen eğimi ${signed(res.sen_slope_per_decade, 2)} ${av.slopeUnit} / 10 yıl).`;
     const dir = res.direction === "increasing" ? "artıyor" : "azalıyor";
     if (res.significant)
-      return `Seçilen alanda ${what} ${years} arasında on yılda yaklaşık <b>${amount}</b> ${dir}. Bu eğilim istatistiksel olarak <b>anlamlı</b> (mevsimsel Mann-Kendall, p &lt; 0,05).`;
-    return `Seçilen alanda ${what} on yılda yaklaşık ${amount} ${dir} gibi görünüyor, ancak bu eğilim <b>anlamlı değil</b>: ${res.n_years} yıllık doğal dalgalanmadan ayırt edilemiyor.`;
+      return `${where} ${what} ${years} arasında on yılda yaklaşık <b>${amount}</b> ${dir}. Bu eğilim istatistiksel olarak <b>anlamlı</b> (mevsimsel Mann-Kendall, p &lt; 0,05).`;
+    return `${where} ${what} on yılda yaklaşık ${amount} ${dir} gibi görünüyor, ancak bu eğilim <b>anlamlı değil</b>: ${res.n_years} yıllık doğal dalgalanmadan ayırt edilemiyor.`;
   }
 
   // Seriyi SVG çizgisine çevirir; boş aylarda çizgi kesilir.
@@ -1017,7 +1018,9 @@
       wireAreaPanel(); return;
     }
     const key = areaKey(s, state.variable), d = area.dataKey === key ? area.data : null;
-    const top = `${head}<h2${s.kind === "box" ? ' class="box-title"' : ""}>${areaTitle(s)}</h2><div class="sub">${av.name} · ${av.hint} · ${av.unit}</div>`;
+    const top = s.label
+      ? `${head}<h2>${escH(s.label)} çevresi</h2><div class="sub">${areaTitle(s)}</div><div class="sub">${av.name} · ${av.hint} · ${av.unit}</div>`
+      : `${head}<h2${s.kind === "box" ? ' class="box-title"' : ""}>${areaTitle(s)}</h2><div class="sub">${av.name} · ${av.hint} · ${av.unit}</div>`;
     if (!d && area.error) {
       el.innerHTML = `${top}<div class="warn">${area.error}</div>
         ${area.canRetry ? `<div class="btn-row"><button class="fly" id="areaRetry">Tekrar dene</button></div>` : ""}
@@ -1126,6 +1129,20 @@
     Object.assign(area, { sel, data: null, dataKey: null, error: null });
     setLeft(true, false);
     renderAll(true); renderAreaMap(); renderAreaBar();
+  }
+
+  // Dedektif ajanının baktığı yeri (ör. "Gaziantep") "Alan seç" panelinde açar: kutu haritada
+  // çizilir, panel aynı NASA POWER verisini gösterir, kamera oraya uçar. Kullanıcı haritaya
+  // tıklamadığı için seçim modu açılmaz.
+  function showAreaFromAgent(b) {
+    area.active = true; document.body.classList.add("area-on");
+    setOrbit(false); setPicking(false);
+    Object.assign(area, { sel: { kind: "box", south: b.south, west: b.west, north: b.north, east: b.east,
+      label: b.label || null }, data: null, dataKey: null, error: null });
+    setLeft(true, false);
+    renderAreaMap(); renderAreaBar();
+    const cam = map.cameraForBounds([[b.west, b.south], [b.east, b.north]], { padding: viewPadding(), maxZoom: 8.5 });
+    if (cam) map.flyTo({ ...cam, pitch: 45, bearing: 0, padding: viewPadding(), duration: 2600, essential: true });
   }
 
   // Kamerayı seçilen alana (nokta için hücresine) götürür.
@@ -1433,6 +1450,7 @@
     }
     if (a.region === "overview") overview(3000);
     else if (a.region && REGION_TR[a.region]) { closeArea(true); state.region = a.region; flyToRegion(a.region); }
+    if (a.area && typeof a.area.south === "number") showAreaFromAgent(a.area); // C: üç bölge dışındaki bir yer
     save(); renderAll(true); updateNdvi(true);
   }
 
@@ -1471,9 +1489,9 @@
   }
   function welcome() {
     chatLog.innerHTML = "";
-    addMsg("bot", md("Merhaba! Ben **Trend Dedektifi**. Konya, Van ve Doğu Karadeniz'in 2001–2025 yağış, toprak nemi ve sıcaklık verilerine bakıp ipuçlarını takip ederim. Konuştuğum yeri haritada da gösteririm.\n\nAşağıdan bir soru seç ya da kendi sorunu yaz."));
+    addMsg("bot", md("Merhaba! Ben **Trend Dedektifi**. Konya, Van ve Doğu Karadeniz'in 2001–2025 yağış, toprak nemi ve sıcaklık verilerine bakıp ipuçlarını takip ederim. Başka bir şehri de sorabilirsin (ör. Gaziantep); oraya NASA POWER'ın 1981–2025 verisiyle bakarım. Konuştuğum yeri haritada da gösteririm.\n\nAşağıdan bir soru seç ya da kendi sorunu yaz."));
   }
-  const SUGG = ["Konya'da toprak neden kuruyor?", "Karadeniz ile Konya'yı karşılaştır", "Van'daki ısınma gerçek mi?", "2021–25 dönemi öncekine göre nasıl?"];
+  const SUGG = ["Konya'da toprak neden kuruyor?", "Karadeniz ile Konya'yı karşılaştır", "Van'daki ısınma gerçek mi?", "2021–25 dönemi öncekine göre nasıl?", "Gaziantep'te toprak ne durumda?"];
   SUGG.forEach(q => { const b = document.createElement("button"); b.type = "button"; b.textContent = q; b.onclick = () => send(q); sugg.appendChild(b); });
 
   async function checkAgent() {

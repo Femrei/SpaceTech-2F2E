@@ -39,6 +39,7 @@ from src import detective, trend  # noqa: E402
 os.chdir(_cwd)
 
 import anthropic  # noqa: E402
+import pandas as pd  # noqa: E402
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.responses import FileResponse  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
@@ -247,6 +248,102 @@ def tool_get_background(region: str | None = None, variable: str | None = None) 
     return out
 
 
+# --------------------------------------------------------------------------- #
+# C: any place outside the three regions ("Gaziantep'te toprak ne durumda?")
+# NASA POWER 1981-2025 over a ~1° box around the place, same analysis as the regions.
+# --------------------------------------------------------------------------- #
+CITIES = _load_js(HERE / "cities.js") or []  # Natural Earth cities shown on the map (name, lat, lon)
+PLACE_VARIABLES = {"precip": "power_precip", "soil_moisture": "power_soil_wetness", "temp": "power_temp"}
+PLACE_HALF_LAT, PLACE_HALF_LON = 0.5, 0.6  # box half-size in degrees (~110 km x ~105 km at 38°N)
+PLACE_SOURCE = {"dataset": "NASA POWER monthly regional API (MERRA-2 based), 1981-2025",
+                "url": "https://power.larc.nasa.gov/docs/services/api/", "via": "NASA POWER"}
+_FOLD = str.maketrans("çğıöşüâîû", "cgiosuaiu")
+
+
+# Metni Türkçe kurallarıyla küçültür ve harf işaretlerini atar ("Şanlıurfa" -> "sanliurfa"),
+# böylece kullanıcı "Sanliurfa" ya da "ŞANLIURFA" yazsa da şehir bulunur.
+def _fold(text: str) -> str:
+    return text.replace("İ", "i").replace("I", "ı").lower().translate(_FOLD).strip()
+
+
+# Şehir adını haritadaki şehir listesinde (cities.js) arar; bulamazsa None döner.
+def find_city(name: str) -> dict | None:
+    key = _fold(name)
+    return next((c for c in CITIES if _fold(c["name"]) == key), None)
+
+
+# Cümlede geçen şehri bulur. Türkçe ekler için sadece kelimenin başı eşleşmeli:
+# "Gaziantepte" ve "Gaziantep'te" ikisi de Gaziantep'i bulur. Uzun adlar önce denenir.
+def city_in_text(text: str) -> dict | None:
+    folded = _fold(text)
+    for c in sorted(CITIES, key=lambda c: -len(c["name"])):
+        if re.search(r"(?<![a-z])" + re.escape(_fold(c["name"])), folded):
+            return c
+    return None
+
+
+# Bir trend sonucunun ajana gereken kısmını seçer (B'nin analyze_trend çıktısından).
+def _trend_summary(r: dict) -> dict:
+    return {"period": f'{r.get("start_year")}–{r.get("end_year")}',
+            "sen_slope_per_decade": _round(r["sen_slope_per_decade"]),
+            "ci95_per_decade": [_round(r["ci_low"]), _round(r["ci_high"])],
+            "mann_kendall_p": r["mk_p"], "significant_at_0_05": bool(r["significant"]),
+            "direction": r["direction"]}
+
+
+# Ajan aracı: istenen yerin çevresindeki ~1°'lik kutuda NASA POWER verisini B'nin
+# analiziyle inceler (1981-2025 ve 2001-2025). Koordinat önce şehir listesinden alınır;
+# listede yoksa modelin verdiği enlem/boylam kullanılır. Haritada gösterilecek kutu da döner.
+def tool_analyze_place(place: str, variable: str, lat: float | None = None, lon: float | None = None) -> dict:
+    if variable not in PLACE_VARIABLES:
+        raise ValueError(f"Unknown variable {variable!r}; use one of {sorted(PLACE_VARIABLES)}.")
+    city = find_city(place)
+    if city:
+        lat, lon, located = city["lat"], city["lon"], "app city list (Natural Earth)"
+    elif lat is None or lon is None:
+        raise ValueError(f"'{place}' is not in the city list; call again with the lat/lon of its centre.")
+    else:
+        located = "coordinates given by the assistant (approximate)"
+    lat, lon = float(lat), float(lon)
+    if not (-89 <= lat <= 89 and -179 <= lon <= 179):
+        raise ValueError("Latitude must be within ±89 and longitude within ±179.")
+    box = {"south": round(lat - PLACE_HALF_LAT, 2), "north": round(lat + PLACE_HALF_LAT, 2),
+           "west": round(lon - PLACE_HALF_LON, 2), "east": round(lon + PLACE_HALF_LON, 2)}
+    power_id = PLACE_VARIABLES[variable]
+    try:
+        out = api.box(box["south"], box["west"], box["north"], box["east"], power_id)
+    except HTTPException as err:  # e.g. soil wetness over open water, NASA POWER down
+        raise ValueError(err.detail) from err
+    series = pd.Series([p["value"] for p in out["points"]],
+                       index=pd.to_datetime([p["date"] for p in out["points"]]))
+    recent = api._scalars(trend.analyze_trend(series[series.index.year >= 2001]))  # adds start_year/end_year
+    r, meta = out["result"], api.power_loader.POINT_VARIABLES[power_id]
+    name = city["name"] if city else place
+    return {
+        "place": name,
+        "located_by": located,
+        "centre": {"lat": round(lat, 4), "lon": round(lon, 4)},
+        "box": box,
+        "grid_cells_used": out["point"]["n_cells"],
+        "variable": meta["name"],
+        "unit": meta["unit"],
+        "trend_1981_2025": _trend_summary(r),
+        "trend_2001_2025": _trend_summary(recent),
+        "long_term_mean": _round(r["mean_value"]),
+        "percent_change_per_decade": _round(r["percent_change_per_decade"], 2) if variable == "precip" else None,
+        "interpretation": out["interpretation"],
+        "what_it_means": detective.get_context(r, variable),
+        "comparability_note": (
+            "NASA POWER (MERRA-2 based, ~50 km grid), area-weighted mean of the grid cells in a ~1° box around "
+            "the place: a regional picture, not the city's own weather station. Different dataset from the "
+            "three regions' main analysis (Giovanni 2001-2025). Soil wetness here is GWETTOP, the top-layer "
+            "soil wetness in percent, not Giovanni's 0-10 cm soil moisture in kg/m². No catalog clue hints "
+            "exist for this place."),
+        "source": PLACE_SOURCE,
+        "map_area": {**box, "label": name},
+    }
+
+
 # control_map is not executed here: its actions are sent to the browser.
 TOOLS = [
     {
@@ -363,6 +460,30 @@ TOOLS = [
         },
     },
     {
+        "name": "analyze_place",
+        "description": (
+            "Trend analysis for ANY place outside the three regions: a city or town (e.g. Gaziantep, İzmir, "
+            "Ankara), a district, or any spot on Earth. Uses NASA POWER monthly data 1981-2025 (MERRA-2 based, "
+            "~50 km grid), area-weighted over a ~1° box (about 110 km) around the place, with the team's same "
+            "seasonal Mann-Kendall + Sen analysis. Returns the 1981-2025 and the 2001-2025 trend, the team's "
+            "interpretation and real-world context. Always pass lat/lon of the place centre in decimal degrees; "
+            "they are used when the place is not in the app's city list. The map shows the box automatically. "
+            "For konya, van and black_sea use get_trend instead."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "place": {"type": "string", "description": "Place name as the user wrote it, e.g. 'Gaziantep'."},
+                "variable": {"type": "string", "enum": VARIABLE_IDS},
+                "lat": {"type": "number", "description": "Latitude of the place centre, decimal degrees."},
+                "lon": {"type": "number", "description": "Longitude of the place centre, decimal degrees."},
+            },
+            "required": ["place", "variable", "lat", "lon"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
+    {
         "name": "control_map",
         "description": (
             "Drive the 3D map the user is looking at so it shows what you are talking about. "
@@ -394,6 +515,7 @@ HANDLERS = {
     "get_background": tool_get_background,
     "get_long_record": tool_get_long_record,
     "get_ndvi_trend": tool_get_ndvi_trend,
+    "analyze_place": tool_analyze_place,
 }
 
 STEP_LABELS = {
@@ -404,6 +526,7 @@ STEP_LABELS = {
     "get_background": "Katalog bilgisi",
     "get_long_record": "45 yıllık kontrol (POWER)",
     "get_ndvi_trend": "Bitki örtüsü (MODIS NDVI)",
+    "analyze_place": "Konum analizi (NASA POWER)",
     "control_map": "Harita",
 }
 TR_REGION = {"konya": "Konya", "van": "Van", "black_sea": "Doğu Karadeniz", "overview": "Türkiye"}
@@ -411,7 +534,7 @@ TR_VAR = {"precip": "yağış", "soil_moisture": "toprak nemi", "temp": "sıcakl
 
 
 def _step_label(name: str, args: dict) -> str:
-    bits = [TR_REGION.get(args.get(k), args.get(k)) for k in ("region", "region_a", "region_b") if args.get(k)]
+    bits = [TR_REGION.get(args.get(k), args.get(k)) for k in ("place", "region", "region_a", "region_b") if args.get(k)]
     if args.get("variable"):
         bits.append(TR_VAR.get(args["variable"], args["variable"]))
     if args.get("start_year"):
@@ -432,6 +555,10 @@ Basin, high plateau) and black_sea (Eastern Black Sea, mostly mountains in our b
 - Three monthly variables, 2001-2025, from NASA Giovanni as area averages over each region's box (~25 km grid): \
 precip (mm/month), soil_moisture (surface 0-10 cm, kg/m²), temp (2 m air temperature, °C).
 - The team's statistics: seasonal Mann-Kendall test + Sen slope, significance at p < 0.05.
+- Any other place (a city such as Gaziantep or İzmir, a district, or coordinates anywhere on Earth): \
+analyze_place, with NASA POWER monthly data 1981-2025 (MERRA-2 based, ~50 km grid) averaged over a ~1° box \
+around the place. Same variable ids: precip (mm/month), soil_moisture (here GWETTOP top-layer soil wetness in %, \
+a different quantity from Giovanni's kg/m²), temp (°C). There are no catalog clue hints for these places.
 
 How to work:
 - Get every number from a tool. Never estimate or recall values. If the tools can't answer, say so.
@@ -445,6 +572,10 @@ reasons (different products and depths, coarse grids, mountains) and suggest che
 irrigated fields while the soil dries may point to more groundwater irrigation, but say this is a
 hypothesis, not a finding.
 - Use control_map so the map shows what you are describing.
+- When the user asks about a place outside konya, van and black_sea, never say you only cover three regions: \
+call analyze_place (it moves the map itself). Follow the clue chain there too by calling analyze_place for the \
+other variables at the same place (e.g. drying soil -> was it less rain or more heat?). Say that it is NASA POWER \
+as a ~1° area average, not the city's own station, and compare 1981-2025 with 2001-2025 when they differ.
 - Be honest about limits: these are regional averages, not field measurements; a trend is not a cause; \
 "not significant" means it can't yet be told apart from natural variability, not "no change". For farm \
 advice (irrigation, crops, fertiliser) explain what the data suggests and what local measurement \
@@ -499,6 +630,10 @@ def _run_tool(name: str, args: dict, steps: list, actions: list, sources: list) 
     result = HANDLERS[name](**args)
     if isinstance(result, dict):
         _add_source(sources, result.get("source"))
+    # C: the map opens the place's box in the "Alan seç" panel. Only the first place call of an
+    # answer moves the map, so clue-chain calls (rain, heat) don't switch away from what was asked.
+    if name == "analyze_place" and not any("area" in a for a in actions):
+        actions.append({"area": result["map_area"], "variable": args["variable"]})
     if name == "compare_regions":
         for key in ("region_a", "region_b"):
             _add_source(sources, SOURCES.get(f"{args[key]}|{args['variable']}"))
@@ -641,8 +776,51 @@ def _find(kind: str, text: str) -> list[str]:
     return [k for k, words in KEYWORDS[kind].items() if any(w in t for w in words)]
 
 
+PLACE_TR = {"precip": ("yağış", "mm/ay"), "soil_moisture": ("yüzey toprak ıslaklığı", "yüzde puan"),
+            "temp": ("sıcaklık", "°C")}
+
+
+# C: Çevrimdışı modda (LLM yok) cümlede üç bölge dışında bir şehir geçiyorsa o şehrin
+# çevresini NASA POWER ile analiz eder. Toprak sorulduysa ipucu zinciri için yağış ve
+# sıcaklığa da bakar (toprak kuruyorsa: yağış mı azaldı, sıcaklık mı arttı?).
+def _offline_place(city: dict, user_text: str, ui_state: dict) -> dict:
+    variable = (_find("variable", user_text) or [ui_state.get("variable") or "soil_moisture"])[0]
+    chain = [variable] + (["precip", "temp"] if variable == "soil_moisture" else [])
+    steps, actions, lines, sources = [], [], [], []
+    mark = lambda x: "anlamlı" if x["significant_at_0_05"] else "anlamlı değil"
+    for var in chain:
+        name, unit = PLACE_TR[var]
+        steps.append(_step_label("analyze_place", {"place": city["name"], "variable": var}))
+        try:
+            t = tool_analyze_place(city["name"], var)
+        except ValueError as err:
+            lines.append(f"**{city['name']} çevresi · {name}**: analiz edilemedi ({err}).")
+            continue
+        _add_source(sources, t["source"])
+        if not actions:
+            actions.append({"area": t["map_area"], "variable": var})
+        f, r = t["trend_1981_2025"], t["trend_2001_2025"]
+        yon = {"increasing": "artıyor", "decreasing": "azalıyor"}.get(f["direction"], "belirgin değişmiyor")
+        lines.append(f"**{city['name']} çevresi · {name}** (NASA POWER): 1981–2025 on yılda "
+                     f"{f['sen_slope_per_decade']:+.2f} {unit} ({yon}, {mark(f)}); 2001–2025 "
+                     f"{r['sen_slope_per_decade']:+.2f} {unit} ({mark(r)}).")
+    if len(chain) > 1:
+        lines.insert(1, "İpucu zinciri: toprak değişiyorsa sebep yağış mı, sıcaklık mı? İkisine de bakıldı:")
+    lines.append("_Bu sonuç şehrin çevresindeki ~1°'lik kutunun (yaklaşık 110 km) alan ortalaması; "
+                 "şehrin kendi istasyon ölçümü değil._")
+    if actions:
+        steps.append(_step_label("control_map", {"place": city["name"]}))
+    lines.append("\n_Çevrimdışı mod: LLM bağlı değil, cevap kural tabanlı. Tam ajan için .env dosyasında "
+                 "ücretsiz bir sağlayıcı (LLM_PROVIDER + LLM_API_KEY) tanımla._")
+    return {"text": "\n".join(lines), "steps": steps, "actions": actions, "sources": sources, "offline": True}
+
+
 def run_offline(user_text: str, ui_state: dict) -> dict:
-    regions = _find("region", user_text) or [ui_state.get("region") or "konya"]
+    found = _find("region", user_text)
+    city = None if found else city_in_text(user_text)
+    if city:  # C: a city outside the three regions -> NASA POWER around it
+        return _offline_place(city, user_text, ui_state)
+    regions = found or [ui_state.get("region") or "konya"]
     variable = (_find("variable", user_text) or [ui_state.get("variable") or "soil_moisture"])[0]
     steps, actions, lines, sources = [], [], [], []
     for region in regions[:2]:
