@@ -8,7 +8,6 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="data.js"></script>
 <script src="power_data.js"></script>
-<script src="ndvi_data.js"></script>
 <script src="cities.js"></script>
 <style>
   :root {
@@ -577,7 +576,7 @@
       <ul>
         <li>Soldaki panel seçili bölgenin özetidir: tek cümlelik hikâye, <b>Sen eğimi</b> (on yılda ne kadar değişmiş), güven aralığı ve <b>anlamlılık</b>.</li>
         <li><b>Anlamlı</b> rozeti, değişimin doğal dalgalanmadan ayırt edilebildiğini söyler (p &lt; 0,05). "Anlamlı değil" ise "değişim yok" demek değildir; henüz ayırt edilemiyordur.</li>
-        <li>Aşağıda ısı haritası, NASA POWER ile 45 yıllık kontrol, bitki örtüsü (NDVI), kaynaklar ve <b>CSV indir</b> düğmesi var.</li>
+        <li>Aşağıda ısı haritası, NASA POWER ile 45 yıllık kontrol, kaynaklar ve <b>CSV indir</b> düğmesi var.</li>
       </ul>
 
       <h3>4. Kendi alanını seç</h3>
@@ -624,7 +623,7 @@
       <ul>
         <li>The left panel sums up the selected region: a one-sentence story, the <b>Sen slope</b> (how much it changed per decade), the confidence interval and the <b>significance</b>.</li>
         <li>The <b>Significant</b> badge means the change can be told apart from natural variability (p &lt; 0.05). "Not significant" does not mean "no change"; it means it can't be told apart yet.</li>
-        <li>Below are the heat map, the 45-year check with NASA POWER, vegetation (NDVI), the sources and a <b>Download CSV</b> button.</li>
+        <li>Below are the heat map, the 45-year check with NASA POWER, the sources and a <b>Download CSV</b> button.</li>
       </ul>
 
       <h3>4. Pick your own area</h3>
@@ -664,12 +663,6 @@
     try { const s = localStorage.getItem("td3d-lang"); if (s === "tr" || s === "en") return s; } catch (e) {}
     return /^tr\b/i.test(navigator.language || "") ? "tr" : "en";
   })();
-  const ND_EN = { "Çumra ovası": "Çumra plain", "Erciş ovası": "Erciş plain", "Rize kıyı yamaçları": "Rize coastal slopes",
-    "tarım": "cropland", "bitki örtüsü": "natural vegetation", "tarım alanı": "cropland", "yerleşim": "urban",
-    "çayır/mera": "grassland", "sulak alan": "wetland", "iğne yapraklı orman": "needleleaf forest",
-    "geniş yapraklı yaprak dökmeyen orman": "evergreen broadleaf forest", "geniş yapraklı yaprak döken orman": "deciduous broadleaf forest",
-    "karışık orman": "mixed forest", "odunsu savan": "woody savanna", "savan": "savanna", "tarım/doğal karışık": "cropland/natural mosaic",
-    "çıplak arazi": "barren", "su": "water" };
   const STR = {
     tr: {
       pageTitle: "Trend Dedektifi 3B", noDataJs: "data.js bulunamadı. Önce build_data.py çalıştırın.", langGroup: "Dil",
@@ -747,7 +740,7 @@
       },
       "pw.T2M": "Hava sıcaklığı (T2M)", "pw.T2M_MAX": "Günlük en yüksek sıcaklık (T2M_MAX)",
       "pw.PRECTOTCORR": "Yağış (PRECTOTCORR)", "pw.GWETROOT": "Kök bölgesi toprak ıslaklığı (GWETROOT)",
-      unit: u => u, nd: s => s,
+      unit: u => u,
       cellNoData: "veri yok", vsNormal: "(normale göre)", heatAria: "Yıl-ay sapma ısı haritası",
       noPower: "power_data.js yok. <code>build_power.py</code> çalıştırılınca 45 yıllık kontrol burada görünür.",
       conflict: (a, b) => `⚠️ Veri setleri çelişiyor: Giovanni ${a}, POWER ${b} (2001–2025). Farklı ürünler ve derinlikler, kaba ızgara ve dağlık arazi etkili olabilir. Karar vermeden önce yerel istasyon verisiyle (MGM) kontrol edilmeli.`,
@@ -755,21 +748,13 @@
       sigSplit: (full, recent) => `🕵️ 45 yılda ${full ? "anlamlı" : "anlamlı değil"}, son 25 yılda ${recent ? "anlamlı" : "anlamlı değil"}: değişim ${recent ? "yeni bir olgu olabilir" : "uzun vadeli ama son dönemde gürültüde kaybolmuş olabilir"}.`,
       giovanniReq: "Giovanni isteği", areaMean: (w, e, s, n) => `(alan ortalaması, ${w}–${e}°D, ${s}–${n}°K)`,
       powerSrc: n => `NASA POWER aylık nokta API'si, 1981–2025, kutu içindeki ${n} ızgara noktasının ortalaması`,
-      apiDoc: "API belgesi", serviceDoc: "servis belgesi",
-      ndviSrc: name => `MODIS Terra MOD13Q1 v061 NDVI (250 m, 16 günlük), ORNL DAAC Land Product Subsets · ${name} penceresi`,
+      apiDoc: "API belgesi",
       trendSrc: "Trend: B'nin mevsimsel Mann-Kendall + Sen eğimi (repodaki <code>src/trend.py</code>)",
-      noNdvi: "ndvi_data.js yok. <code>build_ndvi.py</code> çalıştırılınca MODIS NDVI trendi burada görünür.",
-      ndviMissing: name => `${name ? `<b>${name}</b> penceresi için` : "Bu bölge için"} MODIS NDVI verisi henüz indirilmedi (ORNL sunucusu yoğundu). <code>build_ndvi.py</code> tekrar çalıştırılınca kaldığı yerden tamamlanır.`,
-      ndviWindow: (kind, km, lat, lon) => `(${kind} penceresi, ${km}×${km} km, ${lat}°K ${lon}°D)`,
-      landCover: "Arazi örtüsü (MODIS 2020)", ndviMonthly: "Aylık NDVI trendi", ndviPeak: "Yıllık zirve (en yeşil ay)",
-      peakTitle: (y, v) => `${y}: zirve NDVI ${v}`, peakAria: "Yıllık zirve NDVI",
-      nonCrop: "Bu kutuda MODIS'e göre tarım alanı yok (çay/fındık bahçeleri orman sınıfında). Pencere doğal bitki örtüsünü ölçüyor.",
-      ndviCaveat: "NDVI tek başına nedeni söylemez: yeşillenme sulama artışından, kahverengileşme nadas veya kuraklıktan olabilir.",
       noVarData: "Bu değişken için veri yok.", kicker: "Dedektif dosyası", hideFileA: "Dedektif dosyasını gizle", hide: "Gizle ◂",
       senPerDec: "Sen eğimi / 10 yıl", senCi95: "Sen eğimi %95 güven aralığı", olsCi95: "OLS eğimi %95 güven aralığı", longMean: "Uzun dönem ortalama", pctPerDec: "% değişim / 10 yıl",
       chartLegend: "Aylık değer (soluk), 12 aylık ortalama (beyaz), Sen trendi (sarı kesikli)",
       heatTitle: "Isı haritası (yıl × ay)", y25: "25 yıl", y45: "45 yıl", heatNote: "her hücre o ayın kendi ortalamasından sapması",
-      longTitle: "45 yıllık kontrol · NASA POWER", vegTitle: "Bitki örtüsü · MODIS NDVI", sources: "Kaynaklar",
+      longTitle: "45 yıllık kontrol · NASA POWER", sources: "Kaynaklar",
       flyRegion: "Bölgeye yakınlaş", csv: "CSV indir",
       "av.temp": "Hava sıcaklığı", "av.precip": "Yağış", "av.soil_moisture": "Yüzey toprak ıslaklığı",
       "avu.precip": "mm/ay", "avs.soil_moisture": "yüzde puan",
@@ -878,7 +863,7 @@
       },
       "pw.T2M": "Air temperature (T2M)", "pw.T2M_MAX": "Daily maximum temperature (T2M_MAX)",
       "pw.PRECTOTCORR": "Precipitation (PRECTOTCORR)", "pw.GWETROOT": "Root-zone soil wetness (GWETROOT)",
-      unit: u => u === "mm/ay" ? "mm/month" : u, nd: s => ND_EN[s] || s,
+      unit: u => u === "mm/ay" ? "mm/month" : u,
       cellNoData: "no data", vsNormal: "(vs normal)", heatAria: "Year × month anomaly heat map",
       noPower: "power_data.js is missing. Run <code>build_power.py</code> to see the 45-year check here.",
       conflict: (a, b) => `⚠️ The datasets disagree: Giovanni ${a}, POWER ${b} (2001–2025). Different products and depths, coarse grids and mountains can cause this. Check local station data (MGM) before deciding.`,
@@ -886,21 +871,13 @@
       sigSplit: (full, recent) => `🕵️ ${full ? "Significant" : "Not significant"} over 45 years, ${recent ? "significant" : "not significant"} over the last 25: the change ${recent ? "may be a new phenomenon" : "may be long-term but lost in recent noise"}.`,
       giovanniReq: "Giovanni request", areaMean: (w, e, s, n) => `(area mean, ${w}–${e}°E, ${s}–${n}°N)`,
       powerSrc: n => `NASA POWER monthly point API, 1981–2025, mean of the ${n} grid points inside the box`,
-      apiDoc: "API docs", serviceDoc: "service docs",
-      ndviSrc: name => `MODIS Terra MOD13Q1 v061 NDVI (250 m, 16-day), ORNL DAAC Land Product Subsets · ${name} window`,
+      apiDoc: "API docs",
       trendSrc: "Trend: the team's seasonal Mann-Kendall + Sen slope (<code>src/trend.py</code> in the repo)",
-      noNdvi: "ndvi_data.js is missing. Run <code>build_ndvi.py</code> to see the MODIS NDVI trend here.",
-      ndviMissing: name => `MODIS NDVI data ${name ? `for the <b>${name}</b> window` : "for this region"} is not downloaded yet (the ORNL server was busy). Running <code>build_ndvi.py</code> again continues where it stopped.`,
-      ndviWindow: (kind, km, lat, lon) => `(${kind} window, ${km}×${km} km, ${lat}°N ${lon}°E)`,
-      landCover: "Land cover (MODIS 2020)", ndviMonthly: "Monthly NDVI trend", ndviPeak: "Yearly peak (greenest month)",
-      peakTitle: (y, v) => `${y}: peak NDVI ${v}`, peakAria: "Yearly peak NDVI",
-      nonCrop: "MODIS shows no cropland in this box (tea and hazelnut gardens fall in the forest class). The window measures natural vegetation.",
-      ndviCaveat: "NDVI alone can't tell the cause: greening can come from more irrigation, browning from fallow or drought.",
       noVarData: "No data for this variable.", kicker: "Detective file", hideFileA: "Hide the detective file", hide: "Hide ◂",
       senPerDec: "Sen slope / decade", senCi95: "Sen slope 95% confidence interval", olsCi95: "OLS slope 95% confidence interval", longMean: "Long-term mean", pctPerDec: "% change / decade",
       chartLegend: "Monthly value (faint), 12-month mean (white), Sen trend (dashed yellow)",
       heatTitle: "Heat map (year × month)", y25: "25 yrs", y45: "45 yrs", heatNote: "each cell is the departure from that month's own mean",
-      longTitle: "45-year check · NASA POWER", vegTitle: "Vegetation · MODIS NDVI", sources: "Sources",
+      longTitle: "45-year check · NASA POWER", sources: "Sources",
       flyRegion: "Zoom to region", csv: "Download CSV",
       "av.temp": "Air temperature", "av.precip": "Precipitation", "av.soil_moisture": "Surface soil wetness",
       "avu.precip": "mm/month", "avs.soil_moisture": "percentage points",
@@ -1253,7 +1230,6 @@
     const src = P[`${r.id}|${v}`]?.source || {};
     const items = [`<li>${escH(src.dataset || "—")} · ${src.url ? `<a href="${escH(src.url)}" target="_blank" rel="noopener">${t("giovanniReq")}</a>` : ""} ${t("areaMean", r.bbox.west, r.bbox.east, r.bbox.south, r.bbox.north)}</li>`];
     if (PW) items.push(`<li>${t("powerSrc", PW.points[r.id]?.length || "?")} · <a href="${escH(PW.source.url)}" target="_blank" rel="noopener">${t("apiDoc")}</a></li>`);
-    if (ND && ND.sites[r.id]) items.push(`<li>${t("ndviSrc", escH(t("nd", ND.sites[r.id].name)))} · <a href="${escH(ND.source.url)}" target="_blank" rel="noopener">${t("serviceDoc")}</a></li>`);
     items.push(`<li>${t("trendSrc")}</li>`);
     // A: kutunun denize ya da göle taşan payı (scripts/check_bbox_water.py ile ölçüldü; katalogdaki box_note)
     const boxNote = (LANG === "tr" ? r.box_note_tr : null) || r.box_note;
@@ -1266,54 +1242,17 @@
     const params = PW ? (POWER_PARAMS[v] || []) : [];
     const pw = params.map(param => powerSeries(r.id, param));
     const allMonths = PW ? [...new Set([...PW.months, ...months])].sort() : months;
-    const nd = ND?.series?.[r.id];
-    const head = ["month", `giovanni_${v}`, ...params.map(x => `power_${x}`), ...(nd ? ["modis_ndvi_window"] : [])];
+    const head = ["month", `giovanni_${v}`, ...params.map(x => `power_${x}`)];
     const lines = [head.join(",")];
     for (const m of allMonths) {
       const gi = months.indexOf(m), pi = PW ? PW.months.indexOf(m) : -1;
-      const ni = nd ? ND.months.indexOf(m) : -1;
-      lines.push([m, gi >= 0 ? (p.value[gi] ?? "") : "", ...pw.map(s => s && pi >= 0 ? (s.values[pi] ?? "") : ""),
-        ...(nd ? [ni >= 0 ? (nd.values[ni] ?? "") : ""] : [])].join(","));
+      lines.push([m, gi >= 0 ? (p.value[gi] ?? "") : "", ...pw.map(s => s && pi >= 0 ? (s.values[pi] ?? "") : "")].join(","));
     }
     const meta = `# ${r.name} | ${VAR_TR[v].name} (${VAR_TR[v].unit}) | Giovanni: ${p.source?.dataset || ""} | POWER units: ${params.map(x => x + "=" + PW.variables[x].unit).join(" ")}`;
     const blob = new Blob(["﻿" + meta + "\n" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = `trend_dedektifi_${r.id}_${v}.csv`;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  }
-
-  // ------------------------------------------------------------------ MODIS NDVI (farm window)
-  const ND = window.NDVI_DATA || null;
-  function ndviHTML(r) {
-    if (!ND) return `<div class="lr">${t("noNdvi")}</div>`;
-    const site = ND.sites[r.id], ser = ND.series[r.id];
-    if (!site || !ser) {
-      const miss = ND.missing_regions?.[r.id];
-      return `<div class="lr">${t("ndviMissing", miss ? escH(t("nd", miss.name)) : "")}</div>`;
-    }
-    const tr = ser.trend, pk = ser.peak;
-    const badge = x => `<span class="badge ${x.significant ? "sig" : "ns"}">${t(x.significant ? "sig" : "notSigShort")}</span>`;
-    // Yıllık zirve NDVI için küçük çubuk grafik
-    const W = 276, H = 54, n = pk.values.length, lo = Math.min(...pk.values) - 0.02, hi = Math.max(...pk.values) + 0.01;
-    const bw = W / n;
-    const bars = pk.values.map((v, i) => {
-      const h = ((v - lo) / (hi - lo)) * (H - 12);
-      return `<rect x="${(i * bw).toFixed(1)}" y="${(H - 12 - h).toFixed(1)}" width="${(bw - 1).toFixed(1)}" height="${h.toFixed(1)}" fill="#5fbf6a"><title>${t("peakTitle", pk.years[i], v.toFixed(3))}</title></rect>`;
-    }).join("");
-    const lc = site.land_cover.map(c => `${escH(t("nd", c.class))} ${t("pct", c.percent)}`).join(", ");
-    return `<div class="lr">
-      <div><b>${escH(t("nd", site.name))}</b> <span class="p">${t("ndviWindow", escH(t("nd", site.kind)), ND.window_km, site.lat, site.lon)}</span></div>
-      <div class="p" style="margin:2px 0 6px">${t("landCover")}: ${lc}</div>
-      <table>
-        <tr><td>${t("ndviMonthly")}</td><td>${signed(tr.sen_slope_per_decade, 3)} ${t("perDecade")} ${badge(tr)}<div class="p">p = ${pTxt(tr.mk_p)}</div></td></tr>
-        <tr><td>${t("ndviPeak")}</td><td>${signed(pk.sen_slope_per_decade, 3)} ${t("perDecade")} ${badge(pk)}<div class="p">p = ${pTxt(pk.mk_p)}</div></td></tr>
-      </table>
-      <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;margin-top:6px" aria-label="${t("peakAria")}">${bars}
-        <text class="axis" x="0" y="${H - 1}" style="font-size:10px;fill:var(--muted)">${pk.years[0]}</text>
-        <text class="axis" x="${W}" y="${H - 1}" text-anchor="end" style="font-size:10px;fill:var(--muted)">${pk.years[n - 1]}</text></svg>
-      ${site.kind !== "tarım" ? `<div class="warn">${t("nonCrop")}</div>` : ""}
-      <div class="p" style="margin-top:6px">${t("ndviCaveat")}</div>
-    </div>`;
   }
 
   function setMode(mode) {
@@ -1444,7 +1383,6 @@
           <small style="color:var(--muted);font-size:11px">${heatSrc === "power" ? PW_TR[POWER_PARAMS[v][0]] + " · NASA POWER" : meta.name + " · Giovanni"} · ${t("heatNote")}</small></div>
       </div>
       <div class="sec"><h3>${t("longTitle")}</h3>${longRecordHTML(r, v, res)}</div>
-      <div class="sec"><h3>${t("vegTitle")}</h3>${ndviHTML(r)}</div>
       <div class="sec"><h3>${t("sources")}</h3>${sourcesHTML(r, v)}</div>
       <div class="btn-row"><button class="fly" id="flyBtn">${t("flyRegion")}</button><button class="ghost" id="csvBtn">${t("csv")}</button></div>`;
     document.getElementById("flyBtn").onclick = () => flyToRegion(r.id);
@@ -2290,14 +2228,6 @@
       paint: { "fill-extrusion-color": ["get", "color"], "fill-extrusion-height": ["get", "h"],
         "fill-extrusion-base": 0, "fill-extrusion-opacity": 0.88, "fill-extrusion-vertical-gradient": true } });
 
-    if (window.NDVI_DATA) {
-      const sq = (lat, lon, km) => { const dLat = km / 2 / 111, dLon = km / 2 / (111 * Math.cos(lat * Math.PI / 180));
-        return [[[lon - dLon, lat - dLat], [lon + dLon, lat - dLat], [lon + dLon, lat + dLat], [lon - dLon, lat + dLat], [lon - dLon, lat - dLat]]]; };
-      map.addSource("ndvi-sites", { type: "geojson", data: { type: "FeatureCollection", features:
-        Object.entries(window.NDVI_DATA.sites).map(([id, s]) => ({ type: "Feature", properties: { name: s.name },
-          geometry: { type: "Polygon", coordinates: sq(s.lat, s.lon, window.NDVI_DATA.window_km) } })) } });
-      map.addLayer({ id: "ndvi-sites-line", type: "line", source: "ndvi-sites", paint: { "line-color": "#6fe08a", "line-width": 2.2 } });
-    }
     // C: "Alan seç" açıkken tıklamalar bölge seçmez, alan seçer.
     map.on("click", "region-fill", e => { if (!area.picking) selectRegion(e.features[0].properties.id, true); });
     map.on("mouseenter", "region-fill", () => { if (!area.picking) map.getCanvas().style.cursor = "pointer"; });
