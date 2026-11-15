@@ -577,6 +577,12 @@ around the place. Same variable ids: precip (mm/month), soil_moisture (here GWET
 a different quantity from Giovanni's kg/m²), temp (°C). There are no catalog clue hints for these places.
 
 How to work:
+- Stay on topic. You only help with this app: how rain, soil moisture and temperature (drought, warming, \
+water) change in its NASA data, the regions and places it can analyse, and how to read the app. Do not answer \
+anything else (sports, recipes, news, homework, coding, health, personal advice, other general knowledge) and \
+call no tools for it: say in one sentence that you are the Trend Detective and only cover these trends, then \
+suggest two example questions. For a greeting or "what can you do?", greet briefly, say what you can do in one \
+sentence and suggest two example questions.
 - Get every number from a tool. Never estimate or recall values. If the tools can't answer, say so.
 - Follow the clue chain like a detective: when a series changes, check the variables that could explain it \
 (e.g. drying soil -> was it less rain or more heat?), using the catalog's next-step hint.
@@ -791,9 +797,57 @@ KEYWORDS = {
 }
 
 
+def _has_word(text: str, word: str) -> bool:
+    """True if a word in the text starts with ``word`` (so "toprak nemi" has "nem", "sinema" does not)."""
+    return re.search(r"(?<![a-zçğıöşüâîû])" + re.escape(word), text) is not None
+
+
 def _find(kind: str, text: str) -> list[str]:
     t = text.lower()
-    return [k for k, words in KEYWORDS[kind].items() if any(w in t for w in words)]
+    return [k for k, words in KEYWORDS[kind].items() if any(_has_word(t, w) for w in words)]
+
+
+# Konuyla ilgili sayılan başka kelimeler (bölge, şehir ve değişken kelimelerine ek olarak).
+TOPIC_WORDS = (
+    "trend", "eğilim", "egilim", "iklim", "climate", "hava", "weather", "su ", "water", "kuru", "dry", "ıslak",
+    "islak", "wet", "tarım", "tarim", "ekin", "crop", "farm", "bitki", "plant", "ndvi", "nasa", "veri", "data",
+    "anlamlı", "anlamli", "significant", "değiş", "degis", "chang", "art", "azal", "increas", "decreas", "harita",
+    "map", "bölge", "bolge", "region", "karşılaştır", "karsilastir", "compare", "genel", "overview", "türkiye",
+    "turkiye", "turkey", "dönem", "donem", "period", "yıl", "yil", "year", "grafik", "chart", "şerit", "serit",
+    "stripe", "giovanni", "power", "merra", "gldas", "imerg", "mann", "kendall", "sen eğim", "p değer", "p-value",
+)
+GREETINGS = ("merhaba", "selam", "slm", "hello", "hi", "hey", "günaydın", "gunaydin", "iyi akşam", "iyi aksam",
+             "nasılsın", "nasilsin", "kimsin", "ne yapabilirsin", "what can you do", "who are you")
+
+
+def _on_topic(text: str) -> bool:
+    t = text.lower()
+    return bool(_find("region", t) or _find("variable", t) or any(_has_word(t, w) for w in TOPIC_WORDS)
+                or re.search(r"-?\d{1,3}[.,]\d+\s*[,;/ ]\s*-?\d{1,3}[.,]\d+", t))  # coordinates
+
+
+OFFLINE_INTRO = {
+    "tr": ("Ben Trend Dedektifi'yim. NASA verileriyle yağış, toprak nemi ve hava sıcaklığının nasıl değiştiğini "
+           "araştırırım; bunların dışındaki konularda yardımcı olamam.",
+           "Merhaba! Ben Trend Dedektifi'yim. NASA verileriyle yağış, toprak nemi ve hava sıcaklığının nasıl "
+           "değiştiğini araştırırım.",
+           "Şunları sorabilirsin:",
+           ["Konya'da toprak neden kuruyor?", "Van'daki ısınma gerçek mi?", "Gaziantep'te toprak ne durumda?"]),
+    "en": ("I'm the Trend Detective. I look into how rain, soil moisture and air temperature change in NASA data; "
+           "I can't help with other topics.",
+           "Hi! I'm the Trend Detective. I look into how rain, soil moisture and air temperature change in NASA data.",
+           "You could ask:",
+           ["Why is the soil drying in Konya?", "Is the warming in Van real?", "How is the soil in Gaziantep?"]),
+}
+
+
+def _offline_intro(user_text: str, lang: str) -> dict:
+    """Answer to a greeting or an off-topic question: who the detective is and what to ask instead."""
+    off_topic, hello, ask, examples = OFFLINE_INTRO["en" if lang == "en" else "tr"]
+    t = user_text.lower()
+    greeting = any(_has_word(t, g) for g in GREETINGS)
+    text = (hello if greeting else off_topic) + "\n" + ask + "\n" + "\n".join(f"- {q}" for q in examples)
+    return {"text": text + OFFLINE_NOTE[lang == "en"], "steps": [], "actions": [], "sources": [], "offline": True}
 
 
 PLACE_NAMES = {  # variable -> ((tr name, tr unit), (en name, en unit))
@@ -872,6 +926,8 @@ def run_offline(user_text: str, ui_state: dict) -> dict:
     city = None if found else city_in_text(user_text)
     if city:  # C: a city outside the three regions -> NASA POWER around it
         return _offline_place(city, user_text, ui_state)
+    if not _on_topic(user_text):  # greeting or unrelated question: introduce, don't dump statistics
+        return _offline_intro(user_text, lang)
     regions = found or [ui_state.get("region") or "konya"]
     variable = (_find("variable", user_text) or [ui_state.get("variable") or "soil_moisture"])[0]
     reg_name, var_name = (EN_REGION, EN_VAR) if en else (TR_REGION, TR_VAR)

@@ -211,3 +211,34 @@ def test_yearly_check_reaches_data_card_and_agent(server):
         assert html.count(f"{key}:") == 2, key
     check = server.tool_get_trend("konya", "soil_moisture")["robustness_check"]
     assert check["significant_at_0_05"] is True and 0.001 < check["yearly_means_p"] < 0.05
+
+
+@pytest.mark.parametrize(("text", "lang", "greeting"), [
+    ("Dün akşamki maçı kim kazandı?", "tr", False),
+    ("Bana bir kek tarifi ver", "tr", False),
+    ("sinema bileti al", "tr", False),          # "sinema" must not count as "nem" (soil moisture)
+    ("Who won the World Cup?", "en", False),
+    ("merhaba", "tr", True),
+    ("ne yapabilirsin", "tr", True),
+    ("hello", "en", True),
+])
+def test_offline_off_topic_gets_an_intro_not_statistics(server, text, lang, greeting):
+    out = server.run_offline(text, {"lang": lang, "region": "konya", "variable": "soil_moisture"})
+    assert out["steps"] == [] and out["actions"] == [] and out["sources"] == []
+    assert "kg/m²" not in out["text"]
+    intro = server.OFFLINE_INTRO[lang]
+    assert out["text"].startswith(intro[1] if greeting else intro[0])
+    assert all(q in out["text"] for q in intro[3])  # example questions
+
+
+@pytest.mark.parametrize("text", [
+    "Konya toprak nemi kuruyor mu?", "Karadeniz ile Konya'yı karşılaştır", "son yıllarda ne değişti?",
+    "Is it getting warmer in Van?", "kuraklık var mı",
+])
+def test_offline_on_topic_still_analyses(server, text):
+    out = server.run_offline(text, {"lang": "tr", "region": "konya", "variable": "soil_moisture"})
+    assert out["steps"], text
+
+
+def test_agent_prompt_keeps_to_the_topic(server):
+    assert "Stay on topic" in server.SYSTEM and "suggest two example questions" in server.SYSTEM
