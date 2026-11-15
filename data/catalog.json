@@ -24,6 +24,47 @@
           { "title": "IPCC AR6 Working Group I (2021): Regional fact sheet, Europe and the Mediterranean", "url": "https://www.ipcc.ch/report/ar6/wg1/downloads/factsheets/IPCC_AR6_WGI_Regional_Fact_Sheet_Europe.pdf" },
           { "title": "NASA Science: How atmospheric water vapor amplifies Earth's greenhouse effect", "url": "https://science.nasa.gov/earth/climate-change/steamy-relationships-how-atmospheric-water-vapor-amplifies-earths-greenhouse-effect/" }
         ]
+      },
+      "context_tr": {
+        "increasing": "Daha fazla yağmur ve kar toprağı, nehirleri, barajları ve yeraltı suyunu doldurabilir; bu tarıma ve doğaya yardımcı olur. Ama fazladan su daha şiddetli sağanaklarla gelirse sel ve toprak erozyonu riski de artabilir, çünkü sert ve kuru zemin suyun çoğunu akıtıp götürür.",
+        "decreasing": "Daha az yağmur ve kar, toprağı, nehirleri, barajları ve yeraltı suyunu dolduracak suyun azalması demektir; bu da tarım bölgelerinde sulama ve kuyular üzerindeki baskıyı artırabilir. İklim değerlendirmeleri, ısınma sürdükçe Türkiye'nin batısını ve ortasını da kapsayan Akdeniz bölgesinde daha az yaz yağışı ve daha fazla kuraklık öngörüyor.",
+        "no_clear_trend": "Yağış yıldan yıla çok değişir; bu yüzden 25 yıl, uzun dönemli bir değişimi doğal iniş çıkışlardan ayırmak için çoğu zaman kısadır. 'Belirgin eğilim yok', hiçbir şeyin değişmediği anlamına gelmez; bu verinin henüz bunu söyleyemediği anlamına gelir."
+      },
+      "actions": {
+        "increasing": {
+          "en": [
+            "Prepare for heavier downpours: keep drains and stream beds clear and protect slopes and fields against erosion.",
+            "Where possible, store part of the extra water for drier periods."
+          ],
+          "tr": [
+            "Daha şiddetli sağanaklara hazırlan: kanalları ve dere yataklarını açık tut, yamaçları ve tarlaları erozyona karşı koru.",
+            "Mümkün olan yerlerde fazla suyun bir kısmını kurak dönemler için depola."
+          ]
+        },
+        "decreasing": {
+          "en": [
+            "Collect and store rainwater where possible, for example with small rainwater harvesting structures.",
+            "Prepare for dry years in advance with a drought risk plan (water allocation, groundwater limits), rather than waiting for an emergency."
+          ],
+          "tr": [
+            "Mümkün olan yerlerde yağmur suyunu topla ve depola; örneğin küçük yağmur suyu hasadı yapılarıyla.",
+            "Kurak yıllara önceden hazırlan: acil durumu beklemek yerine bir kuraklık risk planı yap (su paylaşımı, yeraltı suyu sınırları)."
+          ]
+        },
+        "sources": [
+          {
+            "title": "FAO: Drought, proactive drought risk management",
+            "url": "https://www.fao.org/land-water/water/drought/en/"
+          },
+          {
+            "title": "FAO: Conservation Agriculture (soil cover, minimum tillage, crop diversification)",
+            "url": "https://www.fao.org/conservation-agriculture/en/"
+          },
+          {
+            "title": "IPCC AR6 Working Group I (2021): Regional fact sheet, Europe and the Mediterranean",
+            "url": "https://www.ipcc.ch/report/ar6/wg1/downloads/factsheets/IPCC_AR6_WGI_Regional_Fact_Sheet_Europe.pdf"
+          }
+        ]
       }
     },
     {
@@ -46,6 +87,49 @@
         "sources": [
           { "title": "Drought.gov (NOAA NIDIS): Soil moisture", "url": "https://www.drought.gov/topics/soil-moisture" },
           { "title": "IPCC AR6 Working Group I (2021): Regional fact sheet, Europe and the Mediterranean", "url": "https://www.ipcc.ch/report/ar6/wg1/downloads/factsheets/IPCC_AR6_WGI_Regional_Fact_Sheet_Europe.pdf" }
+        ]
+      },
+      "context_tr": {
+        "increasing": "Daha nemli üst toprak genellikle ekinler ve bitkiler için daha fazla su demektir. Ama zaten ıslak olan toprak çok daha fazla su emmez; bu yüzden üzerine düşen şiddetli yağmurun akıp sele yol açma ihtimali artar.",
+        "decreasing": "Kuruyan üst toprak, ekinlere ve bitkilere daha az su bırakır; bu da yağmura dayalı hasadı düşürebilir ve çiftçileri sulama için daha fazla yeraltı suyu çekmeye itebilir. Toprak nemi kuraklığı çoğu zaman diğer işaretlerden önce haber verir; IPCC de bu tür kuraklığın Akdeniz çevresinde şimdiden daha sık görüldüğünü bildiriyor.",
+        "no_clear_trend": "Üst toprak her ıslak ya da kuru döneme hızla tepki verir; bu yüzden yıldan yıla çok dalgalanır ve yavaş bir değişim gizli kalabilir. Unutma: bu değerler doğrudan ölçüm değil, gözlemlerle beslenen bir bilgisayar modelinden (GLDAS) geliyor."
+      },
+      "actions": {
+        "increasing": {
+          "en": [
+            "Watch for waterlogging and runoff: soil that is already wet cannot take up heavy rain, so floods become more likely.",
+            "Keep fields covered and drainage paths open to limit erosion when heavy rain falls on wet ground."
+          ],
+          "tr": [
+            "Su birikmesine ve yüzey akışına dikkat et: zaten ıslak toprak şiddetli yağmuru ememez, sel ihtimali artar.",
+            "Tarlaları örtülü, drenaj yollarını açık tut; ıslak zemine düşen sağanakta erozyonu sınırlar."
+          ]
+        },
+        "decreasing": {
+          "en": [
+            "Keep the soil covered (crop residues, cover crops) and disturb it as little as possible; FAO's conservation agriculture links this to better water use.",
+            "Plan for dry seasons before they arrive: watch soil moisture and groundwater and agree on a drought plan, instead of reacting in an emergency.",
+            "Spread the risk with more than one crop or variety, so that a dry year does not hit everything at once."
+          ],
+          "tr": [
+            "Toprağı örtülü tut (anız, örtü bitkileri) ve olabildiğince az işle; FAO'nun koruyucu tarım yaklaşımı bunu daha verimli su kullanımıyla ilişkilendiriyor.",
+            "Kurak dönemlere önceden hazırlan: toprak nemini ve yeraltı suyunu izle, acil durumda tepki vermek yerine önceden bir kuraklık planı yap.",
+            "Riski tek ürüne bağlama: birden fazla ürün ya da çeşit, kurak bir yılın her şeyi birden vurmasını önleyebilir."
+          ]
+        },
+        "sources": [
+          {
+            "title": "FAO: Conservation Agriculture (soil cover, minimum tillage, crop diversification)",
+            "url": "https://www.fao.org/conservation-agriculture/en/"
+          },
+          {
+            "title": "FAO: Drought, proactive drought risk management",
+            "url": "https://www.fao.org/land-water/water/drought/en/"
+          },
+          {
+            "title": "Drought.gov (NOAA NIDIS): Soil moisture",
+            "url": "https://www.drought.gov/topics/soil-moisture"
+          }
         ]
       }
     },
@@ -70,6 +154,53 @@
           { "title": "NASA Science: How atmospheric water vapor amplifies Earth's greenhouse effect", "url": "https://science.nasa.gov/earth/climate-change/steamy-relationships-how-atmospheric-water-vapor-amplifies-earths-greenhouse-effect/" },
           { "title": "IPCC AR6 Working Group I (2021): Summary for Policymakers, headline statements", "url": "https://www.ipcc.ch/report/ar6/wg1/resources/spm-headline-statements/" },
           { "title": "IPCC AR6 Working Group I (2021): Regional fact sheet, Europe and the Mediterranean", "url": "https://www.ipcc.ch/report/ar6/wg1/downloads/factsheets/IPCC_AR6_WGI_Regional_Fact_Sheet_Europe.pdf" }
+        ]
+      },
+      "context_tr": {
+        "increasing": "Daha sıcak hava topraktan, göllerden ve bitkilerden buharlaşmayı artırır; yağış aynı kalsa bile arazi kuruyabilir. Isınma ayrıca daha sık sıcak hava dalgaları ve yüksek dağlar gibi karlı yerlerde daha az ve daha erken eriyen kar demektir; bu da nehirlerin ve göllerin suyu ne zaman aldığını değiştirir.",
+        "decreasing": "Soğuma eğilimi Avrupa'nın ve dünyanın çoğunda görülen ısınmaya ters düşer; bu yüzden örneğin yakındaki bir bölgeyle karşılaştırarak iki kez kontrol etmeye değer. Daha serin hava daha az buharlaşma demektir, ama ekinler için don zararı riski de artar.",
+        "no_clear_trend": "Sıcaklık eğilimleri genellikle yağış eğilimlerinden daha çabuk belirginleşir, ama yıldan yıla dalgalanmalar 25 yıl boyunca yavaş bir değişimi yine de gizleyebilir. Yakındaki bir bölgeyle karşılaştır ya da daha fazla yıllık veri geldiğinde yeniden bak."
+      },
+      "actions": {
+        "increasing": {
+          "en": [
+            "Protect people and animals during heat waves: shade, water, and no heavy outdoor work in the hottest hours.",
+            "Follow heat early warnings and local heat action plans where they exist.",
+            "Warmer air dries the soil faster: keeping the soil covered helps it hold its water."
+          ],
+          "tr": [
+            "Sıcak hava dalgalarında insanları ve hayvanları koru: gölge, su ve günün en sıcak saatlerinde ağır açık hava işi yok.",
+            "Varsa sıcak hava erken uyarılarını ve yerel sıcak hava eylem planlarını takip et.",
+            "Daha sıcak hava toprağı daha hızlı kurutur: toprağı örtülü tutmak suyunu korumaya yardımcı olur."
+          ]
+        },
+        "decreasing": {
+          "en": [
+            "Double-check the data first: a cooling trend goes against the warming seen across the region.",
+            "Follow frost warnings from the national weather service for sensitive crops."
+          ],
+          "tr": [
+            "Önce veriyi tekrar kontrol et: soğuma eğilimi bölgede görülen ısınmaya ters düşüyor.",
+            "Hassas ürünler için ulusal meteoroloji servisinin (MGM) don uyarılarını takip et."
+          ]
+        },
+        "sources": [
+          {
+            "title": "WHO fact sheet: Heat and health",
+            "url": "https://www.who.int/news-room/fact-sheets/detail/climate-change-heat-and-health"
+          },
+          {
+            "title": "NASA Science: How atmospheric water vapor amplifies Earth's greenhouse effect",
+            "url": "https://science.nasa.gov/earth/climate-change/steamy-relationships-how-atmospheric-water-vapor-amplifies-earths-greenhouse-effect/"
+          },
+          {
+            "title": "FAO: Conservation Agriculture (soil cover, minimum tillage, crop diversification)",
+            "url": "https://www.fao.org/conservation-agriculture/en/"
+          },
+          {
+            "title": "IPCC AR6 Working Group I (2021): Regional fact sheet, Europe and the Mediterranean",
+            "url": "https://www.ipcc.ch/report/ar6/wg1/downloads/factsheets/IPCC_AR6_WGI_Regional_Fact_Sheet_Europe.pdf"
+          }
         ]
       }
     }
