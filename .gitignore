@@ -30,3 +30,8 @@ data/cache/
 *.nc4
 *.h5
 *.hdf
+
+# detective3d: raw download caches of the build scripts (re-downloadable; the generated *.js files ARE committed)
+detective3d/power_raw/
+detective3d/ndvi_raw/
+detective3d/ne_raw/

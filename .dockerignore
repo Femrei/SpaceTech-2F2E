@@ -12,3 +12,7 @@ data/cache
 *.h5
 *.hdf
 .env
+**/.env
+detective3d/power_raw
+detective3d/ndvi_raw
+detective3d/ne_raw

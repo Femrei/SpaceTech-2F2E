@@ -1,0 +1,1163 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trend Dedektifi 3B</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="data.js"></script>
+<script src="power_data.js"></script>
+<script src="ndvi_data.js"></script>
+<script src="cities.js"></script>
+<style>
+  :root {
+    --panel: rgba(17, 24, 32, 0.86);
+    --panel-solid: #111820;
+    --panel-2: rgba(30, 40, 52, 0.9);
+    --line: rgba(255, 255, 255, 0.09);
+    --text: #e8edf2;
+    --muted: #93a1b0;
+    --brand: #d9a441;
+    --accent: #2f7de1;
+    --sig: #3fbf7f;
+    --ns: #8a96a3;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #0b1016; color: var(--text);
+    font: 14px/1.4 "Inter", "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+  #map { position: absolute; inset: 0; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  /* ---------- top strip ---------- */
+  .top { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); display: flex;
+    gap: 8px; padding: 8px; z-index: 5; max-width: calc(100% - 32px); }
+  .now { background: var(--accent); border-radius: 9px; padding: 8px 14px; min-width: 160px;
+    display: flex; flex-direction: column; justify-content: center; }
+  .now small { opacity: .85; font-size: 12px; }
+  .now b { font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
+  .chip { background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px;
+    padding: 8px 12px; text-align: left; min-width: 112px; transition: .2s; }
+  @media (min-width: 1101px) {
+    body:not(.left-closed) .top { left: 362px; transform: none; max-width: calc(100% - 362px - 150px); }
+  }
+  .chip small { display: block; color: var(--muted); font-size: 12px; }
+  .chip span { font-weight: 600; }
+  .chip:hover { border-color: rgba(255,255,255,.25); }
+  .chip.on { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+
+  /* ---------- top right ---------- */
+  .tr { position: absolute; top: 16px; right: 16px; z-index: 5; display: flex; flex-direction: column;
+    gap: 8px; align-items: flex-end; }
+  .seg { display: flex; padding: 4px; gap: 2px; }
+  .seg button { background: none; border: 0; padding: 7px 12px; border-radius: 8px; color: var(--muted);
+    font-weight: 500; }
+  .seg button.on { background: rgba(255,255,255,.1); color: var(--text); }
+  .toggles { display: none; flex-direction: column; gap: 6px; padding: 10px 12px; min-width: 210px; }
+  .toggles.open { display: flex; }
+  .layers-btn { padding: 7px 12px; border: 1px solid var(--line); background: var(--panel); color: var(--text);
+    border-radius: 10px; font-weight: 500; }
+  .layers-btn:hover { border-color: rgba(255,255,255,.3); }
+  .toggles label { display: flex; gap: 8px; align-items: center; cursor: pointer; color: var(--muted); }
+  .toggles label:hover { color: var(--text); }
+  .toggles input { accent-color: var(--brand); }
+  .toggles .h { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+    margin-top: 2px; }
+
+  /* ---------- left detail ---------- */
+  .left { position: absolute; top: 16px; left: 16px; width: 340px; z-index: 5; padding: 16px 14px 16px 16px;
+    max-height: calc(100% - 130px); overflow-y: auto; overflow-x: hidden; transition: transform .25s, opacity .25s;
+    scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.22) transparent; }
+  .left::-webkit-scrollbar { width: 8px; }
+  .left::-webkit-scrollbar-track { background: transparent; }
+  .left::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 8px; border: 2px solid transparent;
+    background-clip: padding-box; }
+  .left::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.32); background-clip: padding-box; }
+  .left svg { max-width: 100%; }
+  body.left-closed .left { transform: translateX(-370px); opacity: 0; pointer-events: none; }
+  .left-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .hide-btn { background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 7px; padding: 2px 8px;
+    font-size: 11.5px; color: var(--muted); }
+  .hide-btn:hover { color: var(--text); border-color: rgba(255,255,255,.3); }
+  /* Panel kapalıyken görünen "aç" düğmesi */
+  .left-tab { display: none; position: absolute; top: 16px; left: 16px; z-index: 6; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 10px; padding: 9px 14px; color: var(--text); font-weight: 600;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35); backdrop-filter: blur(10px); }
+  .left-tab:hover { border-color: var(--brand); }
+  body.left-closed .left-tab { display: block; }
+  .left .kicker { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--brand); }
+  .left h2 { margin: 4px 0 2px; font-size: 19px; font-weight: 600; }
+  .left .sub { color: var(--muted); font-size: 13px; }
+  .story { margin: 12px 0; font-size: 14px; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
+  .stat small { color: var(--muted); font-size: 11.5px; display: block; }
+  .stat b { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .bigchart { margin-top: 12px; background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 9px; padding: 8px 8px 4px; }
+  .bigchart small { color: var(--muted); font-size: 11.5px; }
+  .note { margin-top: 10px; font-size: 12px; color: var(--muted); }
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 99px;
+    vertical-align: 1px; }
+  .badge.sig { background: rgba(63,191,127,.18); color: #6fe0a6; }
+  .badge.ns { background: rgba(138,150,163,.2); color: #b8c2cc; }
+  .fly { margin-top: 12px; width: 100%; background: rgba(217,164,65,.15); border: 1px solid rgba(217,164,65,.5);
+    color: #f1cf8a; padding: 8px; border-radius: 9px; font-weight: 600; }
+
+  /* ---------- floating region cards ---------- */
+  .anchor { display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+  .fcard { pointer-events: auto; width: 214px; padding: 10px 12px; cursor: pointer; transition: border-color .2s, transform .2s; }
+  .fcard:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.25); }
+  .fcard.sel { border-color: var(--brand); }
+  .fc-head { display: flex; justify-content: space-between; align-items: center; gap: 6px;
+    font-weight: 600; font-size: 13px; }
+  .fc-head i { font-style: normal; color: var(--muted); font-weight: 500; font-size: 11.5px; }
+  .fc-val { margin-top: 4px; font-size: 26px; font-weight: 600; letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums; }
+  .fc-val u { text-decoration: none; font-size: 13px; color: var(--muted); font-weight: 500; margin-left: 3px; }
+  .fc-anom { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .fc-anom b { font-weight: 600; }
+  .fc-trend { margin-top: 4px; font-size: 12px; color: var(--muted); display: flex;
+    justify-content: space-between; align-items: center; gap: 6px; }
+  .fc-trend b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .leader { width: 0; height: 64px; border-left: 2px dashed rgba(255,255,255,.75); }
+  .pin { width: 12px; height: 12px; border-radius: 50%; background: #fff;
+    box-shadow: 0 0 0 4px rgba(255,255,255,.25), 0 0 14px rgba(255,255,255,.6); }
+
+  /* ---------- timeline ---------- */
+  .timeline { position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); z-index: 5;
+    width: min(1040px, calc(100% - 32px)); padding: 10px 14px 8px; display: flex; gap: 14px; align-items: center; }
+  .tl-seg { padding: 3px; background: rgba(255,255,255,.05); border-radius: 10px; flex: none; }
+  .tl-seg button { padding: 5px 10px; display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
+  .tl-seg button small { font-size: 10px; opacity: .75; }
+  .timeline.disabled .track, .timeline.disabled .play { opacity: .35; pointer-events: none; }
+  .play { width: 42px; height: 42px; border-radius: 50%; border: 0; background: var(--brand); color: #1b1305;
+    display: grid; place-items: center; flex: none; }
+  .play svg { width: 18px; height: 18px; }
+  .track { flex: 1; min-width: 0; }
+  .track input { width: 100%; accent-color: var(--brand); margin: 0; }
+  .ticks { position: relative; height: 16px; font-size: 11px; color: var(--muted); }
+  .ticks span { position: absolute; transform: translateX(-50%); }
+  .tl-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; }
+  .tl-date { font-weight: 600; font-variant-numeric: tabular-nums; font-size: 15px; }
+  .speed { background: var(--panel-2); border: 1px solid var(--line); color: var(--text); border-radius: 7px;
+    padding: 2px 6px; font: inherit; font-size: 12px; }
+
+  /* ---------- legend (inside the top strip) + footer ---------- */
+  .legend { display: flex; flex-direction: column; justify-content: center; padding: 4px 8px; width: 190px;
+    font-size: 11px; color: var(--muted); }
+  .legend .bar { height: 7px; border-radius: 4px; margin: 4px 0 2px; }
+  .legend .ends { display: flex; justify-content: space-between; }
+  /* ---------- city labels ---------- */
+  .city { display: flex; align-items: center; gap: 5px; pointer-events: none; transform: translateY(50%); }
+  .city i { width: 6px; height: 6px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px rgba(0,0,0,.6); flex: none; }
+  .city span { font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; letter-spacing: .01em;
+    text-shadow: 0 0 3px #000, 0 0 6px rgba(0,0,0,.9), 0 1px 2px #000; }
+  .city.cap span { font-size: 13.5px; font-weight: 700; }
+  .city.small span { font-size: 11px; font-weight: 500; color: #e6ebf0; }
+  .city.hidden { display: none; }
+  .foot { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); z-index: 5; font-size: 11.5px;
+    color: #c6cfd8; background: rgba(0,0,0,.45); padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+  .maplibregl-ctrl-attrib { font-size: 10px; }
+  .maplibregl-ctrl-bottom-right { bottom: 0; }
+
+
+
+  /* ---------- long record, heatmap, sources ---------- */
+  .sec { margin-top: 14px; }
+  .sec h3 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted);
+    display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+  .seg-mini { display: inline-flex; background: rgba(255,255,255,.06); border-radius: 7px; padding: 2px; }
+  .seg-mini button { background: none; border: 0; color: var(--muted); font-size: 11px; padding: 2px 8px; border-radius: 5px; }
+  .seg-mini button.on { background: rgba(255,255,255,.12); color: var(--text); }
+  .hm { background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 8px; }
+  .hm svg { display: block; }
+  .hm .axis { font-size: 10px; fill: var(--muted); }
+  .lr { background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; font-size: 12.5px; }
+  .lr table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .lr td { padding: 3px 0; vertical-align: top; }
+  .lr td:last-child { text-align: right; }
+  .lr .p { color: var(--muted); font-size: 11px; }
+  .warn { margin-top: 8px; padding: 7px 9px; border-radius: 8px; background: rgba(217,164,65,.12);
+    border: 1px solid rgba(217,164,65,.35); color: #f1cf8a; font-size: 12px; }
+  .ok { margin-top: 8px; padding: 7px 9px; border-radius: 8px; background: rgba(63,191,127,.1);
+    border: 1px solid rgba(63,191,127,.3); color: #8fe3b6; font-size: 12px; }
+  .src { font-size: 12px; color: var(--muted); margin: 0; padding-left: 16px; }
+  .src li { margin: 3px 0; }
+  .src a, .srcs a { color: #8cc4ff; }
+  .btn-row { display: flex; gap: 8px; margin-top: 12px; }
+  .btn-row .fly { margin-top: 0; }
+  .ghost { flex: 1; background: rgba(255,255,255,.06); border: 1px solid var(--line); color: var(--text); padding: 8px;
+    border-radius: 9px; font-weight: 600; }
+  .ghost:hover { border-color: rgba(255,255,255,.3); }
+  .srcs { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--line); font-size: 11.5px; color: var(--muted); }
+
+  /* ---------- map navigation buttons + mouse hint ---------- */
+  .navbar { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); z-index: 5; display: flex;
+    flex-direction: column; gap: 2px; padding: 5px; }
+  .navbar button { width: 36px; height: 36px; border: 0; border-radius: 8px; background: none; color: #d6dde4;
+    display: grid; place-items: center; position: relative; }
+  .navbar button:hover { background: rgba(255,255,255,.1); color: #fff; }
+  .navbar button.on { background: rgba(217,164,65,.22); color: #f1cf8a; }
+  .navbar button svg { width: 18px; height: 18px; }
+  .navbar hr { border: 0; border-top: 1px solid var(--line); margin: 3px 4px; }
+  .navbar button[data-tip]:hover::after { content: attr(data-tip); position: absolute; right: 44px; top: 50%;
+    transform: translateY(-50%); white-space: nowrap; background: rgba(10,14,19,.92); color: #fff; font-size: 12px;
+    padding: 4px 8px; border-radius: 6px; pointer-events: none; }
+  .compass-n { transition: transform .15s; }
+  .hint { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); z-index: 6; display: flex; gap: 14px;
+    align-items: center; padding: 9px 14px; font-size: 12.5px; color: #dfe6ec; transition: opacity .4s; }
+  .hint b { color: #fff; }
+  .hint.gone { opacity: 0; pointer-events: none; }
+  .hint button { background: none; border: 0; color: var(--muted); padding: 0 2px; font-size: 15px; }
+  body.chat-open .navbar { right: 422px; }
+  @media (max-width: 760px) { .navbar { top: auto; bottom: 200px; transform: none; } .hint { display: none; } }
+  /* ---------- detective agent chat ---------- */
+  .ask-btn { position: absolute; right: 16px; bottom: 112px; z-index: 6; display: flex; gap: 8px; align-items: center;
+    background: var(--brand); color: #1b1305; border: 0; border-radius: 99px; padding: 11px 18px; font-weight: 700;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+  .ask-btn svg { width: 18px; height: 18px; }
+  body.chat-open .ask-btn, body.chat-open .tr { display: none; }
+  .chat { position: absolute; top: 16px; right: 16px; bottom: 110px; width: 390px; z-index: 6; display: none;
+    flex-direction: column; overflow: hidden; }
+  body.chat-open .chat { display: flex; }
+  .chat-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .chat-head .av { width: 34px; height: 34px; border-radius: 50%; background: rgba(217,164,65,.18); display: grid;
+    place-items: center; color: var(--brand); flex: none; }
+  .chat-head .av svg { width: 18px; height: 18px; }
+  .chat-head b { display: block; font-size: 14px; }
+  .chat-head small { color: var(--muted); font-size: 11.5px; }
+  .chat-head .sp { flex: 1; }
+  .icon-btn { background: none; border: 0; color: var(--muted); padding: 6px; border-radius: 7px; }
+  .icon-btn:hover { color: var(--text); background: rgba(255,255,255,.08); }
+  .icon-btn svg { width: 16px; height: 16px; display: block; }
+  .chat-log { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 92%; font-size: 13.5px; line-height: 1.5; }
+  .msg.user { align-self: flex-end; background: var(--accent); padding: 8px 12px; border-radius: 12px 12px 3px 12px; }
+  .msg.bot { align-self: flex-start; background: var(--panel-2); border: 1px solid var(--line); padding: 10px 12px;
+    border-radius: 12px 12px 12px 3px; }
+  .msg.bot p { margin: 0 0 6px; } .msg.bot p:last-child { margin-bottom: 0; }
+  .msg.bot ul, .msg.bot ol { margin: 4px 0 6px; padding-left: 18px; }
+  .msg.err { border-color: rgba(232,80,58,.5); }
+  .steps { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+  .step { font-size: 11px; color: #cfd8e1; background: rgba(255,255,255,.06); border: 1px solid var(--line);
+    border-radius: 99px; padding: 2px 8px; display: inline-flex; gap: 5px; align-items: center; }
+  .step::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--sig); }
+  .step.map::before { background: var(--brand); }
+  .typing { display: inline-flex; gap: 4px; align-items: center; color: var(--muted); font-size: 12.5px; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+  .sugg { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; }
+  .sugg button { background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 99px; padding: 5px 10px;
+    font-size: 12px; color: #d6dde4; text-align: left; }
+  .sugg button:hover { border-color: var(--brand); color: var(--text); }
+  .chat-form { display: flex; gap: 8px; padding: 10px 12px 12px; border-top: 1px solid var(--line); }
+  .chat-form textarea { flex: 1; resize: none; height: 42px; max-height: 120px; background: rgba(0,0,0,.25); color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 13.5px; }
+  .chat-form textarea:focus { outline: none; border-color: var(--brand); }
+  .chat-form button { width: 42px; height: 42px; border-radius: 10px; border: 0; background: var(--brand); color: #1b1305;
+    display: grid; place-items: center; flex: none; }
+  .chat-form button:disabled { opacity: .45; cursor: default; }
+  .chat-form button svg { width: 18px; height: 18px; }
+  .pill { font-size: 10.5px; font-weight: 600; padding: 1px 7px; border-radius: 99px; margin-left: 4px; }
+  .pill.on { background: rgba(63,191,127,.18); color: #6fe0a6; }
+  .pill.off { background: rgba(217,164,65,.18); color: #f1cf8a; }
+  .pill.down { background: rgba(232,80,58,.2); color: #ff9a88; }
+  @media (max-width: 760px) { .chat { left: 16px; width: auto; bottom: 16px; } .ask-btn { bottom: 130px; } }
+  @media (max-width: 1100px) {
+    .left { display: none; }
+    .legend { display: none; }
+    .left-tab { display: none; }
+  }
+  @media (max-width: 760px) {
+    .top { flex-wrap: wrap; justify-content: center; }
+    .chip { min-width: 0; }
+    .tr { top: auto; bottom: 150px; }
+    .timeline { flex-wrap: wrap; }
+    .foot { white-space: normal; width: calc(100% - 32px); text-align: center; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="map"></div>
+
+<div class="top panel" id="top">
+  <div class="now"><small id="nowLabel">Gösterilen ay</small><b id="nowDate">—</b></div>
+  <div class="legend" id="legend"></div>
+</div>
+
+<div class="tr">
+  <button class="layers-btn" id="layersBtn" aria-expanded="false">Katmanlar ▾</button>
+  <div class="toggles panel" id="toggles">
+    <div class="h">Taban harita</div>
+    <label><input type="radio" name="base" value="esri" checked> Uydu görüntüsü (Esri)</label>
+    <label><input type="radio" name="base" value="bm"> NASA Blue Marble</label>
+    <div class="h">Katmanlar</div>
+    <label><input type="checkbox" id="ndviToggle"> NDVI · MODIS 16 günlük (NASA GIBS)</label>
+    <label><input type="checkbox" id="colToggle" checked> 3B sapma sütunları</label>
+    <label><input type="checkbox" id="cityToggle" checked> Şehir adları</label>
+    <label><input type="checkbox" id="tourToggle"> Otomatik tur</label>
+  </div>
+</div>
+
+
+<div class="navbar panel" id="navbar" aria-label="Harita kontrolleri">
+  <button data-act="home" data-tip="Genel görünüm (Türkiye)" aria-label="Genel görünüm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg></button>
+  <button data-act="zin" data-tip="Yakınlaş" aria-label="Yakınlaş"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button data-act="zout" data-tip="Uzaklaş" aria-label="Uzaklaş"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
+  <hr>
+  <button data-act="rotl" data-tip="Sola döndür (sağ tık + sürükle)" aria-label="Sola döndür"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+  <button data-act="rotr" data-tip="Sağa döndür" aria-label="Sağa döndür"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button>
+  <button data-act="north" data-tip="Kuzeyi yukarı al" aria-label="Kuzeyi yukarı al"><svg viewBox="0 0 24 24" class="compass-n" id="compassIcon"><path d="M12 3l4 9h-8z" fill="#e8553d"/><path d="M12 21l-4-9h8z" fill="#cfd8e1"/></svg></button>
+  <hr>
+  <button data-act="tiltup" data-tip="Daha eğik (3B)" aria-label="Daha eğik"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18 12 8l8 10"/><path d="M8 6h8"/></svg></button>
+  <button data-act="tiltdown" data-tip="Tepeden bak (2B)" aria-label="Tepeden bak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
+  <button data-act="orbit" id="orbitBtn" data-tip="Yavaşça dön (sunum modu)" aria-label="Yavaşça dön"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3a9 9 0 0 1 9 9"/><path d="M12 21a9 9 0 0 1-9-9"/></svg></button>
+  <hr>
+  <button data-act="help" data-tip="Fare kısayolları" aria-label="Fare kısayolları"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><path d="M12 17h.01"/></svg></button>
+</div>
+<div class="hint panel" id="hint" role="status">
+  <span>🖱️ <b>Sürükle</b>: kaydır</span><span><b>Sağ tık + sürükle</b> (veya Ctrl + sürükle): döndür ve eğ</span><span><b>Tekerlek</b>: yakınlaş</span>
+  <button id="hintClose" aria-label="İpucunu kapat">×</button>
+</div>
+<aside class="left panel" id="left"></aside>
+<button class="left-tab" id="leftTab" aria-label="Dedektif dosyasını aç">Dedektif dosyası ▸</button>
+
+<div class="timeline panel" id="timeline">
+  <div class="seg tl-seg" id="modeSeg">
+    <button data-mode="time" class="on">Zaman</button>
+    <button data-mode="before">Önce<small>2001–05</small></button>
+    <button data-mode="after">Sonra<small>2021–25</small></button>
+  </div>
+  <button class="play" id="play" aria-label="Oynat"></button>
+  <div class="track">
+    <input type="range" id="slider" min="0" value="0" aria-label="Ay">
+    <div class="ticks" id="ticks"></div>
+  </div>
+  <div class="tl-right">
+    <div class="tl-date" id="tlDate">—</div>
+    <select class="speed" id="speed" aria-label="Hız">
+      <option value="6">0.5×</option>
+      <option value="12" selected>1×</option>
+      <option value="24">2×</option>
+      <option value="48">4×</option>
+    </select>
+  </div>
+</div>
+
+
+<button class="ask-btn" id="askBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M8.5 11a2.5 2.5 0 0 1 2.5-2.5"/></svg> Dedektife sor</button>
+<section class="chat panel" id="chat" aria-label="Dedektif ajanı">
+  <div class="chat-head">
+    <div class="av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M8.5 11a2.5 2.5 0 0 1 2.5-2.5"/></svg></div>
+    <div><b>Dedektif ajanı</b><small id="agentStatus">Bağlanıyor…</small></div>
+    <div class="sp"></div>
+    <button class="icon-btn" id="chatReset" title="Yeni sohbet" aria-label="Yeni sohbet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+    <button class="icon-btn" id="chatClose" title="Kapat" aria-label="Kapat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="chat-log" id="chatLog"></div>
+  <div class="sugg" id="sugg"></div>
+  <form class="chat-form" id="chatForm">
+    <textarea id="chatInput" placeholder="Örn: Konya'da toprak neden kuruyor?" aria-label="Soru"></textarea>
+    <button type="submit" id="chatSend" aria-label="Gönder"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg></button>
+  </form>
+</section>
+<div class="foot">Prototip · Giovanni bölge ortalamaları (~25 km ızgara), tarla ölçeği değil · NDVI katmanı yalnızca görsel, analizde kullanılmıyor</div>
+
+<script>
+(() => {
+  const D = window.TREND_DATA;
+  if (!D) { document.body.innerHTML = "<p style='padding:2rem'>data.js bulunamadı. Önce build_data.py çalıştırın.</p>"; return; }
+
+  // ------------------------------------------------------------------ texts
+  const REGION_TR = { konya: "Konya Kapalı Havzası", van: "Van Gölü Havzası", black_sea: "Doğu Karadeniz" };
+  const VAR_TR = {
+    precip: { name: "Yağış", unit: "mm/ay", dec: 1, wet: true, hint: "Aylık toplam" },
+    soil_moisture: { name: "Toprak nemi", unit: "kg/m²", dec: 1, wet: true, hint: "Yüzey 0–10 cm" },
+    temp: { name: "Hava sıcaklığı", unit: "°C", dec: 1, wet: false, hint: "2 m yükseklik" },
+  };
+  const MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+  const noPct = new Set(D.no_percent_variables || []);
+  const fmt = (x, d = 1) => x == null || Number.isNaN(x) ? "—" : x.toLocaleString("tr-TR", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const signed = (x, d = 1) => x == null ? "—" : (x > 0 ? "+" : x < 0 ? "−" : "") + fmt(Math.abs(x), d);
+  const fmtP = p => p == null ? "—" : p < 0.001 ? p.toExponential(1).replace("e", "×10^") : fmt(p, 3);
+
+  // ------------------------------------------------------------------ data prep
+  const regions = D.regions.map(r => ({ ...r, name_tr: REGION_TR[r.id] || r.name }));
+  const variables = D.variables.filter(v => VAR_TR[v.id]);
+
+  // Ortak ay ekseni (en erken → en geç tarih)
+  let minD = "9999", maxD = "0000";
+  Object.values(D.pairs).forEach(p => p.points.forEach(pt => { if (pt.date < minD) minD = pt.date; if (pt.date > maxD) maxD = pt.date; }));
+  const months = [];
+  for (let y = +minD.slice(0, 4), m = +minD.slice(5, 7); `${y}-${String(m).padStart(2, "0")}` <= maxD.slice(0, 7);) {
+    months.push(`${y}-${String(m).padStart(2, "0")}`);
+    if (++m > 12) { m = 1; y++; }
+  }
+  const N = months.length;
+
+  // Her çift için: ham değer, 12 aylık ortalamanın uzun dönem ortalamadan sapması (z skoru dahil),
+  // önce/sonra dönem ortalamaları.
+  const P = {};
+  for (const [key, pair] of Object.entries(D.pairs)) {
+    const byM = new Map(pair.points.map(p => [p.date.slice(0, 7), p]));
+    const value = months.map(m => byM.get(m)?.value ?? null);
+    const smooth = months.map(m => byM.get(m)?.smooth ?? null);
+    const mean = pair.result.mean_value;
+    const anomS = smooth.map(s => s == null ? null : s - mean);
+    const valid = anomS.filter(a => a != null);
+    const sd = Math.sqrt(valid.reduce((s, a) => s + a * a, 0) / Math.max(1, valid.length - 1)) || 1;
+    const periodMean = (y0, y1) => {
+      const xs = months.map((m, i) => (+m.slice(0, 4) >= y0 && +m.slice(0, 4) <= y1) ? value[i] : null).filter(v => v != null);
+      return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+    };
+    const before = periodMean(2001, 2005), after = periodMean(2021, 2025);
+    // Yıllık ortalamalar, dönemler arası farkı standartlaştırmak için
+    const yearly = {};
+    months.forEach((m, i) => { if (value[i] != null) (yearly[m.slice(0, 4)] ||= []).push(value[i]); });
+    const ym = Object.values(yearly).filter(a => a.length >= 10).map(a => a.reduce((x, y) => x + y, 0) / a.length);
+    const ymMean = ym.reduce((a, b) => a + b, 0) / ym.length;
+    const sdYear = Math.sqrt(ym.reduce((s, a) => s + (a - ymMean) ** 2, 0) / Math.max(1, ym.length - 1)) || 1;
+    P[key] = { ...pair, value, smooth, anomS, sd, mean, before, after, sdYear };
+  }
+
+  // ------------------------------------------------------------------ state
+  const state = { variable: "soil_moisture", region: "konya", i: N - 1, mode: "time", playing: false, speed: 12 };
+  // Varsayılan ay: tüm bölge/değişkenlerde 12 aylık ortalaması bulunan son ay
+  {
+    let k = N - 1;
+    while (k > 0 && Object.values(P).some(p => p.smooth[k] == null)) k--;
+    state.i = k;
+  }
+  try { const s = JSON.parse(localStorage.getItem("td3d") || "{}"); if (s.variable && VAR_TR[s.variable]) state.variable = s.variable; if (s.region && REGION_TR[s.region]) state.region = s.region; } catch (e) {}
+  const save = () => { try { localStorage.setItem("td3d", JSON.stringify({ variable: state.variable, region: state.region })); } catch (e) {} };
+
+  // ------------------------------------------------------------------ colors
+  // Islak değişkenlerde (yağış, toprak nemi) negatif = kahve (kuru), pozitif = mavi (ıslak).
+  // Sıcaklıkta pozitif = kırmızı, negatif = mavi.
+  function palette(v) {
+    return VAR_TR[v].wet
+      ? { neg: [201, 132, 52], pos: [52, 156, 222], negName: "Normalden kuru", posName: "Normalden ıslak" }
+      : { neg: [70, 136, 230], pos: [232, 80, 58], negName: "Normalden serin", posName: "Normalden sıcak" };
+  }
+  function colorFor(v, z) {
+    if (z == null) return "rgb(140,150,160)";
+    const p = palette(v), t = Math.min(1, Math.abs(z) / 2), base = [225, 228, 232], c = z < 0 ? p.neg : p.pos;
+    const mix = base.map((b, k) => Math.round(b + (c[k] - b) * (0.35 + 0.65 * t)));
+    return `rgb(${mix.join(",")})`;
+  }
+
+  // Bölgenin şu anki z skoru (moda göre)
+  function zFor(regionId, v = state.variable) {
+    const p = P[`${regionId}|${v}`]; if (!p) return null;
+    if (state.mode === "time") { const a = p.anomS[state.i]; return a == null ? null : a / p.sd; }
+    const m = state.mode === "before" ? p.before : p.after;
+    return m == null ? null : (m - p.mean) / p.sdYear;
+  }
+
+  // ------------------------------------------------------------------ geometry
+  const bboxPoly = b => [[[b.west, b.south], [b.east, b.south], [b.east, b.north], [b.west, b.north], [b.west, b.south]]];
+  function circle(lon, lat, rDeg, n = 28) {
+    const ring = [];
+    for (let k = 0; k <= n; k++) {
+      const a = (k / n) * Math.PI * 2;
+      ring.push([lon + (rDeg / Math.cos(lat * Math.PI / 180)) * Math.cos(a), lat + rDeg * Math.sin(a)]);
+    }
+    return [ring];
+  }
+  function regionFC() {
+    return {
+      type: "FeatureCollection",
+      features: regions.map(r => {
+        const z = zFor(r.id);
+        return { type: "Feature", properties: { id: r.id, color: colorFor(state.variable, z),
+          op: z == null ? 0.08 : 0.16 + 0.32 * Math.min(1, Math.abs(z) / 2), sel: r.id === state.region ? 1 : 0 },
+          geometry: { type: "Polygon", coordinates: bboxPoly(r.bbox) } };
+      }),
+    };
+  }
+  function columnFC() {
+    return {
+      type: "FeatureCollection",
+      features: regions.map(r => {
+        const z = zFor(r.id);
+        const cx = (r.bbox.west + r.bbox.east) / 2, cy = (r.bbox.south + r.bbox.north) / 2;
+        return { type: "Feature", properties: { color: colorFor(state.variable, z),
+          h: z == null ? 0 : 8000 + Math.min(3, Math.abs(z)) * 55000 },
+          geometry: { type: "Polygon", coordinates: circle(cx, cy, 0.22) } };
+      }),
+    };
+  }
+
+  // ------------------------------------------------------------------ map
+  const map = new maplibregl.Map({
+    container: "map",
+    center: [38.2, 39.2], zoom: 4.7, pitch: 0, bearing: 0, maxPitch: 80,
+    attributionControl: { compact: true },
+    style: {
+      version: 8,
+      sources: {
+        esri: { type: "raster", tileSize: 256, maxzoom: 18,
+          tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+          attribution: "Görüntü © Esri, Maxar, Earthstar Geographics" },
+        bm: { type: "raster", tileSize: 256, maxzoom: 8,
+          tiles: ["https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_NextGeneration/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg"],
+          attribution: "NASA GIBS · Blue Marble" },
+        ndvi: { type: "raster", tileSize: 256, maxzoom: 9, tiles: [ndviUrl(months[N - 1])],
+          attribution: "NASA GIBS · MODIS Terra NDVI" },
+        dem: { type: "raster-dem", tileSize: 256, maxzoom: 13, encoding: "terrarium",
+          tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+          attribution: "Yükseklik: Mapzen/AWS Terrain Tiles" },
+        demHs: { type: "raster-dem", tileSize: 256, maxzoom: 13, encoding: "terrarium",
+          tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"] },
+      },
+      layers: [
+        { id: "bg", type: "background", paint: { "background-color": "#0b1016" } },
+        { id: "esri", type: "raster", source: "esri", paint: { "raster-saturation": -0.15, "raster-brightness-max": 0.92 } },
+        { id: "bm", type: "raster", source: "bm", layout: { visibility: "none" } },
+        { id: "ndvi", type: "raster", source: "ndvi", layout: { visibility: "none" }, paint: { "raster-opacity": 0.75 } },
+        { id: "hs", type: "hillshade", source: "demHs", paint: { "hillshade-exaggeration": 0.3,
+          "hillshade-shadow-color": "#05080b", "hillshade-highlight-color": "#ffffff" } },
+      ],
+    },
+  });
+  // Navigation is handled by our own #navbar (see "map navigation" below).
+  window.__map = map; // tarayıcı konsolundan hata ayıklamak için
+
+  function ndviUrl(month) {
+    return `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_L3_NDVI_16Day/default/${month}-15/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png`;
+  }
+
+  // ------------------------------------------------------------------ UI: variable chips
+  const top = document.getElementById("top");
+  variables.forEach(v => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.dataset.v = v.id;
+    b.innerHTML = `<small>${VAR_TR[v.id].hint}</small><span>${VAR_TR[v.id].name}</span>`;
+    b.onclick = () => { state.variable = v.id; save(); renderAll(true); };
+    top.appendChild(b);
+  });
+
+  // ------------------------------------------------------------------ floating cards
+  // Kart yerleşimi (piksel): çizgi uzunluğu ve kartın yatay kayması. Van ile Karadeniz
+  // kartları genel görünümde yan yana düştüğü için biri yukarı, biri sağa alınır.
+  const CARD_LAYOUT = { konya: { leader: 70, dx: 0 }, black_sea: { leader: 120, dx: -40 }, van: { leader: 36, dx: 120 } };
+  const cards = {};
+  regions.forEach(r => {
+    const el = document.createElement("div");
+    el.className = "anchor";
+    const lay = CARD_LAYOUT[r.id] || { leader: 64, dx: 0 };
+    el.innerHTML = `<div class="fcard panel" style="margin-left:${2 * lay.dx}px"></div><div class="leader" style="height:${lay.leader}px"></div><div class="pin"></div>`;
+    const card = el.querySelector(".fcard");
+    card.onclick = e => { e.stopPropagation(); selectRegion(r.id, true); };
+    const cx = (r.bbox.west + r.bbox.east) / 2;
+    el.style.zIndex = "3";
+    const marker = new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat([cx, r.bbox.north]).addTo(map);
+    cards[r.id] = { el, card, marker };
+  });
+
+  function sparkPath(arr, w, h, pad = 2) {
+    const xs = arr.map((v, i) => [i, v]).filter(p => p[1] != null);
+    if (!xs.length) return { d: "", y: () => h / 2 };
+    const lo = Math.min(...xs.map(p => p[1])), hi = Math.max(...xs.map(p => p[1])), span = hi - lo || 1;
+    const X = i => pad + (i / (N - 1)) * (w - 2 * pad), Y = v => h - pad - ((v - lo) / span) * (h - 2 * pad);
+    return { d: xs.map((p, k) => `${k ? "L" : "M"}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(""), X, Y, lo, hi };
+  }
+
+  function renderCards() {
+    const v = state.variable, meta = VAR_TR[v];
+    regions.forEach(r => {
+      const p = P[`${r.id}|${v}`], c = cards[r.id];
+      c.card.classList.toggle("sel", r.id === state.region);
+      if (!p) { c.card.innerHTML = `<div class="fc-head">${r.name_tr}</div><div class="fc-anom">Veri yok</div>`; return; }
+      const z = zFor(r.id), res = p.result;
+      let big, anomLine;
+      if (state.mode === "time") {
+        big = p.value[state.i];
+        const a = p.anomS[state.i];
+        anomLine = a == null ? "12 ay ortalaması: kenar ay, hesaplanmadı" :
+          `12 ay ort. normalden <b style="color:${colorFor(v, z)}">${signed(a, meta.dec)}</b> ${meta.unit}`;
+      } else {
+        big = state.mode === "before" ? p.before : p.after;
+        const diff = p.after != null && p.before != null ? p.after - p.before : null;
+        anomLine = state.mode === "before" ? `2001–2005 aylık ortalaması` :
+          `2001–05'e göre <b style="color:${colorFor(v, z)}">${signed(diff, meta.dec)}</b> ${meta.unit}`;
+      }
+      const sp = sparkPath(p.smooth, 190, 34);
+      const cx = sp.X ? sp.X(state.i) : 0;
+      const showCursor = state.mode === "time" && sp.X;
+      c.card.innerHTML = `
+        <div class="fc-head">${r.name_tr}<i>${state.mode === "time" ? "aylık" : state.mode === "before" ? "önce" : "sonra"}</i></div>
+        <div class="fc-val">${fmt(big, meta.dec)}<u>${meta.unit}</u></div>
+        <div class="fc-anom">${anomLine}</div>
+        <svg width="190" height="34" style="display:block;margin-top:6px" aria-hidden="true">
+          <path d="${sp.d}" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.4"/>
+          ${showCursor ? `<line x1="${cx}" x2="${cx}" y1="0" y2="34" stroke="${getComputedStyle(document.documentElement).getPropertyValue("--brand")}" stroke-width="1.5"/>` : ""}
+        </svg>
+        <div class="fc-trend"><span>Trend <b>${signed(res.sen_slope_per_decade, 2)}</b> /10 yıl</span>
+          <span class="badge ${res.significant ? "sig" : "ns"}">${res.significant ? "Anlamlı" : "Anlamlı değil"}</span></div>`;
+    });
+  }
+
+  // ------------------------------------------------------------------ left panel
+  function storyTR(r, v, res) {
+    const meta = VAR_TR[v], dir = res.direction === "increasing" ? "artıyor" : res.direction === "decreasing" ? "azalıyor" : "belirgin değişmiyor";
+    const amount = `${fmt(Math.abs(res.sen_slope_per_decade), 2)} ${meta.unit}`;
+    if (res.significant)
+      return `${r.name_tr} bölgesinde ${meta.name.toLowerCase()} on yılda yaklaşık <b>${amount}</b> ${dir}. Bu eğilim istatistiksel olarak <b>anlamlı</b> (mevsimsel Mann-Kendall, p &lt; 0,05).`;
+    return `${r.name_tr} bölgesinde ${meta.name.toLowerCase()} on yılda yaklaşık ${amount} ${dir} gibi görünüyor, ancak bu eğilim <b>anlamlı değil</b>: 25 yıllık doğal dalgalanmadan ayırt edilemiyor.`;
+  }
+
+  // ------------------------------------------------------------------ long record (NASA POWER), heatmap, sources, CSV
+  const PW = window.POWER_DATA || null;
+  const POWER_PARAMS = { temp: ["T2M", "T2M_MAX"], precip: ["PRECTOTCORR"], soil_moisture: ["GWETROOT"] };
+  const PW_TR = { T2M: "Hava sıcaklığı (T2M)", T2M_MAX: "Günlük en yüksek sıcaklık (T2M_MAX)",
+    PRECTOTCORR: "Yağış (PRECTOTCORR)", GWETROOT: "Kök bölgesi toprak ıslaklığı (GWETROOT)" };
+  let heatSrc = "giovanni";
+  function escH(t) { return String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+  const pTxt = p => p == null ? "—" : p < 1e-15 ? "< 1×10⁻¹⁵" : fmtP(p);
+  const dirArrow = d => d === "increasing" ? "↑" : d === "decreasing" ? "↓" : "→";
+
+  // Yıl × ay ızgarası: her hücre o ayın kendi ay ortalamasından (klimatoloji) sapması.
+  function heatmapSVG(vals, monthKeys, v, W = 296) {
+    const years = [...new Set(monthKeys.map(m => m.slice(0, 4)))];
+    const clim = Array.from({ length: 12 }, (_, k) => {
+      const xs = vals.filter((x, i) => x != null && +monthKeys[i].slice(5, 7) === k + 1);
+      return xs.reduce((a, b) => a + b, 0) / Math.max(1, xs.length);
+    });
+    const anom = vals.map((x, i) => x == null ? null : x - clim[+monthKeys[i].slice(5, 7) - 1]);
+    const ok = anom.filter(a => a != null);
+    const sd = Math.sqrt(ok.reduce((s, a) => s + a * a, 0) / Math.max(1, ok.length - 1)) || 1;
+    const left = 30, top = 12, cw = (W - left) / 12, ch = Math.max(3, Math.min(6, 200 / years.length));
+    const H = top + ch * years.length + 2;
+    const unit = VAR_TR[v]?.unit || "";
+    let cells = "";
+    anom.forEach((a, i) => {
+      const y = years.indexOf(monthKeys[i].slice(0, 4)), m = +monthKeys[i].slice(5, 7) - 1;
+      const cur = heatSrc === "giovanni" && state.mode === "time" && monthKeys[i] === months[state.i];
+      cells += `<rect x="${(left + m * cw).toFixed(1)}" y="${(top + y * ch).toFixed(1)}" width="${(cw - 0.6).toFixed(1)}" height="${(ch - 0.4).toFixed(1)}"
+        fill="${a == null ? "rgba(255,255,255,.05)" : colorFor(v, a / sd)}" ${cur ? 'stroke="#fff" stroke-width="1.2"' : ""}>
+        <title>${MONTHS[m]} ${monthKeys[i].slice(0, 4)}: ${a == null ? "veri yok" : signed(a, 2) + " " + escH(unit) + " (normale göre)"}</title></rect>`;
+    });
+    const mLab = "OŞMNMHTAEEKA".split("").map((c, k) => `<text class="axis" x="${left + k * cw + cw / 2}" y="9" text-anchor="middle">${c}</text>`).join("");
+    const yLab = years.map((y, k) => (+y % 5 === 0) ? `<text class="axis" x="${left - 4}" y="${top + k * ch + ch}" text-anchor="end">${y}</text>` : "").join("");
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img" aria-label="Yıl-ay sapma ısı haritası">${mLab}${yLab}${cells}</svg>`;
+  }
+
+  function powerSeries(regionId, param) {
+    return PW?.series?.[`${regionId}|${param}`] || null;
+  }
+
+  function longRecordHTML(r, v, res) {
+    if (!PW) return `<div class="lr">power_data.js yok. <code>build_power.py</code> çalıştırılınca 45 yıllık kontrol burada görünür.</div>`;
+    const rows = (POWER_PARAMS[v] || []).map(param => {
+      const s = powerSeries(r.id, param); if (!s) return "";
+      const unit = PW.variables[param].unit, cell = x => `${signed(x.sen_slope_per_decade, 2)} <span class="badge ${x.significant ? "sig" : "ns"}">${x.significant ? "Anlamlı" : "Değil"}</span><div class="p">p = ${pTxt(x.mk_p)}</div>`;
+      return `<tr><td colspan="2" style="padding-top:6px;text-align:left"><b>${PW_TR[param]}</b> <span class="p">${unit}/10 yıl</span></td></tr>
+        <tr><td>1981–2025</td><td>${cell(s.full)}</td></tr><tr><td>2001–2025</td><td>${cell(s.recent)}</td></tr>`;
+    }).join("");
+    // Ana sonuçla (Giovanni) karşılaştır: yönler farklı ve en az biri anlamlıysa uyar.
+    const first = powerSeries(r.id, (POWER_PARAMS[v] || [])[0]);
+    let note = "";
+    if (first) {
+      const a = res.direction, b = first.recent.direction, opposite = (a === "increasing" && b === "decreasing") || (a === "decreasing" && b === "increasing");
+      if (opposite && (res.significant || first.recent.significant))
+        note = `<div class="warn">⚠️ Veri setleri çelişiyor: Giovanni ${dirArrow(a)}, POWER ${dirArrow(b)} (2001–2025). Farklı ürünler ve derinlikler, kaba ızgara ve dağlık arazi etkili olabilir. Karar vermeden önce yerel istasyon verisiyle (MGM) kontrol edilmeli.</div>`;
+      else if (a === b && res.significant && first.recent.significant)
+        note = `<div class="ok">✓ İki bağımsız veri seti aynı yönü gösteriyor (${dirArrow(a)}). Bulgu daha güvenilir.</div>`;
+      if (first.full.significant !== first.recent.significant)
+        note += `<div class="warn">🕵️ 45 yılda ${first.full.significant ? "anlamlı" : "anlamlı değil"}, son 25 yılda ${first.recent.significant ? "anlamlı" : "anlamlı değil"}: değişim ${first.recent.significant ? "yeni bir olgu olabilir" : "uzun vadeli ama son dönemde gürültüde kaybolmuş olabilir"}.</div>`;
+    }
+    return `<div class="lr"><table>${rows}</table>${note}</div>`;
+  }
+
+  function sourcesHTML(r, v) {
+    const src = P[`${r.id}|${v}`]?.source || {};
+    const items = [`<li>${escH(src.dataset || "—")} · ${src.url ? `<a href="${escH(src.url)}" target="_blank" rel="noopener">Giovanni isteği</a>` : ""} (alan ortalaması, ${r.bbox.west}–${r.bbox.east}°D, ${r.bbox.south}–${r.bbox.north}°K)</li>`];
+    if (PW) items.push(`<li>NASA POWER aylık nokta API'si, 1981–2025, kutu içindeki ${PW.points[r.id]?.length || "?"} ızgara noktasının ortalaması · <a href="${escH(PW.source.url)}" target="_blank" rel="noopener">API belgesi</a></li>`);
+    if (ND && ND.sites[r.id]) items.push(`<li>MODIS Terra MOD13Q1 v061 NDVI (250 m, 16 günlük), ORNL DAAC Land Product Subsets · ${escH(ND.sites[r.id].name)} penceresi · <a href="${escH(ND.source.url)}" target="_blank" rel="noopener">servis belgesi</a></li>`);
+    items.push(`<li>Trend: B'nin mevsimsel Mann-Kendall + Sen eğimi (repodaki <code>src/trend.py</code>)</li>`);
+    return `<ul class="src">${items.join("")}</ul>`;
+  }
+
+  function downloadCSV(r, v) {
+    const p = P[`${r.id}|${v}`]; if (!p) return;
+    const params = PW ? (POWER_PARAMS[v] || []) : [];
+    const pw = params.map(param => powerSeries(r.id, param));
+    const allMonths = PW ? [...new Set([...PW.months, ...months])].sort() : months;
+    const nd = ND?.series?.[r.id];
+    const head = ["month", `giovanni_${v}`, ...params.map(x => `power_${x}`), ...(nd ? ["modis_ndvi_window"] : [])];
+    const lines = [head.join(",")];
+    for (const m of allMonths) {
+      const gi = months.indexOf(m), pi = PW ? PW.months.indexOf(m) : -1;
+      const ni = nd ? ND.months.indexOf(m) : -1;
+      lines.push([m, gi >= 0 ? (p.value[gi] ?? "") : "", ...pw.map(s => s && pi >= 0 ? (s.values[pi] ?? "") : ""),
+        ...(nd ? [ni >= 0 ? (nd.values[ni] ?? "") : ""] : [])].join(","));
+    }
+    const meta = `# ${r.name} | ${VAR_TR[v].name} (${VAR_TR[v].unit}) | Giovanni: ${p.source?.dataset || ""} | POWER units: ${params.map(x => x + "=" + PW.variables[x].unit).join(" ")}`;
+    const blob = new Blob(["﻿" + meta + "\n" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = `trend_dedektifi_${r.id}_${v}.csv`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  // ------------------------------------------------------------------ MODIS NDVI (farm window)
+  const ND = window.NDVI_DATA || null;
+  function ndviHTML(r) {
+    if (!ND) return `<div class="lr">ndvi_data.js yok. <code>build_ndvi.py</code> çalıştırılınca MODIS NDVI trendi burada görünür.</div>`;
+    const site = ND.sites[r.id], ser = ND.series[r.id];
+    if (!site || !ser) {
+      const miss = ND.missing_regions?.[r.id];
+      return `<div class="lr">${miss ? `<b>${escH(miss.name)}</b> penceresi için` : "Bu bölge için"} MODIS NDVI verisi henüz indirilmedi (ORNL sunucusu yoğundu). <code>build_ndvi.py</code> tekrar çalıştırılınca kaldığı yerden tamamlanır.</div>`;
+    }
+    const t = ser.trend, pk = ser.peak;
+    const badge = x => `<span class="badge ${x.significant ? "sig" : "ns"}">${x.significant ? "Anlamlı" : "Değil"}</span>`;
+    // Yıllık zirve NDVI için küçük çubuk grafik
+    const W = 276, H = 54, n = pk.values.length, lo = Math.min(...pk.values) - 0.02, hi = Math.max(...pk.values) + 0.01;
+    const bw = W / n;
+    const bars = pk.values.map((v, i) => {
+      const h = ((v - lo) / (hi - lo)) * (H - 12);
+      return `<rect x="${(i * bw).toFixed(1)}" y="${(H - 12 - h).toFixed(1)}" width="${(bw - 1).toFixed(1)}" height="${h.toFixed(1)}" fill="#5fbf6a"><title>${pk.years[i]}: zirve NDVI ${v.toFixed(3)}</title></rect>`;
+    }).join("");
+    const lc = site.land_cover.map(c => `${escH(c.class)} %${c.percent}`).join(", ");
+    return `<div class="lr">
+      <div><b>${escH(site.name)}</b> <span class="p">(${site.kind} penceresi, ${ND.window_km}×${ND.window_km} km, ${site.lat}°K ${site.lon}°D)</span></div>
+      <div class="p" style="margin:2px 0 6px">Arazi örtüsü (MODIS 2020): ${lc}</div>
+      <table>
+        <tr><td>Aylık NDVI trendi</td><td>${signed(t.sen_slope_per_decade, 3)} /10 yıl ${badge(t)}<div class="p">p = ${pTxt(t.mk_p)}</div></td></tr>
+        <tr><td>Yıllık zirve (en yeşil ay)</td><td>${signed(pk.sen_slope_per_decade, 3)} /10 yıl ${badge(pk)}<div class="p">p = ${pTxt(pk.mk_p)}</div></td></tr>
+      </table>
+      <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;margin-top:6px" aria-label="Yıllık zirve NDVI">${bars}
+        <text class="axis" x="0" y="${H - 1}" style="font-size:10px;fill:var(--muted)">${pk.years[0]}</text>
+        <text class="axis" x="${W}" y="${H - 1}" text-anchor="end" style="font-size:10px;fill:var(--muted)">${pk.years[n - 1]}</text></svg>
+      ${site.kind !== "tarım" ? `<div class="warn">Bu kutuda MODIS'e göre tarım alanı yok (çay/fındık bahçeleri orman sınıfında). Pencere doğal bitki örtüsünü ölçüyor.</div>` : ""}
+      <div class="p" style="margin-top:6px">NDVI tek başına nedeni söylemez: yeşillenme sulama artışından, kahverengileşme nadas veya kuraklıktan olabilir.</div>
+    </div>`;
+  }
+
+  function renderLeft() {
+    const r = regions.find(x => x.id === state.region), v = state.variable, meta = VAR_TR[v];
+    const p = P[`${r.id}|${v}`], el = document.getElementById("left");
+    if (!p) { el.innerHTML = `<h2>${r.name_tr}</h2><p class="sub">Bu değişken için veri yok.</p>`; return; }
+    const res = p.result, W = 296, H = 92;
+    const sp = sparkPath(p.value, W, H), sm = sparkPath(p.smooth, W, H);
+    // Ham ve düzleştirilmiş seriyi aynı ölçekte çiz
+    const lo = sp.lo, hi = sp.hi, span = (hi - lo) || 1;
+    const X = i => 2 + (i / (N - 1)) * (W - 4), Y = val => H - 2 - ((val - lo) / span) * (H - 4);
+    const path = arr => arr.map((val, i) => val == null ? null : `${X(i).toFixed(1)},${Y(val).toFixed(1)}`)
+      .reduce((acc, pt) => { if (pt == null) { acc.pen = "M"; return acc; } acc.d += acc.pen + pt; acc.pen = "L"; return acc; }, { d: "", pen: "M" }).d;
+    // Sen eğimli trend çizgisi: ortalama değerden, serinin ortasından geçer (görsel yaklaşım)
+    const slopeM = res.sen_slope_per_decade / 120, mid = (N - 1) / 2;
+    const tY = i => Y(p.mean + slopeM * (i - mid));
+    const curX = X(state.i);
+    el.innerHTML = `
+      <div class="left-head"><span class="kicker">Dedektif dosyası</span>
+        <button class="hide-btn" id="hideLeft" aria-label="Dedektif dosyasını gizle">Gizle ◂</button></div>
+      <h2>${r.name_tr}</h2>
+      <div class="sub">${meta.name} · ${meta.hint} · ${meta.unit}</div>
+      <p class="story">${storyTR(r, v, res)}</p>
+      <div class="stats">
+        <div class="stat"><small>Sen eğimi / 10 yıl</small><b>${signed(res.sen_slope_per_decade, 2)} ${meta.unit}</b></div>
+        <div class="stat"><small>%95 güven aralığı</small><b>${signed(res.ci_low, 2)} … ${signed(res.ci_high, 2)}</b></div>
+        <div class="stat"><small>Mann-Kendall p</small><b>${fmtP(res.mk_p)}</b> <span class="badge ${res.significant ? "sig" : "ns"}">${res.significant ? "Anlamlı" : "Değil"}</span></div>
+        <div class="stat"><small>${noPct.has(v) ? "Uzun dönem ortalama" : "% değişim / 10 yıl"}</small><b>${noPct.has(v) ? fmt(p.mean, 1) + " " + meta.unit : signed(res.percent_change_per_decade, 1) + " %"}</b></div>
+      </div>
+      <div class="bigchart">
+        <small>Aylık değer (soluk), 12 aylık ortalama (beyaz), Sen trendi (sarı kesikli)</small>
+        <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;margin-top:4px" aria-hidden="true">
+          <path d="${path(p.value)}" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+          <path d="${path(p.smooth)}" fill="none" stroke="#fff" stroke-width="1.8"/>
+          <line x1="${X(0)}" x2="${X(N - 1)}" y1="${tY(0)}" y2="${tY(N - 1)}" stroke="#d9a441" stroke-width="1.6" stroke-dasharray="5 4"/>
+          ${state.mode === "time" ? `<line x1="${curX}" x2="${curX}" y1="0" y2="${H}" stroke="#2f7de1" stroke-width="1.5"/>` : ""}
+        </svg>
+        <div class="ends" style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>${months[0].slice(0, 4)}</span><span>${months[N - 1].slice(0, 4)}</span></div>
+      </div>
+      <div class="sec">
+        <h3>Isı haritası (yıl × ay)
+          <span class="seg-mini">${PW ? `<button data-h="giovanni" class="${heatSrc === "giovanni" ? "on" : ""}">25 yıl</button><button data-h="power" class="${heatSrc === "power" ? "on" : ""}">45 yıl</button>` : ""}</span></h3>
+        <div class="hm">${heatSrc === "power" && PW && powerSeries(r.id, POWER_PARAMS[v][0])
+          ? heatmapSVG(powerSeries(r.id, POWER_PARAMS[v][0]).values, PW.months, v)
+          : heatmapSVG(p.value, months, v)}
+          <small style="color:var(--muted);font-size:11px">${heatSrc === "power" ? PW_TR[POWER_PARAMS[v][0]] + " · NASA POWER" : meta.name + " · Giovanni"} · her hücre o ayın kendi ortalamasından sapması</small></div>
+      </div>
+      <div class="sec"><h3>45 yıllık kontrol · NASA POWER</h3>${longRecordHTML(r, v, res)}</div>
+      <div class="sec"><h3>Bitki örtüsü · MODIS NDVI</h3>${ndviHTML(r)}</div>
+      <div class="sec"><h3>Kaynaklar</h3>${sourcesHTML(r, v)}</div>
+      <div class="btn-row"><button class="fly" id="flyBtn">Bölgeye yakınlaş</button><button class="ghost" id="csvBtn">CSV indir</button></div>`;
+    document.getElementById("flyBtn").onclick = () => flyToRegion(r.id);
+    document.getElementById("hideLeft").onclick = () => setLeft(false);
+    document.getElementById("csvBtn").onclick = () => downloadCSV(r, v);
+    el.querySelectorAll(".seg-mini button").forEach(b => b.onclick = () => { heatSrc = b.dataset.h; renderLeft(); });
+  }
+
+  function renderLegend() {
+    const p = palette(state.variable), c = a => `rgb(${a.join(",")})`;
+    const what = state.mode === "time" ? "12 aylık ortalamanın normalden sapması" : "Dönem ortalamasının normalden sapması";
+    const el = document.getElementById("legend");
+    el.title = `${what}. Kutu rengi sapmanın yönünü, sütun yüksekliği büyüklüğünü (σ) gösterir.`;
+    el.innerHTML = `
+      <div>Renk: normalden sapma</div>
+      <div class="bar" style="background:linear-gradient(90deg,${c(p.neg)},#e1e4e8,${c(p.pos)})"></div>
+      <div class="ends"><span>${p.negName.replace("Normalden ", "")}</span><span>${p.posName.replace("Normalden ", "")}</span></div>`;
+  }
+
+  function renderTop() {
+    document.querySelectorAll(".chip").forEach(b => b.classList.toggle("on", b.dataset.v === state.variable));
+    const [y, m] = months[state.i].split("-");
+    const label = state.mode === "time" ? `${MONTHS[+m - 1]} ${y}` : state.mode === "before" ? "2001–2005" : "2021–2025";
+    document.getElementById("nowLabel").textContent = state.mode === "time" ? "Gösterilen ay" : "Gösterilen dönem";
+    document.getElementById("nowDate").textContent = label;
+    document.getElementById("tlDate").textContent = `${MONTHS[+m - 1]} ${y}`;
+    document.getElementById("timeline").classList.toggle("disabled", state.mode !== "time");
+    document.querySelectorAll("#modeSeg button").forEach(b => b.classList.toggle("on", b.dataset.mode === state.mode));
+  }
+
+  let lastNdvi = 0, pendingNdvi = null;
+  function updateNdvi(force) {
+    if (!document.getElementById("ndviToggle").checked || !map.getSource("ndvi")) return;
+    const month = state.mode === "time" ? months[state.i] : state.mode === "before" ? "2003-07" : "2023-07";
+    const now = performance.now();
+    clearTimeout(pendingNdvi);
+    // Aynı URL'yi tekrar vermek yüklenen karoları iptal eder (konsolda AbortError); sadece değişince ayarla.
+    const apply = () => {
+      lastNdvi = performance.now(); const s = map.getSource("ndvi"), url = ndviUrl(month);
+      if (s.setTiles && s.tiles?.[0] !== url) s.setTiles([url]);
+    };
+    if (force || now - lastNdvi > 1500) apply(); else pendingNdvi = setTimeout(apply, 400);
+  }
+
+  function renderMap() {
+    if (!map.getSource("regions")) return;
+    map.getSource("regions").setData(regionFC());
+    map.getSource("columns").setData(columnFC());
+    updateNdvi();
+  }
+
+  function renderAll(full) {
+    document.getElementById("slider").value = state.i;
+    renderTop(); renderCards(); renderMap();
+    if (full !== false) { renderLeft(); renderLegend(); }
+    else { renderLeft(); }
+  }
+
+  // ------------------------------------------------------------------ interactions
+  function viewPadding() {
+    const w = window.innerWidth, leftOpen = w > 1100 && !document.body.classList.contains("left-closed");
+    return { top: w > 760 ? 120 : 160, bottom: 110, left: leftOpen ? 360 : 30, right: w > 760 ? 60 : 20 };
+  }
+  function selectRegion(id, fly) { state.region = id; save(); renderAll(true); if (fly) flyToRegion(id); }
+  function flyToRegion(id, duration = 2600) {
+    const r = regions.find(x => x.id === id), b = r.bbox;
+    map.flyTo({ center: [(b.west + b.east) / 2, (b.south + b.north) / 2 - 0.35], zoom: 7.3, pitch: 66,
+      bearing: map.getBearing() + 25, padding: viewPadding(), duration, essential: true });
+  }
+  // Genel görünüm: üç bölge kutusunu (kartlar için biraz pay bırakarak) boş alana sığdırır.
+  function overview(duration = 3500) {
+    const pad = viewPadding();
+    const cam = map.cameraForBounds([[32, 37.2], [44, 41.2]], { padding: pad, bearing: -12 });
+    if (!cam) return;
+    // Eğik kamerada üst kısım sıkıştığı için düz görünüme göre biraz daha yakın gir.
+    map.flyTo({ center: cam.center, zoom: cam.zoom + 0.45, pitch: 55, bearing: -12, padding: pad, duration, essential: true });
+  }
+
+  document.querySelectorAll("#modeSeg button").forEach(b => b.onclick = () => {
+    state.mode = b.dataset.mode; if (state.mode !== "time") setPlaying(false); renderAll(true); updateNdvi(true);
+  });
+  document.querySelectorAll("input[name=base]").forEach(i => i.onchange = () => {
+    map.setLayoutProperty("esri", "visibility", i.value === "esri" ? "visible" : "none");
+    map.setLayoutProperty("bm", "visibility", i.value === "bm" ? "visible" : "none");
+  });
+  document.getElementById("ndviToggle").onchange = e => {
+    map.setLayoutProperty("ndvi", "visibility", e.target.checked ? "visible" : "none"); updateNdvi(true);
+  };
+  document.getElementById("colToggle").onchange = e => map.setLayoutProperty("columns", "visibility", e.target.checked ? "visible" : "none");
+
+
+  // ------------------------------------------------------------------ map navigation (buttons, orbit, hint)
+  let orbiting = false;
+  const orbitBtn = document.getElementById("orbitBtn");
+  function setOrbit(on) {
+    orbiting = on; orbitBtn.classList.toggle("on", on);
+    if (on) requestAnimationFrame(function spin() {
+      if (!orbiting) return;
+      if (!map.isMoving() || map.isRotating?.()) map.setBearing(map.getBearing() + 0.08);
+      requestAnimationFrame(spin);
+    });
+  }
+  const NAV = {
+    home: () => overview(2200),
+    zin: () => map.easeTo({ zoom: map.getZoom() + 0.8, duration: 400 }),
+    zout: () => map.easeTo({ zoom: map.getZoom() - 0.8, duration: 400 }),
+    rotl: () => map.easeTo({ bearing: map.getBearing() - 30, duration: 500 }),
+    rotr: () => map.easeTo({ bearing: map.getBearing() + 30, duration: 500 }),
+    north: () => map.easeTo({ bearing: 0, duration: 500 }),
+    tiltup: () => map.easeTo({ pitch: Math.min(80, map.getPitch() + 15), duration: 500 }),
+    tiltdown: () => map.easeTo({ pitch: Math.max(0, map.getPitch() - 15), duration: 500 }),
+    orbit: () => setOrbit(!orbiting),
+    help: () => showHint(true),
+  };
+  document.querySelectorAll("#navbar button").forEach(b => b.onclick = () => {
+    if (b.dataset.act !== "orbit" && b.dataset.act !== "help") setOrbit(false);
+    NAV[b.dataset.act]();
+  });
+  // Kullanıcı haritayı kendisi tutunca sunum dönüşü durur.
+  map.getCanvas().addEventListener("pointerdown", () => setOrbit(false));
+  map.getCanvas().addEventListener("wheel", () => setOrbit(false), { passive: true });
+  const compassIcon = document.getElementById("compassIcon");
+  map.on("rotate", () => { compassIcon.style.transform = `rotate(${-map.getBearing()}deg)`; });
+
+  // Fare ipucu: açılışta 9 sn görünür, ilk etkileşimde ya da × ile kapanır; ? düğmesi tekrar açar.
+  const hint = document.getElementById("hint");
+  let hintTimer = null;
+  function showHint(on) {
+    hint.classList.toggle("gone", !on);
+    clearTimeout(hintTimer);
+    if (on) hintTimer = setTimeout(() => showHint(false), 9000);
+  }
+  document.getElementById("hintClose").onclick = () => showHint(false);
+  map.getCanvas().addEventListener("pointerdown", () => showHint(false), { once: true });
+  let seenHint = false;
+  try { seenHint = localStorage.getItem("td3d-hint") === "1"; localStorage.setItem("td3d-hint", "1"); } catch (e) {}
+  showHint(!seenHint);
+
+  // Katlanır paneller: harita alanını büyütür. Tercih bu tarayıcıda hatırlanır.
+  const leftTab = document.getElementById("leftTab");
+  function setLeft(open, animate = true) {
+    document.body.classList.toggle("left-closed", !open);
+    try { localStorage.setItem("td3d-left", open ? "1" : "0"); } catch (e) {}
+    if (animate) map.easeTo({ padding: viewPadding(), duration: 500 });
+  }
+  leftTab.onclick = () => setLeft(true);
+  try { if (localStorage.getItem("td3d-left") === "0") setLeft(false, false); } catch (e) {}
+  const layersBtn = document.getElementById("layersBtn"), togglesEl = document.getElementById("toggles");
+  layersBtn.onclick = () => {
+    const open = !togglesEl.classList.contains("open");
+    togglesEl.classList.toggle("open", open);
+    layersBtn.textContent = open ? "Katmanlar ▴" : "Katmanlar ▾";
+    layersBtn.setAttribute("aria-expanded", String(open));
+  };
+
+  // Şehir adları (Natural Earth): yakınlaştıkça daha küçük yerleşimler görünür.
+  // Bölge kutularının içindeki şehirler genel görünümde de gösterilir.
+  const cityMarkers = (window.CITIES || []).map(c => {
+    const el = document.createElement("div");
+    const inBox = regions.some(r => c.lon >= r.bbox.west && c.lon <= r.bbox.east && c.lat >= r.bbox.south && c.lat <= r.bbox.north);
+    el.className = "city" + (c.capital && c.pop > 900000 ? " cap" : "") + (c.pop < 150000 ? " small" : "");
+    el.innerHTML = `<i></i><span>${c.name}</span>`;
+    el.style.zIndex = "1";
+    const marker = new maplibregl.Marker({ element: el, anchor: "left" }).setLngLat([c.lon, c.lat]).addTo(map);
+    return { c, el, marker, minZoom: inBox ? Math.min(c.min_zoom, 6.0) - 0.9 : c.min_zoom - 0.6 };
+  });
+  function updateCities() {
+    const z = map.getZoom(), on = document.getElementById("cityToggle").checked;
+    cityMarkers.forEach(m => m.el.classList.toggle("hidden", !on || z < m.minZoom));
+  }
+  map.on("zoom", updateCities);
+  document.getElementById("cityToggle").onchange = updateCities;
+  updateCities();
+
+  // Timeline
+  const slider = document.getElementById("slider");
+  slider.max = N - 1;
+  slider.oninput = () => { state.i = +slider.value; renderAll(false); };
+  const ticks = document.getElementById("ticks");
+  months.forEach((m, i) => { if (m.endsWith("-01") && (+m.slice(0, 4)) % 5 === 0) {
+    const s = document.createElement("span"); s.style.left = `${(i / (N - 1)) * 100}%`; s.textContent = m.slice(0, 4); ticks.appendChild(s); } });
+  const playBtn = document.getElementById("play");
+  const ICON_PLAY = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>`;
+  const ICON_PAUSE = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>`;
+  function setPlaying(on) {
+    state.playing = on; playBtn.innerHTML = on ? ICON_PAUSE : ICON_PLAY; playBtn.setAttribute("aria-label", on ? "Duraklat" : "Oynat");
+    if (on) { if (state.i >= N - 1) state.i = 0; lastT = null; requestAnimationFrame(tick); }
+  }
+  let lastT = null, acc = 0;
+  function tick(t) {
+    if (!state.playing) return;
+    if (lastT != null) {
+      acc += (t - lastT) / 1000 * state.speed;
+      if (acc >= 1) {
+        const step = Math.floor(acc); acc -= step;
+        state.i = Math.min(N - 1, state.i + step);
+        renderAll(false);
+        if (state.i >= N - 1) { setPlaying(false); return; }
+      }
+    }
+    lastT = t; requestAnimationFrame(tick);
+  }
+  playBtn.onclick = () => { if (state.mode !== "time") return; setPlaying(!state.playing); };
+  document.getElementById("speed").onchange = e => state.speed = +e.target.value;
+  window.addEventListener("keydown", e => {
+    if (e.target.tagName === "TEXTAREA" || (e.target.tagName === "INPUT" && e.target.type !== "range")) return;
+    if (e.code === "Space") { e.preventDefault(); playBtn.click(); }
+    if (e.key === "ArrowRight") { state.i = Math.min(N - 1, state.i + 1); renderAll(false); }
+    if (e.key === "ArrowLeft") { state.i = Math.max(0, state.i - 1); renderAll(false); }
+  });
+
+  // Otomatik tur: genel görünüm → her bölge
+  let tourTimer = null;
+  document.getElementById("tourToggle").onchange = e => {
+    clearTimeout(tourTimer);
+    if (!e.target.checked) return;
+    const stops = ["overview", ...regions.map(r => r.id)];
+    let k = 0;
+    const next = () => {
+      const s = stops[k++ % stops.length];
+      if (s === "overview") overview(4000); else selectRegion(s, true);
+      tourTimer = setTimeout(next, 7000);
+    };
+    next();
+  };
+
+  // ------------------------------------------------------------------ map layers
+  map.on("load", () => {
+    map.setTerrain({ source: "dem", exaggeration: 2.2 });
+    try { if (map.setSky) map.setSky({ "sky-color": "#0d1a2b", "horizon-color": "#4b6a8c", "fog-color": "#1a2633", "sky-horizon-blend": 0.6, "horizon-fog-blend": 0.6, "fog-ground-blend": 0.4 }); } catch (e) {}
+
+    map.addSource("regions", { type: "geojson", data: regionFC() });
+    map.addSource("columns", { type: "geojson", data: columnFC() });
+    map.addLayer({ id: "region-fill", type: "fill", source: "regions",
+      paint: { "fill-color": ["get", "color"], "fill-opacity": ["get", "op"] } });
+    map.addLayer({ id: "region-glow", type: "line", source: "regions",
+      paint: { "line-color": ["case", ["==", ["get", "sel"], 1], "#d9a441", "#ffffff"], "line-width": 7, "line-opacity": 0.18, "line-blur": 4 } });
+    map.addLayer({ id: "region-line", type: "line", source: "regions",
+      paint: { "line-color": ["case", ["==", ["get", "sel"], 1], "#d9a441", "#ffffff"],
+        "line-width": ["case", ["==", ["get", "sel"], 1], 2.6, 1.6], "line-dasharray": [3, 2] } });
+    map.addLayer({ id: "columns", type: "fill-extrusion", source: "columns",
+      paint: { "fill-extrusion-color": ["get", "color"], "fill-extrusion-height": ["get", "h"],
+        "fill-extrusion-base": 0, "fill-extrusion-opacity": 0.88, "fill-extrusion-vertical-gradient": true } });
+
+    if (window.NDVI_DATA) {
+      const sq = (lat, lon, km) => { const dLat = km / 2 / 111, dLon = km / 2 / (111 * Math.cos(lat * Math.PI / 180));
+        return [[[lon - dLon, lat - dLat], [lon + dLon, lat - dLat], [lon + dLon, lat + dLat], [lon - dLon, lat + dLat], [lon - dLon, lat - dLat]]]; };
+      map.addSource("ndvi-sites", { type: "geojson", data: { type: "FeatureCollection", features:
+        Object.entries(window.NDVI_DATA.sites).map(([id, s]) => ({ type: "Feature", properties: { name: s.name },
+          geometry: { type: "Polygon", coordinates: sq(s.lat, s.lon, window.NDVI_DATA.window_km) } })) } });
+      map.addLayer({ id: "ndvi-sites-line", type: "line", source: "ndvi-sites", paint: { "line-color": "#6fe08a", "line-width": 2.2 } });
+    }
+    map.on("click", "region-fill", e => selectRegion(e.features[0].properties.id, true));
+    map.on("mouseenter", "region-fill", () => map.getCanvas().style.cursor = "pointer");
+    map.on("mouseleave", "region-fill", () => map.getCanvas().style.cursor = "");
+
+    renderAll(true);
+    setTimeout(() => overview(5000), 400);
+  });
+
+
+  // ------------------------------------------------------------------ detective agent
+  // Ajan, agent_server.py'deki /api/chat'e bağlanır. Claude repodaki analiz
+  // fonksiyonlarını araç olarak çağırır; control_map aracının istekleri burada uygulanır.
+  function applyAction(a) {
+    if (a.variable && VAR_TR[a.variable]) state.variable = a.variable;
+    if (a.mode && ["time", "before", "after"].includes(a.mode)) { state.mode = a.mode; setPlaying(false); }
+    if (a.month) { const k = months.indexOf(a.month.slice(0, 7)); if (k >= 0) { state.i = k; state.mode = "time"; setPlaying(false); } }
+    if (typeof a.ndvi === "boolean") {
+      document.getElementById("ndviToggle").checked = a.ndvi;
+      map.setLayoutProperty("ndvi", "visibility", a.ndvi ? "visible" : "none");
+    }
+    if (a.region === "overview") overview(3000);
+    else if (a.region && REGION_TR[a.region]) { state.region = a.region; flyToRegion(a.region); }
+    save(); renderAll(true); updateNdvi(true);
+  }
+
+  const chatLog = document.getElementById("chatLog"), chatInput = document.getElementById("chatInput");
+  const chatSend = document.getElementById("chatSend"), statusEl = document.getElementById("agentStatus");
+  const sugg = document.getElementById("sugg");
+  let sessionId = null, busy = false, serverUp = false;
+
+  const esc = t => t.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  // Küçük Markdown çevirici: kalın, italik, kod, madde işaretli/numaralı liste, paragraf.
+  function md(text) {
+    const inline = t => esc(t)
+      .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+      .replace(/(^|[\s(])_(.+?)_(?=$|[\s).,])/g, "$1<i>$2</i>")
+      .replace(/`(.+?)`/g, "<code>$1</code>");
+    const out = []; let list = null;
+    for (const raw of text.split("\n")) {
+      const line = raw.trim();
+      const m = line.match(/^([-*•]|\d+[.)])\s+(.*)$/);
+      if (m) {
+        const tag = /\d/.test(m[1]) ? "ol" : "ul";
+        if (!list || list !== tag) { if (list) out.push(`</${list}>`); list = tag; out.push(`<${tag}>`); }
+        out.push(`<li>${inline(m[2])}</li>`); continue;
+      }
+      if (list) { out.push(`</${list}>`); list = null; }
+      if (line) out.push(`<p>${inline(line.replace(/^#+\s*/, ""))}</p>`);
+    }
+    if (list) out.push(`</${list}>`);
+    return out.join("");
+  }
+
+  function addMsg(role, html, cls = "") {
+    const el = document.createElement("div");
+    el.className = `msg ${role} ${cls}`; el.innerHTML = html;
+    chatLog.appendChild(el); chatLog.scrollTop = chatLog.scrollHeight; return el;
+  }
+  function welcome() {
+    chatLog.innerHTML = "";
+    addMsg("bot", md("Merhaba! Ben **Trend Dedektifi**. Konya, Van ve Doğu Karadeniz'in 2001–2025 yağış, toprak nemi ve sıcaklık verilerine bakıp ipuçlarını takip ederim. Konuştuğum yeri haritada da gösteririm.\n\nAşağıdan bir soru seç ya da kendi sorunu yaz."));
+  }
+  const SUGG = ["Konya'da toprak neden kuruyor?", "Karadeniz ile Konya'yı karşılaştır", "Van'daki ısınma gerçek mi?", "2021–25 dönemi öncekine göre nasıl?"];
+  SUGG.forEach(q => { const b = document.createElement("button"); b.type = "button"; b.textContent = q; b.onclick = () => send(q); sugg.appendChild(b); });
+
+  async function checkAgent() {
+    try {
+      const r = await fetch("/api/agent-status"); if (!r.ok) throw new Error();
+      const j = await r.json(); serverUp = true;
+      statusEl.innerHTML = j.llm ? `${esc(j.provider || "LLM")} · ${esc(j.model || "")} <span class="pill on">çevrimiçi</span>`
+        : `Kural tabanlı yanıt <span class="pill off">çevrimdışı mod</span>`;
+    } catch (e) {
+      serverUp = false;
+      statusEl.innerHTML = `Ajan sunucusu kapalı <span class="pill down">bağlantı yok</span>`;
+    }
+  }
+
+  async function send(text) {
+    text = (text || "").trim(); if (!text || busy) return;
+    if (!serverUp) await checkAgent();
+    if (!serverUp) { addMsg("bot", md("Ajan sunucusu çalışmıyor. Repo kökünde `python detective3d/agent_server.py` ile başlatıp sayfayı `http://localhost:8765` adresinden aç."), "err"); return; }
+    busy = true; chatSend.disabled = true; sugg.style.display = "none";
+    addMsg("user", esc(text)); chatInput.value = "";
+    const wait = addMsg("bot", `<span class="typing">Dedektif iz sürüyor <i></i><i></i><i></i></span>`);
+    try {
+      const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, session_id: sessionId,
+          ui_state: { region: state.region, variable: state.variable, month: months[state.i], mode: state.mode } }) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.detail || `HTTP ${r.status}`);
+      sessionId = j.session_id;
+      (j.actions || []).forEach(applyAction);
+      const steps = (j.steps || []).map(s => `<span class="step${s.startsWith("Harita") ? " map" : ""}">${esc(s)}</span>`).join("");
+      const srcs = (j.sources || []).map(s => s.url
+        ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.dataset)}</a>` : esc(s.dataset)).join(" · ");
+      wait.innerHTML = (steps ? `<div class="steps">${steps}</div>` : "") + md(j.text || "(boş yanıt)")
+        + (srcs ? `<div class="srcs">Veri: ${srcs}</div>` : "");
+    } catch (e) {
+      wait.classList.add("err"); wait.innerHTML = md(`Bir sorun oldu: ${e.message}`);
+    } finally {
+      busy = false; chatSend.disabled = false; chatLog.scrollTop = chatLog.scrollHeight; chatInput.focus();
+    }
+  }
+
+  document.getElementById("chatForm").onsubmit = e => { e.preventDefault(); send(chatInput.value); };
+  chatInput.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(chatInput.value); } });
+  document.getElementById("askBtn").onclick = () => { document.body.classList.add("chat-open"); checkAgent(); chatInput.focus(); };
+  document.getElementById("chatClose").onclick = () => document.body.classList.remove("chat-open");
+  document.getElementById("chatReset").onclick = () => {
+    if (sessionId) fetch("/api/reset", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "-", session_id: sessionId }) }).catch(() => {});
+    sessionId = null; welcome(); sugg.style.display = "";
+  };
+  welcome(); checkAgent();
+
+  setPlaying(false);
+  renderTop(); renderCards(); renderLeft(); renderLegend();
+})();
+</script>
+</body>
+</html>
