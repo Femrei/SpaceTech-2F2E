@@ -1390,6 +1390,9 @@
     if (PW) items.push(`<li>${t("powerSrc", PW.points[r.id]?.length || "?")} · <a href="${escH(PW.source.url)}" target="_blank" rel="noopener">${t("apiDoc")}</a></li>`);
     if (ND && ND.sites[r.id]) items.push(`<li>${t("ndviSrc", escH(t("nd", ND.sites[r.id].name)))} · <a href="${escH(ND.source.url)}" target="_blank" rel="noopener">${t("serviceDoc")}</a></li>`);
     items.push(`<li>${t("trendSrc")}</li>`);
+    // A: kutunun denize ya da göle taşan payı (scripts/check_bbox_water.py ile ölçüldü; katalogdaki box_note)
+    const boxNote = (LANG === "tr" ? r.box_note_tr : null) || r.box_note;
+    if (boxNote) items.push(`<li>⚠️ ${escH(boxNote)}</li>`);
     return `<ul class="src">${items.join("")}</ul>`;
   }
 

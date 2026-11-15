@@ -6,7 +6,8 @@ NASA Space Apps Challenge team project.
 
 ```
 detective3d/                 # THE APP: 3D map UI + chat agent (D)
-  index.html                 # 3D MapLibre UI (time player, cards, NDVI, heat map, chat panel)
+  index.html                 # 3D MapLibre UI in Turkish and English (decision card, enlargeable chart,
+                             # guided case, time player, NDVI, heat map, chat panel)
   agent_server.py            # serves the UI + /api/chat agent over the repo's analysis
   data.js, power_data.js,    # generated data the UI reads (committed)
   ndvi_data.js, cities.js
@@ -14,7 +15,7 @@ detective3d/                 # THE APP: 3D map UI + chat agent (D)
   README.md                  # how the app works, LLM setup, data notes (Turkish)
 api.py                       # FastAPI functions over the Python modules (C); used by detective3d
 power_loader.py              # NASA POWER point/box loader (C)
-frontend/                    # earlier React + shadcn/ui UI (C); kept, no longer built or deployed
+legacy/frontend/             # earlier React + shadcn/ui UI (C); kept for reference, not built or deployed
 requirements.txt             # Python dependencies
 Dockerfile                   # one container serving detective3d
 data/
@@ -25,6 +26,7 @@ data/
 scripts/
   process_giovanni.py        # data/raw -> data/processed/all_series.csv (A)
   check_data.py              # data quality report (A)
+  check_bbox_water.py        # share of each region box that is sea or lake (see data/SOURCES.md)
 src/
   data_loader.py             # load_series, available_pairs (A)
   mock_data.py               # synthetic all_series.csv for testing without real data (B)
@@ -85,13 +87,33 @@ Two free options that give a public URL with no login for visitors:
 After deploying, open the link in a private/incognito window to check it works
 without being signed in.
 
-UI language: the 3D app is in Turkish for now; Space Apps requires English for
-the submission.
+UI language: the 3D app has a TR / EN switch (top right). It opens in English unless
+the browser language is Turkish, and remembers the choice. Space Apps requires
+English for the submission, so demo and record it in EN mode.
+
+### What the app answers
+
+Variable → region → time series → statistics, in that order:
+
+1. Pick a variable (precipitation, soil moisture, air temperature) and a region, or any
+   place in Türkiye with **Pick an area** (click the map or search a place name).
+2. The **decision card** at the top of the left panel says what is changing, where, how
+   fast (Sen slope per decade and %), whether it is statistically significant (seasonal
+   Mann-Kendall p-value) and, if it is not, roughly how many more years of data it would
+   take, or that the trend is too weak to tell.
+3. **Enlarge chart** opens the series with axes, a hover readout, a raw / deseasonalised
+   switch, the Sen trend line and its 95% confidence band.
+4. The hint box explains the variable and what the trend means; **Next clue** follows the
+   catalog's detective hint to the next variable or region.
+5. The **Case** button walks through "Is the soil drying in Konya?" in three steps.
+
+The 2035 / 2050 "if the trend goes on" view and the "what could be done" list are
+secondary: they are labelled as not a forecast and only appear for significant trends.
 
 ### Earlier React UI (C)
 
-`frontend/` + `api.py` still run on their own (`uvicorn api:app --reload` and
-`cd frontend && npm install && npm run dev`), but they are no longer part of the
+`legacy/frontend/` + `api.py` still run on their own (`uvicorn api:app --reload` and
+`cd legacy/frontend && npm install && npm run dev`), but they are no longer part of the
 Docker image. API endpoints (`api.py`): `/api/meta`, `/api/analysis`,
 `/api/overview`, `/api/compare`, `/api/suggest`, `/api/point`, `/api/box`.
 

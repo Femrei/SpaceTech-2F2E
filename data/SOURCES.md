@@ -11,6 +11,14 @@ as *Time Series, Area-Averaged*, monthly, starting 2001-01-01.
 
 Note: IMERG Final Run monthly data were available only up to 2025-09 at download time, so precip is NaN for 2025-10 … 2025-12.
 
+Note on water inside the boxes (measured with `python scripts/check_bbox_water.py`, Natural Earth 10m land and lake
+polygons): about **14.5% of the `black_sea` box lies over the Black Sea** (its north edge, 41.2°N, is past the coast in
+the western half of the box, where the sea starts near 40.9°N) and about **14% of the `van` box is Lake Van**; the
+`konya` box is 99.5% land. Giovanni's area average uses every grid cell with data, so the precipitation (IMERG) and
+temperature (MERRA-2) series of those two boxes include water cells; GLDAS soil moisture is land-only. The boxes were
+not changed: narrowing them means downloading all series again, so trends there should be read as box averages,
+not as land-only values.
+
 | File | Bounding box (W,S,E,N) | Data until | Reproduce URL |
 |---|---|---|---|
 | `black_sea__precip.csv` | 39.5,40.4,41.6,41.2 | 2025-09-30 | [link](https://giovanni.gsfc.nasa.gov/giovanni/#service=ArAvTs&starttime=2001-01-01T00:00:00Z&endtime=2025-09-30T23:59:59Z&bbox=39.5,40.4,41.6,41.2&data=GPM_3IMERGM_07_precipitation&portal=GIOVANNI&format=json) |
