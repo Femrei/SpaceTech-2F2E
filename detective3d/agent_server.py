@@ -13,7 +13,7 @@ Repodaki diğer dosyalar yalnızca okunur, hiçbiri değiştirilmez.
 Çalıştırma (repo kökünden):
     python detective3d/agent_server.py
 Ardından http://localhost:8765 adresini aç.
-HOST ve PORT ortam değişkenleri adresi değiştirir (Docker: HOST=0.0.0.0).
+HOST ve PORT ortam değişkenleri adresi değiştirir (aynı ağdaki başka cihazlar için HOST=0.0.0.0).
 
 LLM: .env dosyasında LLM_PROVIDER (groq, gemini, openrouter, ollama, anthropic) ve anahtarı.
 Yoksa sohbet "çevrimdışı moda" düşer. Bu modda LLM yoktur; anahtar kelimelerle
