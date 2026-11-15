@@ -184,3 +184,14 @@ def test_page_has_decision_card_and_chart():
     assert "sen_ci_low" in html and "olsCi95" in html      # the interval is labelled by the slope it belongs to
     for key in ("vdWhat", "ynWeak", "ynNote", "chartBig", "viewAnom", "nextBtn", "tour"):  # both languages
         assert html.count(f"{key}:") == 2, key
+
+
+def test_page_has_yearly_stripes_and_heat_window():
+    """The left panel shows yearly stripes; "Enlarge" opens a window with a years and a year x month view."""
+    html = (APP_DIR / "index.html").read_text(encoding="utf-8")
+    for needle in ("function anomalyGrid", "function stripesSVG", "function heatPanelHTML", "function renderHeat",
+                   'id="heatBack"', 'id="heatOpen"', 'data-hv="years"', 'data-hv="months"'):
+        assert needle in html, needle
+    assert "heatmapSVG" not in html
+    for key in ("stripesTitle", "heatBig", "viewYears", "viewMonths", "yearRead", "monthRead", "heatNoteY", "heatNoteM"):
+        assert html.count(f"{key}:") == 2, key  # Turkish and English
