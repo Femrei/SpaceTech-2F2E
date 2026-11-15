@@ -934,7 +934,7 @@ def run_offline(user_text: str, ui_state: dict) -> dict:
                          f"{t['unit']} ({yon}), eğilim {sig}.")
         hint = t["detective_next_step"]
         if hint.get("text"):
-            lines.append(f"Clue (catalog): {hint['text']}" if en else f"İpucu (katalog, İngilizce): {hint['text']}")
+            lines.append(f"Clue (catalog): {hint['text']}" if en else f"İpucu (katalog): {hint.get('text_tr') or hint['text']}")
         if POWER:
             lr = tool_get_long_record(region, variable)
             steps.append(_step_label("get_long_record", {"region": region, "variable": variable}, lang))

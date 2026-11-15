@@ -141,3 +141,29 @@ def test_page_has_outlook_steps():
     assert 'data-mode="p2035"' in html and 'data-mode="p2050"' in html
     assert "function outlookOf" in html and "eğilim sürerse" in html
     assert "Tahmin değil" in html  # the projection is always labelled as not a forecast
+
+
+def test_data_js_carries_decision_card_inputs():
+    """The decision card, the Sen interval tile and the "next clue" button read these from data.js."""
+    text = (APP_DIR / "data.js").read_text(encoding="utf-8")
+    data = json.loads(text[text.index("=") + 1:].strip().rstrip(";"))
+    for variable in data["variables"]:
+        assert variable["short_description_tr"]
+    for key, pair in data["pairs"].items():
+        res = pair["result"]
+        assert {"sen_ci_low", "sen_ci_high", "years_needed_estimate", "n_years", "start_year", "end_year"} <= set(res), key
+        assert res["sen_ci_low"] <= res["sen_slope_per_decade"] <= res["sen_ci_high"], key
+        # the rough "years of data needed" estimate exists exactly when the trend is not significant
+        assert (res["years_needed_estimate"] is None) == bool(res["significant"]) or res["sen_slope_per_decade"] == 0, key
+        assert {"text", "text_tr", "variable_id", "region_id"} <= set(pair["next_step"]), key
+
+
+def test_page_has_decision_card_chart_and_case():
+    html = (APP_DIR / "index.html").read_text(encoding="utf-8")
+    for needle in ("function verdictHTML", "function hintBoxHTML", "function nextStepHTML", "function yearsNeededHTML",
+                   'id="chartBack"', "function renderChart", 'id="caseBtn"', "function goCase"):
+        assert needle in html, needle
+    assert "sen_ci_low" in html and "olsCi95" in html      # the interval is labelled by the slope it belongs to
+    assert 'id="tourToggle"' not in html                    # the auto tour became the guided case
+    for key in ("vdWhat", "ynWeak", "ynNote", "chartBig", "viewAnom", "case1", "nextBtn"):  # both languages
+        assert html.count(f"{key}:") == 2, key

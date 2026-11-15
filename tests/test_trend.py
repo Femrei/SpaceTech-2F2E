@@ -189,3 +189,37 @@ def test_years_needed_uses_sen_slope():
     half_ci = (r["ci_high"] - r["ci_low"]) / 2
     expected = r["n"] * (half_ci / abs(r["sen_slope_per_decade"])) ** (2 / 3) / 12
     assert r["years_needed_estimate"] == pytest.approx(max(expected, r["n"] / 12), rel=1e-9)
+
+
+def test_sen_slope_has_its_own_confidence_interval():
+    from src.trend import _seasonal_slopes
+
+    s = make_series(trend_per_decade=0.5, noise=0.3, amp=2.0, seed=21)
+    s.iloc[[5, 77, 140]] = np.nan
+    r = analyze_trend(s)
+    # the pooled same-month slopes reproduce pymannkendall's seasonal Sen slope
+    slopes = _seasonal_slopes(s.to_numpy())
+    assert np.median(slopes) * 10 == pytest.approx(r["sen_slope_per_decade"], rel=1e-12)
+    # the interval brackets the estimate and the true slope, and is not the OLS interval
+    assert r["sen_ci_low"] < r["sen_slope_per_decade"] < r["sen_ci_high"]
+    assert r["sen_ci_low"] < 0.5 < r["sen_ci_high"]
+    assert (r["sen_ci_low"], r["sen_ci_high"]) != (r["ci_low"], r["ci_high"])
+    # independent check of Gilbert's ranks: (N' -/+ C) / 2 with C = 1.96 * sqrt(Var(S'))
+    var_s = mk.seasonal_test(s.to_numpy(), period=12).var_s
+    c = 1.959963984540054 * np.sqrt(var_s)
+    ordered, n = np.sort(slopes), len(slopes)
+    lo_rank, hi_rank = (n - c) / 2, (n + c) / 2 + 1
+    assert ordered[int(np.floor(lo_rank)) - 1] * 10 <= r["sen_ci_low"] <= ordered[int(np.ceil(lo_rank)) - 1] * 10
+    assert ordered[int(np.floor(hi_rank)) - 1] * 10 <= r["sen_ci_high"] <= ordered[int(np.ceil(hi_rank)) - 1] * 10
+
+
+def test_sen_interval_matches_significance_and_noise():
+    # significant trend -> the interval excludes 0; pure noise -> it contains 0
+    sig = analyze_trend(make_series(trend_per_decade=0.8, noise=0.2))
+    assert sig["significant"] and sig["sen_ci_low"] > 0
+    flat = analyze_trend(make_series(trend_per_decade=0.0, noise=1.0, seed=123))
+    assert not flat["significant"] and flat["sen_ci_low"] < 0 < flat["sen_ci_high"]
+    # less noise -> narrower interval
+    quiet = analyze_trend(make_series(trend_per_decade=0.5, noise=0.1, seed=4))
+    loud = analyze_trend(make_series(trend_per_decade=0.5, noise=1.0, seed=4))
+    assert quiet["sen_ci_high"] - quiet["sen_ci_low"] < loud["sen_ci_high"] - loud["sen_ci_low"]

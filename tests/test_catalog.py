@@ -365,3 +365,20 @@ def test_get_actions_only_for_significant_trends(variable_id, direction, signifi
 def test_get_context_has_turkish_text():
     out = get_context(_result("decreasing", True), "soil_moisture")
     assert out["text_tr"] == get_variable("soil_moisture")["context_tr"]["decreasing"]
+
+
+def test_turkish_texts_for_the_3d_app():
+    """The 3D app's hint box and "follow the clue" button need Turkish versions."""
+    catalog = load_catalog()
+    for variable in catalog["variables"]:
+        assert variable["short_description_tr"].strip(), variable["id"]
+    for region in catalog["regions"]:
+        assert region["name_tr"].strip(), region["id"]
+    for rule in catalog["hints"]:
+        assert rule["text_tr"].strip()
+        # same placeholders as the English text, so both format() calls work
+        assert ("{region}" in rule["text_tr"]) == ("{region}" in rule["text"])
+        assert ("{compare_region}" in rule["text_tr"]) == ("{compare_region}" in rule["text"])
+    step = next_step(_result("decreasing", True), "soil_moisture", "konya")
+    assert "İpucu bulundu" in step["text_tr"] and "Konya Kapalı Havzası" in step["text_tr"]
+    assert "{" not in step["text_tr"]

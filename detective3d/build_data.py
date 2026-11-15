@@ -40,8 +40,13 @@ for region, variable in meta["pairs"]:
         "points": [{k: p[k] for k in ("date", "value", "smooth", "anomaly")} for p in a["points"]],
         "result": {k: a["result"].get(k) for k in (
             "sen_slope_per_decade", "percent_change_per_decade", "significant",
-            "direction", "mk_p", "mean_value", "ci_low", "ci_high", "slope_per_decade")},
+            "direction", "mk_p", "mean_value", "ci_low", "ci_high", "slope_per_decade",
+            # decision card: Sen slope's own interval, record length and the rough
+            # "years of data needed" estimate (None when the trend is significant)
+            "sen_ci_low", "sen_ci_high", "years_needed_estimate", "n_years", "start_year", "end_year")},
         "interpretation": a["interpretation"],
+        # D's catalog clue (text, text_tr and the variable/region it points to) for the panel button
+        "next_step": a["next_step"],
         "source": {"dataset": DATASETS.get(variable), "url": LINKS.get(f"{region}|{variable}"),
                    "via": "NASA Giovanni, area-averaged time series"},
     }

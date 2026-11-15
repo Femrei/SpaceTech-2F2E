@@ -37,6 +37,8 @@ RESULT_KEYS = (
     "ci_high",                   # 95% CI upper bound of the OLS slope, units / 10 yr
     "ols_p",                     # OLS p-value (assumes independent residuals)
     "sen_slope_per_decade",      # Sen's slope from the seasonal MK test, units / 10 yr
+    "sen_ci_low",                # 95% CI lower bound of the Sen slope, units / 10 yr
+    "sen_ci_high",               # 95% CI upper bound of the Sen slope, units / 10 yr
     "percent_change_per_decade", # sen_slope_per_decade / |mean_value| * 100 (None if mean ~ 0)
     "mk_p",                      # p-value of the primary test (seasonal Mann-Kendall)
     "mk_tau",                    # Kendall's tau of the primary test
@@ -76,6 +78,44 @@ def _prepare(series: pd.Series) -> pd.Series:
 def monthly_anomalies(series: pd.Series) -> pd.Series:
     """Subtract each calendar month's long-term mean (climatology). NaNs stay NaN."""
     return series - series.groupby(series.index.month).transform("mean")
+
+
+def _seasonal_slopes(values: np.ndarray, period: int = MONTHS_PER_YEAR) -> np.ndarray:
+    """All pairwise slopes between the same season in different years, pooled.
+
+    Mirrors ``pymannkendall.seasonal_sens_slope``: the series is cut into rows
+    of ``period`` values and, for each season (column), the slope of every
+    pair of years is (x_j - x_i) / (j - i), with i, j the row (year) numbers,
+    so a missing year keeps its place. Pairs with a missing value are
+    dropped. The median of the result is the seasonal Sen slope (per year).
+    """
+    x = np.asarray(values, dtype=float)
+    if len(x) % period:
+        x = np.pad(x, (0, period - len(x) % period), constant_values=np.nan)
+    x = x.reshape(-1, period)
+    i, j = np.triu_indices(x.shape[0], k=1)
+    slopes = ((x[j] - x[i]) / (j - i)[:, None]).ravel()
+    return slopes[~np.isnan(slopes)]
+
+
+def _sen_confidence_interval(slopes: np.ndarray, var_s: float, alpha: float = ALPHA) -> tuple[float, float]:
+    """Rank-based CI of the (seasonal) Sen slope, Gilbert (1987) section 17.5.
+
+    ``slopes`` are the pooled pairwise slopes and ``var_s`` the variance of the
+    (seasonal) Mann-Kendall statistic. Returns (low, high) in the units of
+    ``slopes``; (nan, nan) if there are no slopes.
+    """
+    n = len(slopes)
+    if n == 0:
+        return float("nan"), float("nan")
+    ordered = np.sort(slopes)
+    c = stats.norm.ppf(1 - alpha / 2) * math.sqrt(max(var_s, 0.0))
+    # 1-based ranks M1 and M2 + 1; non-integer ranks are interpolated, ranks
+    # outside 1..n are clipped to the smallest / largest slope.
+    ranks = np.arange(1, n + 1)
+    low = float(np.interp((n - c) / 2, ranks, ordered))
+    high = float(np.interp((n + c) / 2 + 1, ranks, ordered))
+    return low, high
 
 
 def _regular_monthly(series: pd.Series) -> pd.Series:
@@ -118,6 +158,13 @@ def analyze_trend(series: pd.Series) -> dict:
        units per *year* (differences between the same month in different
        years), so x 10 gives units per decade. (For the non-seasonal
        ``original_test`` on monthly steps the factor would be x 12 x 10.)
+       Its 95% confidence interval (``sen_ci_low`` / ``sen_ci_high``) is the
+       rank-based interval of the seasonal Kendall slope (Gilbert 1987,
+       section 17.5): with N' pooled same-month slopes and
+       C = z_0.975 * sqrt(Var(S')), the bounds are the ((N' - C) / 2)-th and
+       ((N' + C) / 2 + 1)-th smallest slopes. It belongs to the Sen slope;
+       ``ci_low`` / ``ci_high`` belong to the OLS slope. Like the test itself
+       it does not correct for autocorrelation between months.
     5. ``percent_change_per_decade`` = Sen slope per decade / |mean| x 100;
        ``None`` if the mean is ~0 (e.g. anomalies, temperatures near 0 degC).
     6. ``years_needed_estimate`` (only when not significant): a *rough* guess
@@ -162,6 +209,7 @@ def analyze_trend(series: pd.Series) -> dict:
     mk_p = float(smk.p)
     significant = bool(mk_p < ALPHA)
     sen_dec = float(smk.slope) * 10  # seasonal slope is per year
+    sen_lo, sen_hi = _sen_confidence_interval(_seasonal_slopes(regular.to_numpy()), float(smk.var_s))
 
     if sen_dec > 0:
         direction = "increasing"
@@ -197,6 +245,8 @@ def analyze_trend(series: pd.Series) -> dict:
         "ci_high": float(slope_dec + ci_half),
         "ols_p": float(reg.pvalue),
         "sen_slope_per_decade": sen_dec,
+        "sen_ci_low": sen_lo * 10,
+        "sen_ci_high": sen_hi * 10,
         "percent_change_per_decade": pct,
         "mk_p": mk_p,
         "mk_tau": float(smk.Tau),

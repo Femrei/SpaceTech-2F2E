@@ -5,6 +5,7 @@
       "id": "precip",
       "name": "Precipitation",
       "short_description": "How much rain and snow falls each month, measured as the depth of water it would make on flat ground.",
+      "short_description_tr": "Her ay ne kadar yağmur ve kar düştüğü; düz bir zeminde biriktireceği suyun derinliği olarak ölçülür.",
       "long_description": "Monthly precipitation from NASA's IMERG product, which combines measurements from a fleet of satellites in the Global Precipitation Measurement (GPM) mission and calibrates them with rain gauges on the ground. Rain and snow are where a region's water comes from: they refill soils, rivers, lakes and groundwater. A long-term drop can point to growing drought risk, while a rise can mean more water but also more floods. Precipitation varies a lot from year to year, so a trend is harder to detect than for temperature.",
       "dataset": "GPM_3IMERGM",
       "dataset_variable": "precipitation",
@@ -71,6 +72,7 @@
       "id": "soil_moisture",
       "name": "Surface soil moisture (0–10 cm)",
       "short_description": "How wet the top 10 cm of soil is — think of it as how much water plants can easily reach.",
+      "short_description_tr": "Toprağın üst 10 cm'sinin ne kadar ıslak olduğu; bitkilerin kolayca ulaşabildiği su gibi düşün.",
       "long_description": "The amount of water held in the top 10 cm of soil, from NASA's GLDAS Noah land surface model. It is not measured directly: the model combines satellite and ground observations of rain, sunlight, temperature and wind to calculate how much water soaks into the soil and how much evaporates. Surface soil moisture reacts quickly to both rain and heat, so it is one of the first places drought shows up and it matters directly for crops. 1 kg/m² equals a 1 mm layer of water.",
       "dataset": "GLDAS_NOAH025_M",
       "dataset_variable": "SoilMoi0_10cm_inst",
@@ -137,6 +139,7 @@
       "id": "temp",
       "name": "Air temperature (2 m)",
       "short_description": "How warm the air is about 2 metres above the ground — roughly where people and crops feel it.",
+      "short_description_tr": "Yerden yaklaşık 2 metre yukarıda havanın ne kadar sıcak olduğu; insanların ve ekinlerin hissettiği sıcaklık.",
       "long_description": "Monthly mean air temperature at 2 m height from NASA's MERRA-2 reanalysis. A reanalysis is a weather model that is continuously corrected with millions of observations from satellites, weather stations, balloons and aircraft, giving a consistent record everywhere on Earth. Temperature is the most direct sign of warming. Warmer air also pulls more water out of soil and plants, so rising temperature can dry a region even if rainfall stays the same.",
       "dataset": "M2TMNXSLV",
       "dataset_variable": "T2M",
@@ -209,6 +212,7 @@
     {
       "id": "konya",
       "name": "Konya Closed Basin",
+      "name_tr": "Konya Kapalı Havzası",
       "name_in_text": "the Konya Closed Basin",
       "bbox": { "west": 32.0, "south": 37.2, "east": 34.0, "north": 38.6 },
       "lat": 37.9,
@@ -221,6 +225,7 @@
     {
       "id": "van",
       "name": "Lake Van Basin",
+      "name_tr": "Van Gölü Havzası",
       "name_in_text": "the Lake Van Basin",
       "bbox": { "west": 42.0, "south": 38.0, "east": 44.0, "north": 39.3 },
       "lat": 38.65,
@@ -233,6 +238,7 @@
     {
       "id": "black_sea",
       "name": "Eastern Black Sea",
+      "name_tr": "Doğu Karadeniz",
       "name_in_text": "the Eastern Black Sea",
       "bbox": { "west": 39.5, "south": 40.4, "east": 41.6, "north": 41.2 },
       "lat": 40.8,
@@ -287,56 +293,67 @@
     {
       "variable_id": "*", "direction": "no change", "significant": true,
       "text": "The test flags a significant trend, but its estimated rate is about zero. Look closely at the chart before drawing conclusions.",
+      "text_tr": "Test anlamlı bir eğilim gösteriyor ama tahmin edilen hız sıfıra yakın. Sonuç çıkarmadan önce grafiğe dikkatle bak.",
       "next": null
     },
     {
       "variable_id": "soil_moisture", "direction": "decreasing", "significant": true,
       "text": "🕵️ Clue found! The soil in {region} is drying. Is it less rain — or more heat? Check precipitation next.",
+      "text_tr": "🕵️ İpucu bulundu! Toprak kuruyor ({region}). Yağış mı azaldı, yoksa hava mı ısındı? Sırada yağış var.",
       "next": { "variable_id": "precip", "region_id": "{region_id}" }
     },
     {
       "variable_id": "soil_moisture", "direction": "increasing", "significant": true,
       "text": "🕵️ Interesting — the soil in {region} is getting wetter. Is more rain falling? Check precipitation next.",
+      "text_tr": "🕵️ İlginç: toprak ıslanıyor ({region}). Daha çok yağış mı düşüyor? Sırada yağış var.",
       "next": { "variable_id": "precip", "region_id": "{region_id}" }
     },
     {
       "variable_id": "soil_moisture", "direction": "*", "significant": false,
       "text": "No significant trend in soil moisture yet — natural year-to-year swings may be hiding any change. Compare with {compare_region} to see a different story.",
+      "text_tr": "Toprak neminde henüz anlamlı bir eğilim yok; yıldan yıla doğal dalgalanma olası bir değişimi gizliyor olabilir. Farklı bir hikâye için {compare_region} ile karşılaştır.",
       "next": { "variable_id": "soil_moisture", "region_id": "{compare_region_id}" }
     },
     {
       "variable_id": "precip", "direction": "decreasing", "significant": true,
       "text": "🕵️ Clue found! Less rain is falling in {region}. Does the soil feel it? Check soil moisture next.",
+      "text_tr": "🕵️ İpucu bulundu! Yağış azalıyor ({region}). Toprak bunu hissediyor mu? Sırada toprak nemi var.",
       "next": { "variable_id": "soil_moisture", "region_id": "{region_id}" }
     },
     {
       "variable_id": "precip", "direction": "increasing", "significant": true,
       "text": "🕵️ More rain is falling in {region}. Is the rest of the country seeing the same? Compare with {compare_region}.",
+      "text_tr": "🕵️ Yağış artıyor ({region}). Ülkenin başka yerinde de böyle mi? {compare_region} ile karşılaştır.",
       "next": { "variable_id": "precip", "region_id": "{compare_region_id}" }
     },
     {
       "variable_id": "precip", "direction": "*", "significant": false,
       "text": "Rain isn't clearly changing in {region} — its natural swings from year to year are large. So if the land is drying, what else could be behind it? Try temperature.",
+      "text_tr": "Yağış belirgin biçimde değişmiyor ({region}); yıldan yıla doğal dalgalanması büyük. Peki toprak kuruyorsa arkasında başka ne olabilir? Sırada sıcaklık var.",
       "next": { "variable_id": "temp", "region_id": "{region_id}" }
     },
     {
       "variable_id": "temp", "direction": "increasing", "significant": true,
       "text": "🕵️ Clue found! It's getting warmer in {region}. Warmer air pulls more water out of soil and plants — check soil moisture next.",
+      "text_tr": "🕵️ İpucu bulundu! Hava ısınıyor ({region}). Sıcak hava topraktan ve bitkilerden daha çok su çeker; sırada toprak nemi var.",
       "next": { "variable_id": "soil_moisture", "region_id": "{region_id}" }
     },
     {
       "variable_id": "temp", "direction": "decreasing", "significant": true,
       "text": "It's getting cooler in {region}, which goes against the warming seen in most of the world. Compare with {compare_region} to check.",
+      "text_tr": "Hava serinliyor ({region}); bu, dünyanın çoğunda görülen ısınmanın tersine. Kontrol için {compare_region} ile karşılaştır.",
       "next": { "variable_id": "temp", "region_id": "{compare_region_id}" }
     },
     {
       "variable_id": "temp", "direction": "*", "significant": false,
       "text": "No significant temperature trend yet — is 25 years long enough to tell? Compare with {compare_region}.",
+      "text_tr": "Sıcaklıkta henüz anlamlı bir eğilim yok; 25 yıl bunu görmek için yeterli mi? {compare_region} ile karşılaştır.",
       "next": { "variable_id": "temp", "region_id": "{compare_region_id}" }
     },
     {
       "variable_id": "*", "direction": "*", "significant": "*",
       "text": "No clear clue yet — try comparing with {compare_region}, or think about whether 25 years is long enough.",
+      "text_tr": "Henüz net bir ipucu yok; {compare_region} ile karşılaştırmayı dene ya da 25 yılın yeterli olup olmadığını düşün.",
       "next": { "variable_id": "{variable_id}", "region_id": "{compare_region_id}" }
     }
   ],

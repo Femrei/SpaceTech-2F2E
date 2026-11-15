@@ -15,7 +15,7 @@ Public API (used by the UI; do not change signatures without telling C):
     glossary()                                      -> dict[term, definition]
     get_cases()                                     -> list[dict]
     next_step_hint(result, variable_id, region_id)  -> str
-    next_step(result, variable_id, region_id)       -> {"text", "variable_id", "region_id"}
+    next_step(result, variable_id, region_id)       -> {"text", "text_tr", "variable_id", "region_id"}
     get_context(result, variable_id)                -> {"key", "text", "text_tr", "sources"}
     get_actions(result, variable_id)                -> {"key", "en", "tr", "sources"}
 
@@ -124,7 +124,8 @@ def next_step(result: dict, variable_id: str, region_id: str) -> dict:
     Looks up the first rule in ``catalog.json["hints"]`` matching
     (variable, direction, significant); ``"*"`` matches anything. Placeholders
     ``{region}``, ``{compare_region}``, ``{region_id}``, ``{compare_region_id}``
-    and ``{variable_id}`` are filled in. Returns the hint text plus the
+    and ``{variable_id}`` are filled in. Returns the hint text (``text``,
+    English; ``text_tr``, Turkish, with the regions' ``name_tr``) plus the
     variable/region the hint points to (``None`` when there is no follow-up),
     so the UI can offer a "follow the clue" button.
     """
@@ -146,8 +147,11 @@ def next_step(result: dict, variable_id: str, region_id: str) -> dict:
                 and _matches(rule["direction"], direction)
                 and _matches(rule["significant"], significant)):
             nxt = rule["next"]
+            values_tr = {**values, "region": region.get("name_tr", region["name"]),
+                         "compare_region": compare.get("name_tr", compare["name"])}
             return {
                 "text": rule["text"].format(**values),
+                "text_tr": rule.get("text_tr", rule["text"]).format(**values_tr),
                 "variable_id": nxt["variable_id"].format(**values) if nxt else None,
                 "region_id": nxt["region_id"].format(**values) if nxt else None,
             }

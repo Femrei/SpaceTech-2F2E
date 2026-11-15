@@ -227,7 +227,7 @@ def point(lat: float, lon: float, variable: str) -> dict:
         "points": _chart_points(series, result),
         "result": _scalars(result),
         "interpretation": trend.interpret(result, power_loader.POINT_VARIABLES[variable]["interpret_as"], place),
-        "next_step": {"text": "", "variable_id": None, "region_id": None},
+        "next_step": {"text": "", "text_tr": "", "variable_id": None, "region_id": None},
         "point": {"lat": lat, "lon": lon, "cell": cell, "n_cells": 1,
                   "cells": [[(cell["south"] + cell["north"]) / 2, (cell["west"] + cell["east"]) / 2]],
                   "source": power_loader.POINT_SOURCE},
