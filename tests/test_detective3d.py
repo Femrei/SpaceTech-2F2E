@@ -10,6 +10,10 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
+import subprocess
+import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -69,3 +73,25 @@ def test_offline_chat_answers_with_real_numbers(server):
 def test_static_files_are_allowlisted(server):
     with pytest.raises(server.HTTPException):
         server.static_file("agent_server.py")  # source code must not be served
+
+
+def test_server_starts_with_non_utf8_output():
+    """Windows regression: with stdout redirected to a cp1254 pipe the start-up print crashed."""
+    env = {**os.environ, "PYTHONIOENCODING": "cp1254", "PORT": "0", "HOST": "127.0.0.1"}
+    env.pop("PYTHONUTF8", None)
+    proc = subprocess.Popen([sys.executable, str(APP_DIR / "agent_server.py")], cwd=ROOT, env=env,
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    try:
+        output = b""
+        deadline = time.time() + 60
+        while time.time() < deadline and b"startup complete" not in output:
+            line = proc.stdout.readline()
+            if not line:  # process exited
+                break
+            output += line
+    finally:
+        proc.kill()
+        proc.wait()
+    text = output.decode("utf-8", errors="replace")
+    assert "UnicodeEncodeError" not in text, text
+    assert "startup complete" in text, text
