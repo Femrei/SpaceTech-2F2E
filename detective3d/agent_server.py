@@ -795,5 +795,12 @@ def static_file(name: str):
 if __name__ == "__main__":
     import uvicorn
 
+    # Windows'ta çıktı bir dosyaya ya da başka bir programa yönlendirilince Python
+    # sistem kodlamasını (Türkçe Windows'ta cp1254) kullanır; "→" gibi karakterler
+    # orada yoktur ve print sunucuyu açılışta çökertir. Çıktıyı her zaman UTF-8 yap.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
     print("LLM:", f"açık ({PROVIDER_LABEL} · {MODEL})" if _has_credentials() else "kapalı → çevrimdışı mod")
     uvicorn.run(app, host=os.environ.get("HOST", "127.0.0.1"), port=int(os.environ.get("PORT", 8765)))
