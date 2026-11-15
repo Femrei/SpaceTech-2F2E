@@ -39,6 +39,7 @@ from src import detective, trend  # noqa: E402
 os.chdir(_cwd)
 
 import anthropic  # noqa: E402
+import pandas as pd  # noqa: E402
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.responses import FileResponse  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
@@ -247,6 +248,102 @@ def tool_get_background(region: str | None = None, variable: str | None = None) 
     return out
 
 
+# --------------------------------------------------------------------------- #
+# C: any place outside the three regions ("Gaziantep'te toprak ne durumda?")
+# NASA POWER 1981-2025 over a ~1° box around the place, same analysis as the regions.
+# --------------------------------------------------------------------------- #
+CITIES = _load_js(HERE / "cities.js") or []  # Natural Earth cities shown on the map (name, lat, lon)
+PLACE_VARIABLES = {"precip": "power_precip", "soil_moisture": "power_soil_wetness", "temp": "power_temp"}
+PLACE_HALF_LAT, PLACE_HALF_LON = 0.5, 0.6  # box half-size in degrees (~110 km x ~105 km at 38°N)
+PLACE_SOURCE = {"dataset": "NASA POWER monthly regional API (MERRA-2 based), 1981-2025",
+                "url": "https://power.larc.nasa.gov/docs/services/api/", "via": "NASA POWER"}
+_FOLD = str.maketrans("çğıöşüâîû", "cgiosuaiu")
+
+
+# Metni Türkçe kurallarıyla küçültür ve harf işaretlerini atar ("Şanlıurfa" -> "sanliurfa"),
+# böylece kullanıcı "Sanliurfa" ya da "ŞANLIURFA" yazsa da şehir bulunur.
+def _fold(text: str) -> str:
+    return text.replace("İ", "i").replace("I", "ı").lower().translate(_FOLD).strip()
+
+
+# Şehir adını haritadaki şehir listesinde (cities.js) arar; bulamazsa None döner.
+def find_city(name: str) -> dict | None:
+    key = _fold(name)
+    return next((c for c in CITIES if _fold(c["name"]) == key), None)
+
+
+# Cümlede geçen şehri bulur. Türkçe ekler için sadece kelimenin başı eşleşmeli:
+# "Gaziantepte" ve "Gaziantep'te" ikisi de Gaziantep'i bulur. Uzun adlar önce denenir.
+def city_in_text(text: str) -> dict | None:
+    folded = _fold(text)
+    for c in sorted(CITIES, key=lambda c: -len(c["name"])):
+        if re.search(r"(?<![a-z])" + re.escape(_fold(c["name"])), folded):
+            return c
+    return None
+
+
+# Bir trend sonucunun ajana gereken kısmını seçer (B'nin analyze_trend çıktısından).
+def _trend_summary(r: dict) -> dict:
+    return {"period": f'{r.get("start_year")}–{r.get("end_year")}',
+            "sen_slope_per_decade": _round(r["sen_slope_per_decade"]),
+            "ci95_per_decade": [_round(r["ci_low"]), _round(r["ci_high"])],
+            "mann_kendall_p": r["mk_p"], "significant_at_0_05": bool(r["significant"]),
+            "direction": r["direction"]}
+
+
+# Ajan aracı: istenen yerin çevresindeki ~1°'lik kutuda NASA POWER verisini B'nin
+# analiziyle inceler (1981-2025 ve 2001-2025). Koordinat önce şehir listesinden alınır;
+# listede yoksa modelin verdiği enlem/boylam kullanılır. Haritada gösterilecek kutu da döner.
+def tool_analyze_place(place: str, variable: str, lat: float | None = None, lon: float | None = None) -> dict:
+    if variable not in PLACE_VARIABLES:
+        raise ValueError(f"Unknown variable {variable!r}; use one of {sorted(PLACE_VARIABLES)}.")
+    city = find_city(place)
+    if city:
+        lat, lon, located = city["lat"], city["lon"], "app city list (Natural Earth)"
+    elif lat is None or lon is None:
+        raise ValueError(f"'{place}' is not in the city list; call again with the lat/lon of its centre.")
+    else:
+        located = "coordinates given by the assistant (approximate)"
+    lat, lon = float(lat), float(lon)
+    if not (-89 <= lat <= 89 and -179 <= lon <= 179):
+        raise ValueError("Latitude must be within ±89 and longitude within ±179.")
+    box = {"south": round(lat - PLACE_HALF_LAT, 2), "north": round(lat + PLACE_HALF_LAT, 2),
+           "west": round(lon - PLACE_HALF_LON, 2), "east": round(lon + PLACE_HALF_LON, 2)}
+    power_id = PLACE_VARIABLES[variable]
+    try:
+        out = api.box(box["south"], box["west"], box["north"], box["east"], power_id)
+    except HTTPException as err:  # e.g. soil wetness over open water, NASA POWER down
+        raise ValueError(err.detail) from err
+    series = pd.Series([p["value"] for p in out["points"]],
+                       index=pd.to_datetime([p["date"] for p in out["points"]]))
+    recent = api._scalars(trend.analyze_trend(series[series.index.year >= 2001]))  # adds start_year/end_year
+    r, meta = out["result"], api.power_loader.POINT_VARIABLES[power_id]
+    name = city["name"] if city else place
+    return {
+        "place": name,
+        "located_by": located,
+        "centre": {"lat": round(lat, 4), "lon": round(lon, 4)},
+        "box": box,
+        "grid_cells_used": out["point"]["n_cells"],
+        "variable": meta["name"],
+        "unit": meta["unit"],
+        "trend_1981_2025": _trend_summary(r),
+        "trend_2001_2025": _trend_summary(recent),
+        "long_term_mean": _round(r["mean_value"]),
+        "percent_change_per_decade": _round(r["percent_change_per_decade"], 2) if variable == "precip" else None,
+        "interpretation": out["interpretation"],
+        "what_it_means": detective.get_context(r, variable),
+        "comparability_note": (
+            "NASA POWER (MERRA-2 based, ~50 km grid), area-weighted mean of the grid cells in a ~1° box around "
+            "the place: a regional picture, not the city's own weather station. Different dataset from the "
+            "three regions' main analysis (Giovanni 2001-2025). Soil wetness here is GWETTOP, the top-layer "
+            "soil wetness in percent, not Giovanni's 0-10 cm soil moisture in kg/m². No catalog clue hints "
+            "exist for this place."),
+        "source": PLACE_SOURCE,
+        "map_area": {**box, "label": name},
+    }
+
+
 # control_map is not executed here: its actions are sent to the browser.
 TOOLS = [
     {
@@ -363,6 +460,30 @@ TOOLS = [
         },
     },
     {
+        "name": "analyze_place",
+        "description": (
+            "Trend analysis for ANY place outside the three regions: a city or town (e.g. Gaziantep, İzmir, "
+            "Ankara), a district, or any spot on Earth. Uses NASA POWER monthly data 1981-2025 (MERRA-2 based, "
+            "~50 km grid), area-weighted over a ~1° box (about 110 km) around the place, with the team's same "
+            "seasonal Mann-Kendall + Sen analysis. Returns the 1981-2025 and the 2001-2025 trend, the team's "
+            "interpretation and real-world context. Always pass lat/lon of the place centre in decimal degrees; "
+            "they are used when the place is not in the app's city list. The map shows the box automatically. "
+            "For konya, van and black_sea use get_trend instead."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "place": {"type": "string", "description": "Place name as the user wrote it, e.g. 'Gaziantep'."},
+                "variable": {"type": "string", "enum": VARIABLE_IDS},
+                "lat": {"type": "number", "description": "Latitude of the place centre, decimal degrees."},
+                "lon": {"type": "number", "description": "Longitude of the place centre, decimal degrees."},
+            },
+            "required": ["place", "variable", "lat", "lon"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
+    {
         "name": "control_map",
         "description": (
             "Drive the 3D map the user is looking at so it shows what you are talking about. "
@@ -394,6 +515,7 @@ HANDLERS = {
     "get_background": tool_get_background,
     "get_long_record": tool_get_long_record,
     "get_ndvi_trend": tool_get_ndvi_trend,
+    "analyze_place": tool_analyze_place,
 }
 
 STEP_LABELS = {
@@ -404,22 +526,69 @@ STEP_LABELS = {
     "get_background": "Katalog bilgisi",
     "get_long_record": "45 yıllık kontrol (POWER)",
     "get_ndvi_trend": "Bitki örtüsü (MODIS NDVI)",
+    "analyze_place": "Konum analizi (NASA POWER)",
     "control_map": "Harita",
 }
 TR_REGION = {"konya": "Konya", "van": "Van", "black_sea": "Doğu Karadeniz", "overview": "Türkiye"}
 TR_VAR = {"precip": "yağış", "soil_moisture": "toprak nemi", "temp": "sıcaklık"}
 
+# C: dil desteği (TR / EN). Sayfa ui_state.lang ile "tr" ya da "en" gönderir; sunucu adım
+# etiketlerini, çevrimdışı cevapları ve hata mesajlarını o dilde verir, LLM'e de o dilde cevap vermesini söyler.
+STEP_LABELS_EN = {
+    "get_trend": "Trend analysis", "compare_regions": "Region comparison", "get_overview": "Overview scan",
+    "get_period_stats": "Period statistics", "get_background": "Catalog background",
+    "get_long_record": "45-year check (POWER)", "get_ndvi_trend": "Vegetation (MODIS NDVI)",
+    "analyze_place": "Place analysis (NASA POWER)", "control_map": "Map",
+}
+EN_REGION = {"konya": "Konya", "van": "Van", "black_sea": "Eastern Black Sea", "overview": "Türkiye"}
+EN_VAR = {"precip": "precipitation", "soil_moisture": "soil moisture", "temp": "temperature"}
+SITE_EN = {"Çumra ovası": "Çumra plain", "Erciş ovası": "Erciş plain", "Rize kıyı yamaçları": "Rize coastal slopes"}
+MESSAGES = {  # key -> (Türkçe, English)
+    "too_many": ("Çok fazla adım gerekti; soruyu daha dar sorabilir misin?",
+                 "That needed too many steps; could you ask a narrower question?"),
+    "cut": ("\n\n(Yanıt uzunluk sınırında kesildi.)", "\n\n(The answer was cut at the length limit.)"),
+    "empty": ("(boş yanıt)", "(empty answer)"),
+    "refusal": ("Bu isteğe yanıt veremiyorum. Soruyu verilerle ilgili olacak şekilde yeniden sorabilirsin.",
+                "I can't answer this request. You can ask it again in a way that is about the data."),
+    "empty_message": ("Boş mesaj.", "Empty message."),
+    "bad_key": ("{p} anahtarı geçersiz (LLM_API_KEY).", "The {p} key is not valid (LLM_API_KEY)."),
+    "quota": ("{p} ücretsiz kotası doldu; bir dakika bekleyip tekrar dene.",
+              "The free {p} quota is used up; wait a minute and try again."),
+    "no_connect": ("{p} sunucusuna bağlanılamadı.{hint}", "Can't connect to the {p} server.{hint}"),
+    "ollama_hint": (" Ollama açık mı? (ollama serve)", " Is Ollama running? (ollama serve)"),
+    "no_model": ("Model '{m}' bulunamadı veya araç çağırmayı desteklemiyor; .env'de LLM_MODEL ile değiştir.{listing}",
+                 "Model '{m}' was not found or does not support tool calls; change it with LLM_MODEL in .env.{listing}"),
+    "models": (" Kullanılabilir modeller: ", " Available models: "),
+    "provider_error": ("{p} hatası: {e}", "{p} error: {e}"),
+    "unexpected": ("Beklenmeyen hata: {e}", "Unexpected error: {e}"),
+    "claude_key": ("API anahtarı geçersiz.", "The API key is not valid."),
+    "claude_rate": ("Hız sınırına takıldı, biraz sonra tekrar dene.", "Rate limit reached; try again in a moment."),
+    "claude_connect": ("Claude API'ye bağlanılamadı (internet?).", "Can't connect to the Claude API (internet?)."),
+    "claude_error": ("Claude API hatası: {e}", "Claude API error: {e}"),
+}
 
-def _step_label(name: str, args: dict) -> str:
-    bits = [TR_REGION.get(args.get(k), args.get(k)) for k in ("region", "region_a", "region_b") if args.get(k)]
+
+# Sayfanın gönderdiği dili okur: "en" değilse Türkçe kabul edilir.
+def _lang(ui_state: dict | None) -> str:
+    return "en" if (ui_state or {}).get("lang") == "en" else "tr"
+
+
+# Mesaj tablosundan seçili dildeki metni döndürür; {p} gibi yerleri verilen değerlerle doldurur.
+def _msg(key: str, lang: str, **values) -> str:
+    return MESSAGES[key][lang == "en"].format(**values)
+
+
+def _step_label(name: str, args: dict, lang: str = "tr") -> str:
+    labels, regions, variables = (STEP_LABELS_EN, EN_REGION, EN_VAR) if lang == "en" else (STEP_LABELS, TR_REGION, TR_VAR)
+    bits = [regions.get(args.get(k), args.get(k)) for k in ("place", "region", "region_a", "region_b") if args.get(k)]
     if args.get("variable"):
-        bits.append(TR_VAR.get(args["variable"], args["variable"]))
+        bits.append(variables.get(args["variable"], args["variable"]))
     if args.get("start_year"):
         bits.append(f'{args["start_year"]}–{args["end_year"]}')
     for k in ("month", "mode"):
         if args.get(k):
             bits.append(str(args[k]))
-    return STEP_LABELS.get(name, name) + (": " + " · ".join(bits) if bits else "")
+    return labels.get(name, name) + (": " + " · ".join(bits) if bits else "")
 
 
 SYSTEM = """You are the Trend Detective assistant inside a 3D map of Türkiye built for the NASA Space Apps \
@@ -432,6 +601,10 @@ Basin, high plateau) and black_sea (Eastern Black Sea, mostly mountains in our b
 - Three monthly variables, 2001-2025, from NASA Giovanni as area averages over each region's box (~25 km grid): \
 precip (mm/month), soil_moisture (surface 0-10 cm, kg/m²), temp (2 m air temperature, °C).
 - The team's statistics: seasonal Mann-Kendall test + Sen slope, significance at p < 0.05.
+- Any other place (a city such as Gaziantep or İzmir, a district, or coordinates anywhere on Earth): \
+analyze_place, with NASA POWER monthly data 1981-2025 (MERRA-2 based, ~50 km grid) averaged over a ~1° box \
+around the place. Same variable ids: precip (mm/month), soil_moisture (here GWETTOP top-layer soil wetness in %, \
+a different quantity from Giovanni's kg/m²), temp (°C). There are no catalog clue hints for these places.
 
 How to work:
 - Get every number from a tool. Never estimate or recall values. If the tools can't answer, say so.
@@ -445,13 +618,19 @@ reasons (different products and depths, coarse grids, mountains) and suggest che
 irrigated fields while the soil dries may point to more groundwater irrigation, but say this is a
 hypothesis, not a finding.
 - Use control_map so the map shows what you are describing.
+- When the user asks about a place outside konya, van and black_sea, never say you only cover three regions: \
+call analyze_place (it moves the map itself). Follow the clue chain there too by calling analyze_place for the \
+other variables at the same place (e.g. drying soil -> was it less rain or more heat?). Say that it is NASA POWER \
+as a ~1° area average, not the city's own station, and compare 1981-2025 with 2001-2025 when they differ.
 - Be honest about limits: these are regional averages, not field measurements; a trend is not a cause; \
 "not significant" means it can't yet be told apart from natural variability, not "no change". For farm \
 advice (irrigation, crops, fertiliser) explain what the data suggests and what local measurement \
 (soil test, field sensors) would be needed; never prescribe doses.
-- Answer in the user's language (usually Turkish). Keep it short: 3-6 sentences or a few bullets, with the \
+- Answer in the page language given as lang in the map note (tr = Turkish, en = English); if the user \
+clearly writes in another language, answer in that one. Keep it short: 3-6 sentences or a few bullets, with the \
 key numbers and units. Plain words first, statistics second. End with one suggested next question when useful.
-- Finish with a short line "Kaynak:" naming the datasets you used (the source fields in tool results)."""
+- Finish with a short line naming the datasets you used (the source fields in tool results), starting \
+with "Kaynak:" in Turkish or "Sources:" in English."""
 
 
 # --------------------------------------------------------------------------- #
@@ -480,7 +659,7 @@ def _get_client() -> anthropic.Anthropic:
 
 def _map_note(ui_state: dict) -> str:
     return (f"[Map state: region={ui_state.get('region')}, variable={ui_state.get('variable')}, "
-            f"month={ui_state.get('month')}, mode={ui_state.get('mode')}]")
+            f"month={ui_state.get('month')}, mode={ui_state.get('mode')}, lang={_lang(ui_state)}]")
 
 
 def _add_source(sources: list, src) -> None:
@@ -488,9 +667,9 @@ def _add_source(sources: list, src) -> None:
         sources.append(src)
 
 
-def _run_tool(name: str, args: dict, steps: list, actions: list, sources: list) -> str:
+def _run_tool(name: str, args: dict, steps: list, actions: list, sources: list, lang: str = "tr") -> str:
     """Execute one tool call; control_map is queued for the browser instead."""
-    steps.append(_step_label(name, args))
+    steps.append(_step_label(name, args, lang))
     if name == "control_map":
         actions.append({k: v for k, v in args.items() if v is not None})
         return "Map updated."
@@ -499,6 +678,10 @@ def _run_tool(name: str, args: dict, steps: list, actions: list, sources: list) 
     result = HANDLERS[name](**args)
     if isinstance(result, dict):
         _add_source(sources, result.get("source"))
+    # C: the map opens the place's box in the "Alan seç" panel. Only the first place call of an
+    # answer moves the map, so clue-chain calls (rain, heat) don't switch away from what was asked.
+    if name == "analyze_place" and not any("area" in a for a in actions):
+        actions.append({"area": result["map_area"], "variable": args["variable"]})
     if name == "compare_regions":
         for key in ("region_a", "region_b"):
             _add_source(sources, SOURCES.get(f"{args[key]}|{args['variable']}"))
@@ -543,6 +726,7 @@ def _trim_history(messages: list, keep_turns: int = 4) -> None:
 
 def run_agent_free(session_id: str, user_text: str, ui_state: dict) -> dict:
     client = _get_oai_client()
+    lang = _lang(ui_state)
     messages = SESSIONS.setdefault(session_id, [{"role": "system", "content": SYSTEM}])
     _trim_history(messages)
     messages.append({"role": "user", "content": f"{_map_note(ui_state)}\n{user_text}"})
@@ -564,22 +748,23 @@ def run_agent_free(session_id: str, user_text: str, ui_state: dict) -> dict:
         if not msg.tool_calls:
             text = (msg.content or "").strip()
             if choice.finish_reason == "length":
-                text += "\n\n(Yanıt uzunluk sınırında kesildi.)"
-            return {"text": text or "(boş yanıt)", "steps": steps, "actions": actions, "sources": sources}
+                text += _msg("cut", lang)
+            return {"text": text or _msg("empty", lang), "steps": steps, "actions": actions, "sources": sources}
 
         for call in msg.tool_calls:
             try:
                 args = json.loads(call.function.arguments or "{}") or {}
-                content = _run_tool(call.function.name, args, steps, actions, sources)
+                content = _run_tool(call.function.name, args, steps, actions, sources, lang)
             except Exception as err:  # report to the model, don't crash the turn
                 content = f"Error: {err}"
             messages.append({"role": "tool", "tool_call_id": call.id, "content": content})
 
-    return {"text": "Çok fazla adım gerekti; soruyu daha dar sorabilir misin?", "steps": steps, "actions": actions, "sources": sources}
+    return {"text": _msg("too_many", lang), "steps": steps, "actions": actions, "sources": sources}
 
 
 # ---- Claude (paid) ---------------------------------------------------------- #
 def run_agent(session_id: str, user_text: str, ui_state: dict) -> dict:
+    lang = _lang(ui_state)
     messages = SESSIONS.setdefault(session_id, [])
     messages.append({"role": "user", "content": f"{_map_note(ui_state)}\n{user_text}"})
     steps, actions, sources = [], [], []
@@ -600,14 +785,14 @@ def run_agent(session_id: str, user_text: str, ui_state: dict) -> dict:
         messages.append({"role": "assistant", "content": response.content})
 
         if response.stop_reason == "refusal":
-            return {"text": "Bu isteğe yanıt veremiyorum. Soruyu verilerle ilgili olacak şekilde yeniden sorabilirsin.",
+            return {"text": _msg("refusal", lang),
                     "steps": steps, "actions": actions, "sources": sources}
         if response.stop_reason == "pause_turn":
             continue
         if response.stop_reason != "tool_use":
             text = "\n".join(b.text for b in response.content if b.type == "text").strip()
             if response.stop_reason == "max_tokens":
-                text += "\n\n(Yanıt uzunluk sınırında kesildi.)"
+                text += _msg("cut", lang)
             return {"text": text, "steps": steps, "actions": actions, "sources": sources}
 
         results = []
@@ -615,14 +800,14 @@ def run_agent(session_id: str, user_text: str, ui_state: dict) -> dict:
             if block.type != "tool_use":
                 continue
             try:
-                content = _run_tool(block.name, dict(block.input or {}), steps, actions, sources)
+                content = _run_tool(block.name, dict(block.input or {}), steps, actions, sources, lang)
                 results.append({"type": "tool_result", "tool_use_id": block.id, "content": content})
             except Exception as err:  # report to the model, don't crash the turn
                 results.append({"type": "tool_result", "tool_use_id": block.id,
                                 "content": f"Error: {err}", "is_error": True})
         messages.append({"role": "user", "content": results})
 
-    return {"text": "Çok fazla adım gerekti; soruyu daha dar sorabilir misin?", "steps": steps, "actions": actions, "sources": sources}
+    return {"text": _msg("too_many", lang), "steps": steps, "actions": actions, "sources": sources}
 
 
 # --------------------------------------------------------------------------- #
@@ -641,49 +826,138 @@ def _find(kind: str, text: str) -> list[str]:
     return [k for k, words in KEYWORDS[kind].items() if any(w in t for w in words)]
 
 
-def run_offline(user_text: str, ui_state: dict) -> dict:
-    regions = _find("region", user_text) or [ui_state.get("region") or "konya"]
+PLACE_NAMES = {  # variable -> ((tr name, tr unit), (en name, en unit))
+    "precip": (("yağış", "mm/ay"), ("precipitation", "mm/month")),
+    "soil_moisture": (("yüzey toprak ıslaklığı", "yüzde puan"), ("surface soil wetness", "percentage points")),
+    "temp": (("sıcaklık", "°C"), ("temperature", "°C")),
+}
+OFFLINE_NOTE = (
+    "\n_Çevrimdışı mod: LLM bağlı değil, cevap kural tabanlı. Tam ajan için .env dosyasında "
+    "ücretsiz bir sağlayıcı (LLM_PROVIDER + LLM_API_KEY) tanımla._",
+    "\n_Offline mode: no LLM is connected, so this answer is rule-based. For the full agent, set a free "
+    "provider (LLM_PROVIDER + LLM_API_KEY) in the .env file._")
+
+
+# C: Sonucun anlamlılığını ve yönünü seçili dilde kısa kelimelerle yazar.
+def _sig_word(significant: bool, lang: str) -> str:
+    return ("significant" if significant else "not significant") if lang == "en" else (
+        "anlamlı" if significant else "anlamlı değil")
+
+
+def _dir_word(direction: str, lang: str) -> str:
+    words = {"increasing": ("artıyor", "rising"), "decreasing": ("azalıyor", "falling")}
+    return words.get(direction, ("belirgin değişmiyor", "no clear change"))[lang == "en"]
+
+
+# C: Çevrimdışı modda (LLM yok) cümlede üç bölge dışında bir şehir geçiyorsa o şehrin
+# çevresini NASA POWER ile analiz eder. Toprak sorulduysa ipucu zinciri için yağış ve
+# sıcaklığa da bakar (toprak kuruyorsa: yağış mı azaldı, sıcaklık mı arttı?). Cevap seçili dilde.
+def _offline_place(city: dict, user_text: str, ui_state: dict) -> dict:
+    lang = _lang(ui_state)
+    en = lang == "en"
     variable = (_find("variable", user_text) or [ui_state.get("variable") or "soil_moisture"])[0]
+    chain = [variable] + (["precip", "temp"] if variable == "soil_moisture" else [])
+    steps, actions, lines, sources = [], [], [], []
+    around = f"Around {city['name']}" if en else f"{city['name']} çevresi"
+    for var in chain:
+        name, unit = PLACE_NAMES[var][en]
+        steps.append(_step_label("analyze_place", {"place": city["name"], "variable": var}, lang))
+        try:
+            t = tool_analyze_place(city["name"], var)
+        except ValueError as err:
+            lines.append(f"**{around} · {name}**: " + (f"could not be analysed ({err})." if en else f"analiz edilemedi ({err})."))
+            continue
+        _add_source(sources, t["source"])
+        if not actions:
+            actions.append({"area": t["map_area"], "variable": var})
+        f, r = t["trend_1981_2025"], t["trend_2001_2025"]
+        fs, rs = _sig_word(f["significant_at_0_05"], lang), _sig_word(r["significant_at_0_05"], lang)
+        if en:
+            lines.append(f"**{around} · {name}** (NASA POWER): 1981–2025 {f['sen_slope_per_decade']:+.2f} {unit} "
+                         f"per decade ({_dir_word(f['direction'], lang)}, {fs}); 2001–2025 "
+                         f"{r['sen_slope_per_decade']:+.2f} {unit} ({rs}).")
+        else:
+            lines.append(f"**{around} · {name}** (NASA POWER): 1981–2025 on yılda "
+                         f"{f['sen_slope_per_decade']:+.2f} {unit} ({_dir_word(f['direction'], lang)}, {fs}); 2001–2025 "
+                         f"{r['sen_slope_per_decade']:+.2f} {unit} ({rs}).")
+    if len(chain) > 1:
+        lines.insert(1, "Clue chain: if the soil is changing, is it rain or heat? Both were checked:" if en
+                     else "İpucu zinciri: toprak değişiyorsa sebep yağış mı, sıcaklık mı? İkisine de bakıldı:")
+    lines.append("_This is the area mean of a ~1° box (about 110 km) around the city, not the city's own "
+                 "station measurement._" if en else
+                 "_Bu sonuç şehrin çevresindeki ~1°'lik kutunun (yaklaşık 110 km) alan ortalaması; "
+                 "şehrin kendi istasyon ölçümü değil._")
+    if actions:
+        steps.append(_step_label("control_map", {"place": city["name"]}, lang))
+    lines.append(OFFLINE_NOTE[en])
+    return {"text": "\n".join(lines), "steps": steps, "actions": actions, "sources": sources, "offline": True}
+
+
+# Çevrimdışı mod (LLM yok): sorudaki bölge ve değişkeni anahtar kelimelerle bulur, B'nin analizi
+# ve D'nin ipucuyla kısa bir cevap yazar. C: cevap sayfada seçili dilde (TR/EN) gelir.
+def run_offline(user_text: str, ui_state: dict) -> dict:
+    lang = _lang(ui_state)
+    en = lang == "en"
+    found = _find("region", user_text)
+    city = None if found else city_in_text(user_text)
+    if city:  # C: a city outside the three regions -> NASA POWER around it
+        return _offline_place(city, user_text, ui_state)
+    regions = found or [ui_state.get("region") or "konya"]
+    variable = (_find("variable", user_text) or [ui_state.get("variable") or "soil_moisture"])[0]
+    reg_name, var_name = (EN_REGION, EN_VAR) if en else (TR_REGION, TR_VAR)
+    per_decade = "/decade" if en else "/10 yıl"
     steps, actions, lines, sources = [], [], [], []
     for region in regions[:2]:
         t = tool_get_trend(region, variable)
         _add_source(sources, t.get("source"))
-        steps.append(_step_label("get_trend", {"region": region, "variable": variable}))
-        sig = "anlamlı (p < 0,05)" if t["significant_at_0_05"] else "anlamlı değil"
-        yon = {"increasing": "artıyor", "decreasing": "azalıyor"}.get(t["direction"], "belirgin değişmiyor")
-        lines.append(f"**{TR_REGION[region]} · {TR_VAR[variable]}**: on yılda {t['sen_slope_per_decade']:+.2f} "
-                     f"{t['unit']} ({yon}), eğilim {sig}.")
+        steps.append(_step_label("get_trend", {"region": region, "variable": variable}, lang))
+        sig = _sig_word(t["significant_at_0_05"], lang) + (" (p < 0.05)" if en else " (p < 0,05)") * bool(t["significant_at_0_05"])
+        yon = _dir_word(t["direction"], lang)
+        if en:
+            lines.append(f"**{reg_name[region]} · {var_name[variable]}**: {t['sen_slope_per_decade']:+.2f} "
+                         f"{t['unit']} per decade ({yon}), trend {sig}.")
+        else:
+            lines.append(f"**{reg_name[region]} · {var_name[variable]}**: on yılda {t['sen_slope_per_decade']:+.2f} "
+                         f"{t['unit']} ({yon}), eğilim {sig}.")
         hint = t["detective_next_step"]
         if hint.get("text"):
-            lines.append(f"İpucu (katalog, İngilizce): {hint['text']}")
+            lines.append(f"Clue (catalog): {hint['text']}" if en else f"İpucu (katalog, İngilizce): {hint['text']}")
         if POWER:
             lr = tool_get_long_record(region, variable)
-            steps.append(_step_label("get_long_record", {"region": region, "variable": variable}))
+            steps.append(_step_label("get_long_record", {"region": region, "variable": variable}, lang))
             _add_source(sources, lr["source"])
             for item in lr["series"][:1]:
                 f, r = item["trend_1981_2025"], item["trend_2001_2025"]
-                mark = lambda x: "anlamlı" if x["significant"] else "anlamlı değil"
-                lines.append(f"45 yıllık kontrol ({item['parameter']}, NASA POWER): 1981–2025 "
+                mark = lambda x: _sig_word(x["significant"], lang)
+                unit = item["unit_per_decade"].replace("mm/ay", "mm/month") if en else item["unit_per_decade"]
+                lines.append(f"{'45-year check' if en else '45 yıllık kontrol'} ({item['parameter']}, NASA POWER): 1981–2025 "
                              f"{f['sen_slope_per_decade']:+.2f} ({mark(f)}), 2001–2025 "
-                             f"{r['sen_slope_per_decade']:+.2f} ({mark(r)}) {item['unit_per_decade']}/10 yıl.")
-    if NDVI and any(w in user_text.lower() for w in ("bitki", "ndvi", "tarım", "tarim", "yeşil", "yesil", "ürün", "urun", "tarla")):
+                             f"{r['sen_slope_per_decade']:+.2f} ({mark(r)}) {unit}{per_decade}.")
+    veg_words = ("bitki", "ndvi", "tarım", "tarim", "yeşil", "yesil", "ürün", "urun", "tarla",
+                 "vegetation", "crop", "green", "farm", "plant")
+    if NDVI and any(w in user_text.lower() for w in veg_words):
         for region in regions[:2]:
-            steps.append(_step_label("get_ndvi_trend", {"region": region}))
+            steps.append(_step_label("get_ndvi_trend", {"region": region}, lang))
             try:
                 n = tool_get_ndvi_trend(region)
             except ValueError:
-                lines.append(f"**{TR_REGION[region]} · NDVI**: veri henüz indirilmedi.")
+                lines.append(f"**{reg_name[region]} · NDVI**: " + ("not downloaded yet." if en else "veri henüz indirilmedi."))
                 continue
             _add_source(sources, n["source"])
             t, pk = n["monthly_trend_2001_2025"], n["peak_greenness_trend"]
-            mark = lambda x: "anlamlı" if x["significant"] else "anlamlı değil"
-            lines.append(f"**{TR_REGION[region]} · bitki örtüsü (MODIS NDVI, {n['site']['name']})**: aylık "
-                         f"{t['sen_slope_per_decade']:+.3f}/10 yıl ({mark(t)}), yıllık zirve "
-                         f"{pk['sen_slope_per_decade']:+.3f}/10 yıl ({mark(pk)}).")
+            mark = lambda x: _sig_word(x["significant"], lang)
+            site = SITE_EN.get(n["site"]["name"], n["site"]["name"]) if en else n["site"]["name"]
+            if en:
+                lines.append(f"**{reg_name[region]} · vegetation (MODIS NDVI, {site})**: monthly "
+                             f"{t['sen_slope_per_decade']:+.3f}/decade ({mark(t)}), yearly peak "
+                             f"{pk['sen_slope_per_decade']:+.3f}/decade ({mark(pk)}).")
+            else:
+                lines.append(f"**{reg_name[region]} · bitki örtüsü (MODIS NDVI, {site})**: aylık "
+                             f"{t['sen_slope_per_decade']:+.3f}/10 yıl ({mark(t)}), yıllık zirve "
+                             f"{pk['sen_slope_per_decade']:+.3f}/10 yıl ({mark(pk)}).")
     actions.append({"region": regions[0] if len(regions) == 1 else "overview", "variable": variable})
-    steps.append(_step_label("control_map", actions[0]))
-    lines.append("\n_Çevrimdışı mod: LLM bağlı değil, cevap kural tabanlı. Tam ajan için .env dosyasında "
-                 "ücretsiz bir sağlayıcı (LLM_PROVIDER + LLM_API_KEY) tanımla._")
+    steps.append(_step_label("control_map", actions[0], lang))
+    lines.append(OFFLINE_NOTE[en])
     return {"text": "\n".join(lines), "steps": steps, "actions": actions, "sources": sources, "offline": True}
 
 
@@ -721,34 +995,34 @@ def area_box(south: float, west: float, north: float, east: float, variable: str
     return api.box(south, west, north, east, variable)
 
 
-def _free_provider_error(err) -> HTTPException:
-    """Turn OpenAI-SDK errors from free providers into short Turkish messages."""
+def _free_provider_error(err, lang: str = "tr") -> HTTPException:
+    """Turn OpenAI-SDK errors from free providers into short messages in the page language."""
     import openai
     if isinstance(err, openai.AuthenticationError):
-        return HTTPException(401, f"{PROVIDER_LABEL} anahtarı geçersiz (LLM_API_KEY).")
+        return HTTPException(401, _msg("bad_key", lang, p=PROVIDER_LABEL))
     if isinstance(err, openai.RateLimitError):
-        return HTTPException(429, f"{PROVIDER_LABEL} ücretsiz kotası doldu; bir dakika bekleyip tekrar dene.")
+        return HTTPException(429, _msg("quota", lang, p=PROVIDER_LABEL))
     if isinstance(err, openai.APIConnectionError):
-        hint = " Ollama açık mı? (ollama serve)" if PROVIDER == "ollama" else ""
-        return HTTPException(503, f"{PROVIDER_LABEL} sunucusuna bağlanılamadı.{hint}")
+        hint = _msg("ollama_hint", lang) if PROVIDER == "ollama" else ""
+        return HTTPException(503, _msg("no_connect", lang, p=PROVIDER_LABEL, hint=hint))
     if isinstance(err, (openai.NotFoundError, openai.BadRequestError)) and "model" in str(err).lower():
         try:
             names = sorted(m.id for m in _get_oai_client().models.list())[:25]
-            listing = " Kullanılabilir modeller: " + ", ".join(names)
+            listing = _msg("models", lang) + ", ".join(names)
         except Exception:
             listing = ""
-        return HTTPException(502, f"Model '{MODEL}' bulunamadı veya araç çağırmayı desteklemiyor; "
-                                  f".env'de LLM_MODEL ile değiştir.{listing}")
+        return HTTPException(502, _msg("no_model", lang, m=MODEL, listing=listing))
     if isinstance(err, openai.APIStatusError):
-        return HTTPException(502, f"{PROVIDER_LABEL} hatası: {err.message}")
-    return HTTPException(500, f"Beklenmeyen hata: {err}")
+        return HTTPException(502, _msg("provider_error", lang, p=PROVIDER_LABEL, e=err.message))
+    return HTTPException(500, _msg("unexpected", lang, e=err))
 
 
 @app.post("/api/chat")
 def chat(body: ChatIn) -> dict:
     text = body.message.strip()
+    lang = _lang(body.ui_state)
     if not text:
-        raise HTTPException(400, "Boş mesaj.")
+        raise HTTPException(400, _msg("empty_message", lang))
     session_id = body.session_id or uuid.uuid4().hex
     if not _has_credentials():
         return {"session_id": session_id, **run_offline(text, body.ui_state)}
@@ -758,19 +1032,19 @@ def chat(body: ChatIn) -> dict:
             out = run_agent_free(session_id, text, body.ui_state)
         except openai.OpenAIError as err:
             SESSIONS.pop(session_id, None)  # a broken history would fail again
-            raise _free_provider_error(err)
+            raise _free_provider_error(err, lang)
         return {"session_id": session_id, **out}
     try:
         out = run_agent(session_id, text, body.ui_state)
     except anthropic.AuthenticationError:
-        raise HTTPException(401, "API anahtarı geçersiz.")
+        raise HTTPException(401, _msg("claude_key", lang))
     except anthropic.RateLimitError:
-        raise HTTPException(429, "Hız sınırına takıldı, biraz sonra tekrar dene.")
+        raise HTTPException(429, _msg("claude_rate", lang))
     except anthropic.APIConnectionError:
-        raise HTTPException(503, "Claude API'ye bağlanılamadı (internet?).")
+        raise HTTPException(503, _msg("claude_connect", lang))
     except anthropic.APIStatusError as err:
         SESSIONS.pop(session_id, None)  # a broken history would fail again
-        raise HTTPException(502, f"Claude API hatası: {err.message}")
+        raise HTTPException(502, _msg("claude_error", lang, e=err.message))
     return {"session_id": session_id, **out}
 
 

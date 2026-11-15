@@ -49,6 +49,7 @@ Sağ alttaki **Dedektife sor** düğmesi sohbet panelini açar.
   - `get_overview`
   - `get_period_stats`
   - `get_background`
+  - `analyze_place` (C): üç bölge dışındaki herhangi bir yer ("Gaziantep'te toprak ne durumda?"). Koordinat önce `cities.js` şehir listesinden, yoksa modelin verdiği enlem/boylamdan alınır. Yerin çevresindeki ~1°'lik kutuda NASA POWER 1981–2025 verisi B'nin analiziyle incelenir (1981–2025 ve 2001–2025 trendi); harita kutuyu "Alan seç" panelinde açar. Çevrimdışı modda da cümlede geçen şehir bulunur.
 - **Harita kontrolü:** `control_map` aracıyla ajan haritayı yönetir: bölgeye uçar, değişkeni/ayı/modu değiştirir, NDVI katmanını açıp kapatır.
 - **Kurallar (sistem talimatı):** Her sayı bir araçtan gelir. Trend neden değildir. Bölge ortalaması tarla ölçümü değildir. Gübre/sulama dozu önerilmez.
 - **Çevrimdışı mod:** LLM tanımlı değilse anahtar kelimelerden bölge ve değişken bulunur, istatistik ve D'nin ipucu gösterilir.
