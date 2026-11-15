@@ -177,6 +177,20 @@
   .hm { background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 8px; }
   .hm svg { display: block; }
   .hm .axis { font-size: 10px; fill: var(--muted); }
+
+  /* ---------- D: önce → sonra → eğilim sürerse ---------- */
+  .ol { background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
+  .ol-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; background: rgba(255,255,255,.05);
+    border-radius: 8px; padding: 3px; }
+  .ol-steps button { background: none; border: 0; color: var(--muted); border-radius: 6px; padding: 4px 2px;
+    font: inherit; font-size: 12px; line-height: 1.15; cursor: pointer; }
+  .ol-steps button small { display: block; font-size: 10px; opacity: .75; }
+  .ol-steps button.on { background: rgba(255,255,255,.12); color: var(--text); }
+  .ol-steps button.off { opacity: .45; }
+  .ol-text { font-size: 13px; margin: 8px 0 0; }
+  .ol ul.acts { margin: 4px 0 0; padding-left: 18px; font-size: 13px; }
+  .ol ul.acts li { margin: 3px 0; }
+  .ol svg .ax { font-size: 9.5px; fill: var(--muted); }
   .lr { background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; font-size: 12.5px; }
   .lr table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
   .lr td { padding: 3px 0; vertical-align: top; }
@@ -456,6 +470,8 @@
     <button data-mode="time" class="on" data-i18n="modeTime"></button>
     <button data-mode="before"><span data-i18n="before"></span><small>2001–05</small></button>
     <button data-mode="after"><span data-i18n="after"></span><small>2021–25</small></button>
+    <button data-mode="p2035" data-i18n-attr="title:projTip">2035<small data-i18n="ifTrend"></small></button>
+    <button data-mode="p2050" data-i18n-attr="title:projTip">2050<small data-i18n="ifTrend"></small></button>
   </div>
   <button class="play" id="play"></button>
   <div class="track">
@@ -627,6 +643,21 @@
       copyTipPoint: "Enlem, boylam", copyTipBox: "Giovanni sırası: batı, güney, doğu, kuzey",
       placeBoxBig: n => `Bu yerin sınırı ${n}° × ${n}°'den büyük; merkez noktası analiz edildi.`,
       placeBoxSmall: "Bu yerin sınırı kutu için çok küçük; merkez noktası analiz edildi.",
+      // D: önce → sonra → eğilim sürerse (2035/2050)
+      ifTrend: "eğilim sürerse", projTip: "Ölçülen eğilim aynı hızla sürerse (tahmin değil)", tagProj: y => `${y} · eğilim sürerse`,
+      projVsAfter: (c, val, unit, lo, hi) => `2021–25'e göre <b style="color:${c}">${val}</b> ${unit} · aralık ${lo}…${hi}`,
+      projNone: "Anlamlı eğilim yok · ileriye uzatılmıyor",
+      legendTipProj: "Ölçülen eğilim sürerse varılacak değerin normalden sapması (tahmin değil; anlamlı olmayan eğilimler gri). Kutu rengi sapmanın yönünü, sütun yüksekliği büyüklüğünü (σ) gösterir.",
+      olTitle: "Önce → sonra → bu gidişle", olPeriodA: "Dönem", olOffTip: "Eğilim anlamlı değil; ileriye uzatılmıyor",
+      olBefore: (from, to, val) => `${from}–${to} ortalaması: <b>${val}</b>.`,
+      olAfter: (from, to, val, ref, diff) => `${from}–${to} ortalaması: <b>${val}</b>` + (ref ? ` (${ref}'e göre ${diff}).` : "."),
+      olProj: (year, val, lo, hi, u) => `Ölçülen eğilim aynı hızla sürerse ${year === 2035 ? "2035'te" : year + "'de"} ortalama yaklaşık <b>${val}${u}</b> olur (aralık ${lo} … ${hi}${u}).`,
+      olProjNone: "Bu eğilim istatistiksel olarak anlamlı olmadığı için ileriye uzatılmıyor: güvenilir bir yön yok.",
+      olHow: "Dönemleri karşılaştırmak için yukarıdaki düğmeleri ya da zaman çubuğundaki <b>Önce · Sonra · 2035 · 2050</b> adımlarını kullan.",
+      olNote: "Tahmin değil: ölçülen eğimin aynen sürdüğü varsayılır. Aralık eğimin %95 güven aralığıdır; yıldan yıla dalgalanma ve gelecekteki salımlar dahil değildir. Gerçek projeksiyon için iklim modelleri (ör. NASA NEX-GDDP-CMIP6) gerekir.",
+      olMeans: "Bu ne anlama geliyor?", olActs: "Bu gidişle ne yapılabilir?",
+      olActsNote: "Genel seçenekler; tarla ölçeğinde karar için yerel ölçüm ve uzman görüşü gerekir.",
+      olNoActs: "Anlamlı bir eğilim olmadığı için öneri listelenmiyor.",
       layers: "Katmanlar", baseMap: "Taban harita", esri: "Uydu görüntüsü (Esri)", ndviLayer: "NDVI · MODIS 16 günlük (NASA GIBS)",
       columns: "3B sapma sütunları", cityNames: "Şehir adları", tour: "Otomatik tur", mapControls: "Harita kontrolleri",
       navHome: "Genel görünüm (Türkiye)", navHomeA: "Genel görünüm", navZin: "Yakınlaş", navZout: "Uzaklaş",
@@ -740,6 +771,21 @@
       copyTipPoint: "Latitude, longitude", copyTipBox: "Giovanni order: west, south, east, north",
       placeBoxBig: n => `This place's boundary is larger than ${n}° × ${n}°; its centre point was analysed.`,
       placeBoxSmall: "This place's boundary is too small for a box; its centre point was analysed.",
+      // D: before → after → if the trend goes on (2035/2050)
+      ifTrend: "if the trend goes on", projTip: "If the measured trend continues at the same rate (not a forecast)", tagProj: y => `${y} · if the trend goes on`,
+      projVsAfter: (c, val, unit, lo, hi) => `vs 2021–25 <b style="color:${c}">${val}</b> ${unit} · range ${lo}…${hi}`,
+      projNone: "No significant trend · not extended",
+      legendTipProj: "Departure from normal of the value reached if the measured trend goes on (not a forecast; trends that are not significant are grey). The box colour shows the direction, the column height the size (σ).",
+      olTitle: "Before → after → if this goes on", olPeriodA: "Period", olOffTip: "The trend is not significant, so it is not extended",
+      olBefore: (from, to, val) => `${from}–${to} mean: <b>${val}</b>.`,
+      olAfter: (from, to, val, ref, diff) => `${from}–${to} mean: <b>${val}</b>` + (ref ? ` (${diff} vs ${ref}).` : "."),
+      olProj: (year, val, lo, hi, u) => `If the measured trend continues at the same rate, the mean would be about <b>${val}${u}</b> in ${year} (range ${lo} … ${hi}${u}).`,
+      olProjNone: "This trend is not statistically significant, so it is not extended into the future: there is no reliable direction.",
+      olHow: "To compare periods, use the buttons above or the <b>Before · After · 2035 · 2050</b> steps on the timeline.",
+      olNote: "Not a forecast: it assumes the measured slope simply continues. The range is the slope's 95% confidence interval; year-to-year swings and future shifts are not included. Real projections need climate models (e.g. NASA NEX-GDDP-CMIP6).",
+      olMeans: "What does this mean?", olActs: "What could be done if this goes on?",
+      olActsNote: "General options; field-scale decisions need local measurements and expert advice.",
+      olNoActs: "No options are listed because there is no significant trend.",
       layers: "Layers", baseMap: "Base map", esri: "Satellite imagery (Esri)", ndviLayer: "NDVI · MODIS 16-day (NASA GIBS)",
       columns: "3D anomaly columns", cityNames: "City names", tour: "Auto tour", mapControls: "Map controls",
       navHome: "Overview (Türkiye)", navHomeA: "Overview", navZin: "Zoom in", navZout: "Zoom out",
@@ -862,6 +908,46 @@
   const signed = (x, d = 1) => x == null ? "—" : (x > 0 ? "+" : x < 0 ? "−" : "") + fmt(Math.abs(x), d);
   const fmtP = p => p == null ? "—" : p < 0.001 ? p.toExponential(1).replace("e", "×10^") : fmt(p, 3);
 
+  // ------------------------------------------------------------------ D: önce → sonra → eğilim sürerse
+  // Üç bölge ve "Alan seç" aynı hesabı kullanır. "Eğilim sürerse" bir tahmin DEĞİLDİR: son 5 yılın
+  // ortalamasından başlayıp ölçülen Sen eğimiyle ileri uzatılır. Aralık, eğimin %95 güven aralığından
+  // (B'nin ci_low/ci_high; Sen eğimi de içine alınır) gelir; yıldan yıla dalgalanma ve gelecekteki
+  // salımlar dahil değildir. Yalnızca anlamlı (artan/azalan) eğilimlerde hesaplanır.
+  const PROJ_YEARS = { p2035: 2035, p2050: 2050 };
+  const isProj = m => Object.prototype.hasOwnProperty.call(PROJ_YEARS, m);
+  const avg = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
+  function outlookOf(values, keys, res) {
+    const years = keys.map(k => +k.slice(0, 4)), y0 = Math.min(...years), y1 = Math.max(...years);
+    const period = (a, b) => {
+      const xs = [], ts = [];
+      keys.forEach((k, i) => {
+        if (years[i] >= a && years[i] <= b && values[i] != null) { xs.push(values[i]); ts.push(years[i] + (+k.slice(5, 7) - 0.5) / 12); }
+      });
+      return xs.length ? { mean: avg(xs), t: avg(ts), from: a, to: b } : null;
+    };
+    const before = period(y0, y0 + 4), after = period(y1 - 4, y1);
+    const sig = !!res.significant && (res.direction === "increasing" || res.direction === "decreasing");
+    const slopes = [res.ci_low, res.ci_high, res.sen_slope_per_decade].map(x => x == null ? null : x / 10);
+    const proj = {};
+    for (const [m, Y] of Object.entries(PROJ_YEARS)) {
+      if (!sig || !after || slopes.some(x => x == null)) { proj[m] = null; continue; }
+      const dt = Y + 0.5 - after.t;
+      proj[m] = { year: Y, mean: after.mean + slopes[2] * dt,
+        lo: after.mean + Math.min(...slopes) * dt, hi: after.mean + Math.max(...slopes) * dt };
+    }
+    return { before, after, proj, sig };
+  }
+  // Yıllık ortalamaların standart sapması: dönem ortalamalarını haritada renklendirmek için ölçek.
+  function yearlySd(values, keys) {
+    const by = {};
+    keys.forEach((k, i) => { if (values[i] != null) (by[k.slice(0, 4)] ||= []).push(values[i]); });
+    const ym = Object.values(by).filter(a => a.length >= 10).map(avg);
+    if (ym.length < 2) return 1;
+    const m = avg(ym);
+    return Math.sqrt(ym.reduce((s, a) => s + (a - m) ** 2, 0) / (ym.length - 1)) || 1;
+  }
+  const catVar = v => D.variables.find(x => x.id === v);
+
   // ------------------------------------------------------------------ data prep
   const regions = D.regions.map(r => Object.defineProperty({ ...r }, "name_tr", { get: () => REGION_TR[r.id] || r.name }));
   const variables = D.variables.filter(v => VAR_TR[v.id]);
@@ -898,7 +984,7 @@
     const ym = Object.values(yearly).filter(a => a.length >= 10).map(a => a.reduce((x, y) => x + y, 0) / a.length);
     const ymMean = ym.reduce((a, b) => a + b, 0) / ym.length;
     const sdYear = Math.sqrt(ym.reduce((s, a) => s + (a - ymMean) ** 2, 0) / Math.max(1, ym.length - 1)) || 1;
-    P[key] = { ...pair, value, smooth, anomS, sd, mean, before, after, sdYear };
+    P[key] = { ...pair, value, smooth, anomS, sd, mean, before, after, sdYear, outlook: outlookOf(value, months, pair.result) };
   }
 
   // ------------------------------------------------------------------ state
@@ -931,6 +1017,7 @@
   function zFor(regionId, v = state.variable) {
     const p = P[`${regionId}|${v}`]; if (!p) return null;
     if (state.mode === "time") { const a = p.anomS[state.i]; return a == null ? null : a / p.sd; }
+    if (isProj(state.mode)) { const pr = p.outlook.proj[state.mode]; return pr ? (pr.mean - p.mean) / p.sdYear : null; }
     const m = state.mode === "before" ? p.before : p.after;
     return m == null ? null : (m - p.mean) / p.sdYear;
   }
@@ -1055,6 +1142,11 @@
         big = p.value[state.i];
         const a = p.anomS[state.i];
         anomLine = a == null ? t("edgeMonth") : t("anomLine", colorFor(v, z), signed(a, meta.dec), meta.unit);
+      } else if (isProj(state.mode)) {
+        const pr = p.outlook.proj[state.mode];
+        big = pr ? pr.mean : null;
+        anomLine = pr ? t("projVsAfter", colorFor(v, z), signed(pr.mean - p.after, meta.dec), meta.unit, fmt(pr.lo, meta.dec), fmt(pr.hi, meta.dec))
+          : t("projNone");
       } else {
         big = state.mode === "before" ? p.before : p.after;
         const diff = p.after != null && p.before != null ? p.after - p.before : null;
@@ -1064,8 +1156,8 @@
       const cx = sp.X ? sp.X(state.i) : 0;
       const showCursor = state.mode === "time" && sp.X;
       c.card.innerHTML = `
-        <div class="fc-head">${r.name_tr}<i>${t(state.mode === "time" ? "tagMonthly" : state.mode === "before" ? "tagBefore" : "tagAfter")}</i></div>
-        <div class="fc-val">${fmt(big, meta.dec)}<u>${meta.unit}</u></div>
+        <div class="fc-head">${r.name_tr}<i>${isProj(state.mode) ? t("tagProj", PROJ_YEARS[state.mode]) : t(state.mode === "time" ? "tagMonthly" : state.mode === "before" ? "tagBefore" : "tagAfter")}</i></div>
+        <div class="fc-val">${fmt(big, meta.dec)}${big == null ? "" : `<u>${meta.unit}</u>`}</div>
         <div class="fc-anom">${anomLine}</div>
         <svg width="190" height="34" style="display:block;margin-top:6px" aria-hidden="true">
           <path d="${sp.d}" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.4"/>
@@ -1212,6 +1304,65 @@
     </div>`;
   }
 
+  // D: sol paneldeki "Önce → sonra → bu gidişle" bölümü (bölgeler ve seçilen alan için ortak).
+  // Adım düğmeleri zaman çubuğundaki modla aynı durumu (state.mode) değiştirir; harita da ona göre boyanır.
+  // opts.skipNoTrendContext: katalogdaki "belirgin eğilim yok" metni bu veriye uymuyorsa (ör. GLDAS'tan söz ediyor).
+  function outlookHTML(o, res, v, unit, dec, opts = {}) {
+    const cv = catVar(v), key = o.sig ? res.direction : "no_clear_trend", m = state.mode, u = ` ${unit}`;
+    const yy = p => p ? `${p.from}–${String(p.to).slice(2)}` : "—";
+    const sub = { before: yy(o.before), after: yy(o.after), p2035: t("ifTrend"), p2050: t("ifTrend") };
+    const label = { before: t("before"), after: t("after"), p2035: "2035", p2050: "2050" };
+    const steps = Object.keys(label).map(s => `<button type="button" data-ol="${s}" class="${m === s ? "on" : ""}${isProj(s) && !o.proj[s] ? " off" : ""}"
+      ${isProj(s) && !o.proj[s] ? `title="${escH(t("olOffTip"))}"` : ""}>${label[s]}<small>${sub[s]}</small></button>`).join("");
+
+    // Küçük grafik: dönem ortalamaları (beyaz), eğilim sürerse değerleri ve genişleyen aralık (sarı).
+    const pts = [o.before, o.after].filter(Boolean).map(p => ({ t: p.t, y: p.mean, k: p === o.before ? "before" : "after", lab: yy(p) }));
+    const pr = Object.entries(o.proj).filter(([, x]) => x).map(([k, x]) => ({ t: x.year + 0.5, y: x.mean, lo: x.lo, hi: x.hi, k, lab: String(x.year) }));
+    const ys = [...pts.map(p => p.y), ...pr.flatMap(p => [p.lo, p.hi])];
+    let chart = "";
+    if (pts.length) {
+      const W = 276, H = 74, t0 = pts[0].t - 2, t1 = 2052, lo = Math.min(...ys), hi = Math.max(...ys), sp = (hi - lo) || 1;
+      const X = t => 6 + (t - t0) / (t1 - t0) * (W - 12), Y = y => H - 16 - (y - lo) / sp * (H - 26);
+      const a = o.after;
+      const fan = a && pr.length ? `<path d="M${X(a.t)},${Y(a.mean)} ${pr.map(p => `L${X(p.t)},${Y(p.hi)}`).join(" ")} ${[...pr].reverse().map(p => `L${X(p.t)},${Y(p.lo)}`).join(" ")} Z" fill="rgba(217,164,65,.18)"/>
+        <path d="M${X(a.t)},${Y(a.mean)} ${pr.map(p => `L${X(p.t)},${Y(p.y)}`).join(" ")}" fill="none" stroke="#d9a441" stroke-width="1.5" stroke-dasharray="4 3"/>` : "";
+      const dot = (p, c) => `<circle cx="${X(p.t)}" cy="${Y(p.y)}" r="${m === p.k ? 5 : 3.2}" fill="${c}" stroke="${m === p.k ? "#fff" : "none"}" stroke-width="1.5"/>`;
+      const tick = p => `<text class="ax" x="${X(p.t)}" y="${H - 3}" text-anchor="middle">${p.lab}</text>`;
+      chart = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;margin-top:8px" aria-hidden="true">
+        ${pts.length === 2 ? `<line x1="${X(pts[0].t)}" y1="${Y(pts[0].y)}" x2="${X(pts[1].t)}" y2="${Y(pts[1].y)}" stroke="rgba(255,255,255,.35)" stroke-width="1"/>` : ""}
+        ${fan}${pts.map(p => dot(p, "#fff")).join("")}${pr.map(p => dot(p, "#d9a441")).join("")}
+        ${[...pts, ...pr].map(tick).join("")}</svg>`;
+    }
+
+    let line;
+    if (m === "before" && o.before) line = t("olBefore", o.before.from, o.before.to, fmt(o.before.mean, dec) + u);
+    else if (m === "after" && o.after) line = t("olAfter", o.after.from, o.after.to, fmt(o.after.mean, dec) + u,
+      o.before ? yy(o.before) : null, o.before ? signed(o.after.mean - o.before.mean, dec) + u : null);
+    else if (isProj(m) && o.proj[m]) {
+      const x = o.proj[m];
+      line = t("olProj", x.year, fmt(x.mean, dec), fmt(x.lo, dec), fmt(x.hi, dec), u);
+    } else if (isProj(m)) line = t("olProjNone");
+    else line = t("olHow");
+
+    const note = o.sig ? `<p class="note">${t("olNote")}</p>` : "";
+    const ctx = cv && !(opts.skipNoTrendContext && key === "no_clear_trend")
+      ? `<p class="ol-text"><b>${t("olMeans")}</b> ${escH((LANG === "tr" ? cv.context_tr?.[key] : null) || cv.context?.[key] || "")}</p>` : "";
+    const acts = cv && o.sig && cv.actions?.[key]
+      ? `<p class="ol-text"><b>${t("olActs")}</b></p><ul class="acts">${(cv.actions[key][LANG] || cv.actions[key].en).map(a => `<li>${escH(a)}</li>`).join("")}</ul>
+         <p class="note">${t("olActsNote")}</p>`
+      : `<p class="note">${t("olNoActs")}</p>`;
+    const srcs = [...(cv?.context?.sources || []), ...(o.sig ? cv?.actions?.sources || [] : [])]
+      .filter((s, i, all) => all.findIndex(x => x.url === s.url) === i);
+    const srcHTML = srcs.length ? `<ul class="src">${srcs.map(s => `<li><a href="${escH(s.url)}" target="_blank" rel="noopener">${escH(s.title)}</a></li>`).join("")}</ul>` : "";
+    return `<div class="sec"><h3>${t("olTitle")}</h3><div class="ol">
+      <div class="ol-steps" role="group" aria-label="${t("olPeriodA")}">${steps}</div>${chart}
+      <p class="ol-text">${line}</p>${note}${ctx}${acts}${srcHTML}</div></div>`;
+  }
+  function setMode(mode) {
+    state.mode = mode; if (mode !== "time") setPlaying(false); renderAll(true); updateNdvi(true);
+  }
+  function wireOutlook(el) { el.querySelectorAll("[data-ol]").forEach(b => b.onclick = () => setMode(b.dataset.ol)); }
+
   function renderLeft() {
     if (area.active) { renderAreaPanel(); return; } // C: "Alan seç" modunda panel seçilen alanı gösterir
     const r = regions.find(x => x.id === state.region), v = state.variable, meta = VAR_TR[v];
@@ -1250,6 +1401,7 @@
         </svg>
         <div class="ends" style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>${months[0].slice(0, 4)}</span><span>${months[N - 1].slice(0, 4)}</span></div>
       </div>
+      ${outlookHTML(p.outlook, res, v, meta.unit, meta.dec)}
       <div class="sec">
         <h3>${t("heatTitle")}
           <span class="seg-mini">${PW ? `<button data-h="giovanni" class="${heatSrc === "giovanni" ? "on" : ""}">${t("y25")}</button><button data-h="power" class="${heatSrc === "power" ? "on" : ""}">${t("y45")}</button>` : ""}</span></h3>
@@ -1266,6 +1418,7 @@
     document.getElementById("hideLeft").onclick = () => setLeft(false);
     document.getElementById("csvBtn").onclick = () => downloadCSV(r, v);
     el.querySelectorAll(".seg-mini button").forEach(b => b.onclick = () => { heatSrc = b.dataset.h; renderLeft(); });
+    wireOutlook(el);
   }
 
   // ------------------------------------------------------------------ C: "Alan seç" modu (NASA POWER)
@@ -1323,8 +1476,10 @@
     const dot = (lon, lat, kind) => f.push({ type: "Feature", properties: { kind },
       geometry: { type: "Point", coordinates: [lon, lat] } });
     const s = area.active ? area.sel : null, d = s && area.data;
-    if (s?.kind === "box") poly(s, "sel");
-    if (s?.kind === "point" && d) poly(d.point.cell, "sel");
+    // D: önce/sonra/eğilim sürerse modlarında seçilen alan, bölgeler gibi normalden sapmaya göre boyanır.
+    const tint = d && state.mode !== "time" ? { color: colorFor(state.variable, areaZ(d)) } : {};
+    if (s?.kind === "box") poly(s, "sel", tint);
+    if (s?.kind === "point" && d) poly(d.point.cell, "sel", tint);
     if (d) d.point.cells.forEach(([la, lo]) => dot(lo, la, "cell"));
     if (s?.kind === "point") dot(s.lon, s.lat, "pin");
     if (area.picking && area.kind === "box" && area.corner && area.hover) {
@@ -1334,12 +1489,22 @@
     return { type: "FeatureCollection", features: f };
   }
 
+  // D: seçilen alanın şu anki moddaki z skoru (dönem ortalamasının uzun dönem ortalamadan sapması / yıllık sd).
+  function areaZ(d) {
+    if (!d || state.mode === "time") return null;
+    const vals = d.points.map(p => p.value), keys = d.points.map(p => p.date.slice(0, 7));
+    const o = outlookOf(vals, keys, d.result);
+    const val = state.mode === "before" ? o.before?.mean : state.mode === "after" ? o.after?.mean : o.proj[state.mode]?.mean;
+    return val == null ? null : (val - d.result.mean_value) / yearlySd(vals, keys);
+  }
+
   // Alan katmanlarını haritaya ekler (harita yüklenince bir kez).
   function addAreaLayers() {
     map.addSource("area", { type: "geojson", data: areaFC() });
     const kind = k => ["==", ["get", "kind"], k];
     map.addLayer({ id: "area-fill", type: "fill", source: "area", filter: kind("sel"),
-      paint: { "fill-color": "#d9a441", "fill-opacity": 0.14 } });
+      paint: { "fill-color": ["coalesce", ["get", "color"], "#d9a441"],
+        "fill-opacity": ["case", ["has", "color"], 0.45, 0.14] } });
     map.addLayer({ id: "area-line", type: "line", source: "area", filter: kind("sel"),
       paint: { "line-color": "#d9a441", "line-width": 2.6 } });
     map.addLayer({ id: "area-preview", type: "line", source: "area", filter: kind("preview"),
@@ -1485,6 +1650,8 @@
         </svg>
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>${keys[0].slice(0, 4)}</span><span>${keys[n - 1].slice(0, 4)}</span></div>
       </div>
+      ${outlookHTML(outlookOf(vals, keys, res), res, state.variable, av.unit, 1,
+        { skipNoTrendContext: state.variable === "soil_moisture" })}
       <div class="sec"><h3>${t("heatTitle")}</h3>
         <div class="hm">${heatmapSVG(vals, keys, state.variable, 296, av.unit)}
           <small style="color:var(--muted);font-size:11px">${av.name} · NASA POWER · ${t("heatNote")}</small></div></div>
@@ -1507,6 +1674,7 @@
     on("areaFly", flyToArea);
     on("areaCsv", downloadAreaCSV);
     on("areaCopy", copyAreaCoords); // B
+    wireOutlook(document.getElementById("left")); // D
   }
 
   // B: panelde başlığın altındaki "Koordinatı kopyala" düğmesi; arama kutu modunda yerin
@@ -1743,7 +1911,7 @@
   function renderLegend() {
     const p = palette(state.variable), c = a => `rgb(${a.join(",")})`;
     const el = document.getElementById("legend");
-    el.title = t("legendTip", state.mode === "time");
+    el.title = isProj(state.mode) ? t("legendTipProj") : t("legendTip", state.mode === "time");
     el.innerHTML = `
       <div>${t("legendTitle")}</div>
       <div class="bar" style="background:linear-gradient(90deg,${c(p.neg)},#e1e4e8,${c(p.pos)})"></div>
@@ -1756,7 +1924,8 @@
       b.classList.toggle("on", b.dataset.v === state.variable);
     });
     const [y, m] = months[state.i].split("-");
-    const label = state.mode === "time" ? `${monthNames()[+m - 1]} ${y}` : state.mode === "before" ? "2001–2005" : "2021–2025";
+    const label = state.mode === "time" ? `${monthNames()[+m - 1]} ${y}` : state.mode === "before" ? "2001–2005"
+      : state.mode === "after" ? "2021–2025" : t("tagProj", PROJ_YEARS[state.mode]);
     document.getElementById("nowLabel").textContent = t(state.mode === "time" ? "nowMonth" : "nowPeriod");
     document.getElementById("nowDate").textContent = label;
     document.getElementById("tlDate").textContent = `${monthNames()[+m - 1]} ${y}`;
@@ -1782,6 +1951,7 @@
     if (!map.getSource("regions")) return;
     map.getSource("regions").setData(regionFC());
     map.getSource("columns").setData(columnFC());
+    renderAreaMap(); // D: seçilen alanın rengi de moda (önce/sonra/eğilim sürerse) göre değişir
     updateNdvi();
   }
 
@@ -1812,9 +1982,7 @@
     map.flyTo({ center: cam.center, zoom: cam.zoom + 0.45, pitch: 55, bearing: -12, padding: pad, duration, essential: true });
   }
 
-  document.querySelectorAll("#modeSeg button").forEach(b => b.onclick = () => {
-    state.mode = b.dataset.mode; if (state.mode !== "time") setPlaying(false); renderAll(true); updateNdvi(true);
-  });
+  document.querySelectorAll("#modeSeg button").forEach(b => b.onclick = () => setMode(b.dataset.mode));
   document.querySelectorAll("input[name=base]").forEach(i => i.onchange = () => {
     map.setLayoutProperty("esri", "visibility", i.value === "esri" ? "visible" : "none");
     map.setLayoutProperty("bm", "visibility", i.value === "bm" ? "visible" : "none");
@@ -2007,7 +2175,7 @@
   // fonksiyonlarını araç olarak çağırır; control_map aracının istekleri burada uygulanır.
   function applyAction(a) {
     if (a.variable && VAR_TR[a.variable]) state.variable = a.variable;
-    if (a.mode && ["time", "before", "after"].includes(a.mode)) { state.mode = a.mode; setPlaying(false); }
+    if (a.mode && ["time", "before", "after", "p2035", "p2050"].includes(a.mode)) { state.mode = a.mode; setPlaying(false); }
     if (a.month) { const k = months.indexOf(a.month.slice(0, 7)); if (k >= 0) { state.i = k; state.mode = "time"; setPlaying(false); } }
     if (typeof a.ndvi === "boolean") {
       document.getElementById("ndviToggle").checked = a.ndvi;

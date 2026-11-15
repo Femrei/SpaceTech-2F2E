@@ -126,6 +126,8 @@ NDVI_PARTIAL=1 python detective3d/build_ndvi.py
 - **Yere bağlı kartlar:** Her bölgede o ayın değeri, sapma, bir sparkline ve Sen trendi ile anlamlılık rozeti var.
 - **Zaman oynatıcı (2001→2025):** Hız seçilebilir. Space tuşu oynatır/durdurur, ← → tuşları birer ay ilerler/geriler.
 - **Önce/Sonra karşılaştırması:** 2001–05 ile 2021–25 ortalamaları.
+- **2035 / 2050 · eğilim sürerse (D):** Zaman çubuğunda ve sol paneldeki "Önce → sonra → bu gidişle" bölümünde. Son 5 yılın ortalamasından başlayıp ölçülen Sen eğimiyle ileri uzatılır; aralık eğimin %95 güven aralığıdır. **Tahmin değildir** ve yalnızca anlamlı eğilimlerde gösterilir; anlamlı olmayanlar gri kalır. Aynı bölüm "Alan seç" ile seçilen her yerde de çalışır (1981–85 → 2021–25 → 2035 → 2050) ve seçilen kutu haritada döneme göre boyanır.
+- **Bu ne anlama geliyor? / Ne yapılabilir? (D):** Katalogdaki bağlam metni (`variables[].context_tr`) ve kaynaklı genel seçenekler (`variables[].actions`, FAO, WHO, IPCC, drought.gov). Öneriler yalnızca anlamlı eğilimlerde listelenir; doz ya da reçete içermez.
 - **Sol panel ("Dedektif dosyası"):** Türkçe hikâye cümlesi, istatistikler ve tam seri grafiği.
 - **NDVI katmanı:** NASA GIBS üzerinden MODIS Terra 16 günlük NDVI. Yalnızca görseldir, analizde kullanılmaz.
 - **Otomatik tur:** Genel görünümden sırayla her bölgeye uçar.

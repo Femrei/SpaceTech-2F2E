@@ -142,6 +142,8 @@ def tool_get_trend(region: str, variable: str) -> dict:
         "interpretation": a["interpretation"],
         "detective_next_step": a["next_step"],
         "what_it_means": detective.get_context(result, variable),
+        # D: general, sourced options if the trend goes on (empty when not significant)
+        "possible_actions": detective.get_actions(result, variable),
         "source": SOURCES.get(f"{region}|{variable}"),
     }
 
@@ -497,7 +499,9 @@ TOOLS = [
             "Every field is optional (omit = leave unchanged): fly to a region (or 'overview' for "
             "all of Türkiye), switch the variable, jump to a month (YYYY-MM, 2001-01..2025-12), "
             "switch the view mode ('time' = monthly animation, 'before' = 2001-05 mean, 'after' = "
-            "2021-25 mean), or toggle the NDVI imagery layer. Call it once per answer when a view "
+            "2021-25 mean, 'p2035' / 'p2050' = where the 2021-25 level would be if the measured trend "
+            "went on; shown only for significant trends and never a forecast), or toggle the NDVI "
+            "imagery layer. Call it once per answer when a view "
             "helps, usually before you write the answer."
         ),
         "input_schema": {
@@ -506,7 +510,7 @@ TOOLS = [
                 "region": {"type": "string", "enum": [*REGION_IDS, "overview"]},
                 "variable": {"type": "string", "enum": VARIABLE_IDS},
                 "month": {"type": "string", "pattern": "^20[0-2][0-9]-(0[1-9]|1[0-2])$"},
-                "mode": {"type": "string", "enum": ["time", "before", "after"]},
+                "mode": {"type": "string", "enum": ["time", "before", "after", "p2035", "p2050"]},
                 "ndvi": {"type": "boolean"},
             },
             "additionalProperties": False,
@@ -629,6 +633,8 @@ hypothesis, not a finding.
 call analyze_place (it moves the map itself). Follow the clue chain there too by calling analyze_place for the \
 other variables at the same place (e.g. drying soil -> was it less rain or more heat?). Say that it is NASA POWER \
 as a ~1° area average, not the city's own station, and compare 1981-2025 with 2001-2025 when they differ.
+- When asked what could be done, use get_trend's possible_actions (general, sourced options; empty when the \
+trend is not significant). Present them as options to consider, never as instructions, and cite their sources.
 - Be honest about limits: these are regional averages, not field measurements; a trend is not a cause; \
 "not significant" means it can't yet be told apart from natural variability, not "no change". For farm \
 advice (irrigation, crops, fertiliser) explain what the data suggests and what local measurement \

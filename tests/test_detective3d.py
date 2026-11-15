@@ -117,3 +117,27 @@ def test_server_starts_with_non_utf8_output():
 def test_city_in_text_needs_a_whole_name(server, text, city):
     found = server.city_in_text(text)
     assert (found["name"] if found else None) == city
+
+
+def test_get_trend_tool_has_actions_only_when_significant(server):
+    sig = server.tool_get_trend("konya", "soil_moisture")       # significant drying
+    ns = server.tool_get_trend("konya", "precip")               # not significant
+    assert sig["possible_actions"]["key"] == "decreasing" and sig["possible_actions"]["tr"]
+    assert ns["possible_actions"]["key"] is None and ns["possible_actions"]["tr"] == []
+
+
+def test_data_js_carries_outlook_inputs():
+    """The before/after/'if the trend goes on' panel needs these from data.js."""
+    text = (APP_DIR / "data.js").read_text(encoding="utf-8")
+    data = json.loads(text[text.index("=") + 1:].strip().rstrip(";"))
+    for variable in data["variables"]:
+        assert {"context", "context_tr", "actions"} <= set(variable), variable["id"]
+    for pair in data["pairs"].values():
+        assert {"sen_slope_per_decade", "ci_low", "ci_high", "significant", "direction"} <= set(pair["result"])
+
+
+def test_page_has_outlook_steps():
+    html = (APP_DIR / "index.html").read_text(encoding="utf-8")
+    assert 'data-mode="p2035"' in html and 'data-mode="p2050"' in html
+    assert "function outlookOf" in html and "eğilim sürerse" in html
+    assert "Tahmin değil" in html  # the projection is always labelled as not a forecast

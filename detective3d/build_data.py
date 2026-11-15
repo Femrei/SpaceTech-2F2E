@@ -40,7 +40,7 @@ for region, variable in meta["pairs"]:
         "points": [{k: p[k] for k in ("date", "value", "smooth", "anomaly")} for p in a["points"]],
         "result": {k: a["result"].get(k) for k in (
             "sen_slope_per_decade", "percent_change_per_decade", "significant",
-            "direction", "mk_p", "mean_value", "ci_low", "ci_high")},
+            "direction", "mk_p", "mean_value", "ci_low", "ci_high", "slope_per_decade")},
         "interpretation": a["interpretation"],
         "source": {"dataset": DATASETS.get(variable), "url": LINKS.get(f"{region}|{variable}"),
                    "via": "NASA Giovanni, area-averaged time series"},
