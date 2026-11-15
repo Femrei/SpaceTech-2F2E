@@ -295,6 +295,28 @@
   .area-msg { font-size: 12.5px; color: #dfe6ec; font-variant-numeric: tabular-nums; }
   .area-msg.bad { color: #ff9a88; }
   .area-done { flex: none; padding: 6px 12px; }
+  /* B: "Yer ara" kutusu (yer adı → koordinat → seçilen alan) */
+  .area-bar { flex-wrap: wrap; row-gap: 6px; }
+  .area-bar .seg button { white-space: nowrap; }
+  .area-msg { flex: 1 1 150px; }
+  .area-search { position: relative; display: flex; gap: 6px; align-items: center; }
+  .area-search input { width: 190px; background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 8px;
+    color: var(--text); padding: 6px 10px; font: inherit; font-size: 13px; }
+  .area-search input:focus { outline: none; border-color: var(--brand); }
+  .area-search .ghost { flex: none; padding: 6px 12px; }
+  .area-search .ghost:disabled { opacity: .5; cursor: wait; }
+  .area-results { position: absolute; top: calc(100% + 10px); left: 0; width: 330px; max-width: calc(100vw - 32px);
+    padding: 6px; z-index: 9; max-height: 320px; overflow-y: auto; }
+  .area-results[hidden] { display: none; }
+  .area-results button { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 8px;
+    padding: 7px 9px; }
+  .area-results button:hover, .area-results button:focus-visible { background: rgba(255,255,255,.08); outline: none; }
+  .area-results small, .ar-src, .ar-msg { display: block; color: var(--muted); font-size: 11.5px; }
+  .ar-msg { padding: 8px 9px; font-size: 12.5px; color: #dfe6ec; }
+  .ar-src { padding: 5px 9px 2px; border-top: 1px solid var(--line); margin-top: 4px; }
+  .copy-btn { background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 7px; padding: 3px 9px;
+    font-size: 12px; margin-top: 6px; color: var(--text); }
+  .copy-btn:hover { border-color: rgba(255,255,255,.3); }
   body.area-on .hint { display: none; }
   .left .full { width: 100%; margin-top: 8px; }
   .left h2.box-title { font-size: 16px; }
@@ -316,6 +338,9 @@
     body.area-on .left { top: auto; bottom: 16px; left: 8px; right: 8px; width: auto; max-height: 52%; z-index: 7; }
     body.area-on .left-tab { top: auto; bottom: 16px; }
     body.area-on.picking .left { display: none; }
+    .area-search { order: -1; width: 100%; }
+    .area-search input { flex: 1; width: auto; min-width: 0; }
+    .area-results { top: auto; bottom: calc(100% + 10px); width: 100%; max-width: none; max-height: 45vh; }
   }
   /* ---------- C: kullanım rehberi (ortada açılan pencere) ---------- */
   .tr-row { display: flex; gap: 8px; }
@@ -415,6 +440,11 @@
     <button type="button" data-k="point" class="on" data-i18n="point"></button>
     <button type="button" data-k="box" data-i18n="box"></button>
   </div>
+  <form class="area-search" id="areaSearch" role="search" autocomplete="off">
+    <input type="search" id="areaQ" maxlength="120" data-i18n-attr="placeholder:searchPh;aria-label:searchA">
+    <button type="submit" class="ghost" id="areaGo" data-i18n="searchGo"></button>
+    <div class="area-results panel" id="areaResults" role="listbox" data-i18n-attr="aria-label:searchResA" hidden></div>
+  </form>
   <span class="area-msg" id="areaMsg" role="status"></span>
   <button type="button" class="ghost area-done" id="areaDone" data-i18n="done"></button>
 </div>
@@ -585,6 +615,18 @@
       nowMonth: "Gösterilen ay", nowPeriod: "Gösterilen dönem",
       guide: "Rehber", guideTip: "Site nasıl kullanılır?",
       area: "Alan seç", areaTip: "Haritada kendi noktanı ya da kutunu seç (NASA POWER, 1981–2025)",
+      // B: "Yer ara" kutusu
+      searchPh: "Yer ara: Konya Selçuklu", searchA: "Yer adı ara", searchGo: "Ara", searchResA: "Arama sonuçları",
+      searchShort: "Aramak için en az 2 harf yaz.", searching: "Aranıyor…",
+      searchNone: "Bulunamadı. Başka bir yazımla dene (ör. “Selçuklu, Konya”).",
+      searchOfflineNone: "Arama servisine ulaşılamadı ve şehir listesinde de bulunamadı. Haritaya tıklayarak seçebilirsin.",
+      searchOfflineUsed: "Arama servisine ulaşılamadı; haritadaki şehir listesi kullanıldı.",
+      searchOsm: "Arama: © OpenStreetMap katkıcıları (Nominatim)", cityCentre: "Şehir merkezi",
+      searchHint: "İstersen üstteki kutuya bir yer adı yaz (ör. Konya Selçuklu); seçtiğin sonuç burada açılır.",
+      copyCoords: "Koordinatı kopyala", copied: "Kopyalandı ✓",
+      copyTipPoint: "Enlem, boylam", copyTipBox: "Giovanni sırası: batı, güney, doğu, kuzey",
+      placeBoxBig: n => `Bu yerin sınırı ${n}° × ${n}°'den büyük; merkez noktası analiz edildi.`,
+      placeBoxSmall: "Bu yerin sınırı kutu için çok küçük; merkez noktası analiz edildi.",
       layers: "Katmanlar", baseMap: "Taban harita", esri: "Uydu görüntüsü (Esri)", ndviLayer: "NDVI · MODIS 16 günlük (NASA GIBS)",
       columns: "3B sapma sütunları", cityNames: "Şehir adları", tour: "Otomatik tur", mapControls: "Harita kontrolleri",
       navHome: "Genel görünüm (Türkiye)", navHomeA: "Genel görünüm", navZin: "Yakınlaş", navZout: "Uzaklaş",
@@ -686,6 +728,18 @@
       nowMonth: "Month shown", nowPeriod: "Period shown",
       guide: "Guide", guideTip: "How to use this site",
       area: "Pick an area", areaTip: "Pick your own point or box on the map (NASA POWER, 1981–2025)",
+      // B: place search box
+      searchPh: "Search a place: Konya Selçuklu", searchA: "Search a place name", searchGo: "Search", searchResA: "Search results",
+      searchShort: "Type at least 2 letters to search.", searching: "Searching…",
+      searchNone: "Not found. Try another spelling (e.g. “Selçuklu, Konya”).",
+      searchOfflineNone: "The search service is unreachable and the city list has no match. You can pick the place by clicking the map.",
+      searchOfflineUsed: "The search service is unreachable; the map's city list was used.",
+      searchOsm: "Search: © OpenStreetMap contributors (Nominatim)", cityCentre: "City centre",
+      searchHint: "Or type a place name in the box above (e.g. Konya Selçuklu); the result you pick opens here.",
+      copyCoords: "Copy coordinates", copied: "Copied ✓",
+      copyTipPoint: "Latitude, longitude", copyTipBox: "Giovanni order: west, south, east, north",
+      placeBoxBig: n => `This place's boundary is larger than ${n}° × ${n}°; its centre point was analysed.`,
+      placeBoxSmall: "This place's boundary is too small for a box; its centre point was analysed.",
       layers: "Layers", baseMap: "Base map", esri: "Satellite imagery (Esri)", ndviLayer: "NDVI · MODIS 16-day (NASA GIBS)",
       columns: "3D anomaly columns", cityNames: "City names", tour: "Auto tour", mapControls: "Map controls",
       navHome: "Overview (Türkiye)", navHomeA: "Overview", navZin: "Zoom in", navZout: "Zoom out",
@@ -1383,13 +1437,15 @@
         <p class="story">${t(area.kind === "point" ? "clickPoint" : "pickBoxHow")}
           ${t("pickIntro", lower(av.name))}</p>
         <p class="note">${t("pickNote")}</p>
+        <p class="note">${t("searchHint")}</p>
         ${pickAgain}${back}`;
       wireAreaPanel(); return;
     }
     const key = areaKey(s, state.variable), d = area.dataKey === key ? area.data : null;
-    const top = s.label
+    const top = (s.label
       ? `${head}<h2>${t("around", escH(s.label))}</h2><div class="sub">${areaTitle(s)}</div><div class="sub">${av.name} · ${av.hint} · ${av.unit}</div>`
-      : `${head}<h2${s.kind === "box" ? ' class="box-title"' : ""}>${areaTitle(s)}</h2><div class="sub">${av.name} · ${av.hint} · ${av.unit}</div>`;
+      : `${head}<h2${s.kind === "box" ? ' class="box-title"' : ""}>${areaTitle(s)}</h2><div class="sub">${av.name} · ${av.hint} · ${av.unit}</div>`)
+      + areaCopyRow(s); // B: koordinatı kopyala düğmesi (+ aramada kutu yerine nokta kullanıldıysa notu)
     if (!d && area.error) {
       el.innerHTML = `${top}<div class="warn">${areaErrorTR(area.error)}</div>
         ${area.canRetry ? `<div class="btn-row"><button class="fly" id="areaRetry">${t("retry")}</button></div>` : ""}
@@ -1450,6 +1506,24 @@
     on("areaPick", () => { setPicking(true); renderLeft(); });
     on("areaFly", flyToArea);
     on("areaCsv", downloadAreaCSV);
+    on("areaCopy", copyAreaCoords); // B
+  }
+
+  // B: panelde başlığın altındaki "Koordinatı kopyala" düğmesi; arama kutu modunda yerin
+  // sınırını kullanamadıysa (çok büyük/küçük) neden nokta analiz edildiğini söyleyen not.
+  function areaCopyRow(s) {
+    const tip = t(s.kind === "point" ? "copyTipPoint" : "copyTipBox");
+    const note = s.noteKey ? `<p class="note">${escH(t(s.noteKey, AREA_MAX_DEG))}</p>` : "";
+    return `<button class="copy-btn" id="areaCopy" title="${escH(tip)}">${t("copyCoords")}</button>${note}`;
+  }
+
+  // B: seçilen alanın koordinatını panoya kopyalar (nokta: "enlem, boylam"; kutu: Giovanni bbox sırası B,G,D,K).
+  async function copyAreaCoords() {
+    const s = area.sel, btn = document.getElementById("areaCopy");
+    if (!s || !btn) return;
+    const txt = s.kind === "point" ? `${s.lat}, ${s.lon}` : `${s.west},${s.south},${s.east},${s.north}`;
+    try { await navigator.clipboard.writeText(txt); btn.textContent = t("copied"); }
+    catch { btn.textContent = txt; } // pano izni yoksa metni göster, kullanıcı elle seçsin
   }
 
   // "Alan seç" modunu açar: harita tepeden görünüme geçer, tıklamalar alan seçer.
@@ -1566,10 +1640,105 @@
     area.kind = b.dataset.k; setPicking(true); renderLeft();
   });
   window.addEventListener("keydown", e => {
+    if (e.key === "Escape" && e.target === searchQ) { hideResults(); return; } // B: aramada Esc yalnızca listeyi kapatır
     if (e.key !== "Escape" || !area.picking) return;
     if (area.corner) { area.corner = null; area.hover = null; renderAreaBar(); renderAreaMap(); }
     else { setPicking(false); renderLeft(); }
   });
+
+  // ------------------------------------------------------------------ B: "Yer ara" (yer adı → koordinat)
+  // Kullanıcı "Konya Selçuklu" gibi bir yer adı yazar; seçtiği sonuç, haritaya tıklamışçasına
+  // "Alan seç" seçimi olur (nokta, ya da kutu modunda yerin sınır kutusu), yer adı C'nin "label"
+  // alanına yazılır ve aynı /api/point–/api/box analizi çalışır. Arama OpenStreetMap Nominatim ile
+  // yapılır: yalnızca "Ara"ya basınca, en fazla saniyede bir istek (servisin kullanım kuralı).
+  // Servise ulaşılamazsa haritadaki şehir listesine (cities.js) bakılır. Yalnızca yazılan yer adı gönderilir.
+  const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
+  const searchForm = document.getElementById("areaSearch"), searchQ = document.getElementById("areaQ");
+  const searchGo = document.getElementById("areaGo"), searchRes = document.getElementById("areaResults");
+  let searchSeq = 0, lastSearchAt = 0, searchHits = [], searchOffline = false;
+
+  // Türkçe karakterlere duyarsız karşılaştırma: "SELÇUKLU", "selcuklu" ve "Selçuklu" aynı sayılır.
+  const normTR = s => String(s).toLocaleLowerCase("tr-TR").replace(/ı/g, "i")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+
+  // Çevrimdışı yedek: haritadaki şehir adlarında arar (yalnızca şehir merkezleri, ilçe yok).
+  function localPlaces(q) {
+    const words = normTR(q).split(/[\s,]+/).filter(w => w.length >= 3);
+    return (window.CITIES || []).filter(c => words.some(w => normTR(c.name).startsWith(w))).slice(0, 5)
+      .map(c => ({ name: c.name, detailKey: "cityCentre", lat: c.lat, lon: c.lon, bbox: null }));
+  }
+
+  // Nominatim'den en fazla 5 sonuç (seçili dilde ad); 8 saniyede cevap gelmezse vazgeçer.
+  async function nominatim(q) {
+    const url = `${NOMINATIM_URL}?format=jsonv2&limit=5&accept-language=${LANG}&q=${encodeURIComponent(q)}`;
+    const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 8000);
+    try {
+      const r = await fetch(url, { signal: ctrl.signal, headers: { Accept: "application/json" } });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const j = await r.json();
+      return j.filter(p => Number.isFinite(+p.lat) && Number.isFinite(+p.lon)).map(p => {
+        const parts = String(p.display_name || "").split(", ");
+        const bb = (p.boundingbox || []).map(Number); // [güney, kuzey, batı, doğu]
+        return { name: parts.slice(0, 2).join(", "), detail: parts.slice(2).join(", "), lat: +p.lat, lon: +p.lon,
+          bbox: bb.length === 4 && bb.every(Number.isFinite) ? { south: bb[0], north: bb[1], west: bb[2], east: bb[3] } : null };
+      });
+    } finally { clearTimeout(timer); }
+  }
+
+  function hideResults() { searchRes.hidden = true; }
+
+  // Sonuç listesini (ya da tek satırlık bir mesajı) arama kutusunun altında gösterir.
+  function showResults(msg) {
+    if (msg) { searchRes.innerHTML = `<div class="ar-msg">${escH(msg)}</div>`; searchRes.hidden = false; return; }
+    searchRes.innerHTML = searchHits.map((h, i) => {
+      const detail = h.detailKey ? t(h.detailKey) : h.detail;
+      return `<button type="button" role="option" data-i="${i}"><b>${escH(h.name)}</b>
+        <small>${detail ? escH(detail) + " · " : ""}${latTxt(h.lat)} ${lonTxt(h.lon)}</small></button>`;
+    }).join("") + `<div class="ar-src">${t(searchOffline ? "searchOfflineUsed" : "searchOsm")}</div>`;
+    searchRes.hidden = false;
+    searchRes.querySelectorAll("button[data-i]").forEach(b => b.onclick = () => pickPlace(searchHits[+b.dataset.i]));
+  }
+
+  async function runSearch(raw) {
+    const q = raw.trim();
+    if (q.length < 2) { showResults(t("searchShort")); return; }
+    const seq = ++searchSeq;
+    const wait = lastSearchAt + 1100 - Date.now(); // saniyede en fazla bir istek
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    if (seq !== searchSeq) return;
+    lastSearchAt = Date.now();
+    searchGo.disabled = true; showResults(t("searching"));
+    let hits, offline = false;
+    try { hits = await nominatim(q); } catch { offline = true; hits = localPlaces(q); }
+    if (seq !== searchSeq) return; // bu arada yeni bir arama başladı
+    searchGo.disabled = false;
+    searchHits = hits; searchOffline = offline;
+    if (!hits.length) { showResults(t(offline ? "searchOfflineNone" : "searchNone")); return; }
+    showResults(null);
+  }
+
+  // Seçilen sonucu "Alan seç" seçimine çevirir ve kamerayı oraya götürür. Kutu modunda yerin sınır
+  // kutusu kullanılır; kutu 10°'den büyük ya da çok küçükse nokta olarak analiz edilir (panelde not).
+  function pickPlace(h) {
+    if (!h) return;
+    hideResults();
+    let sel = { kind: "point", lat: r2(h.lat), lon: r2(h.lon) };
+    if (area.kind === "box") {
+      const b = h.bbox && { kind: "box", south: r2(h.bbox.south), north: r2(h.bbox.north), west: r2(h.bbox.west), east: r2(h.bbox.east) };
+      if (b && !tooBig(b) && !tooSmall(b)) sel = b;
+      else sel.noteKey = b && tooBig(b) ? "placeBoxBig" : "placeBoxSmall";
+    }
+    sel.label = h.name; // C'nin panelindeki yer adı ("… çevresi")
+    area.corner = null; area.hover = null; // kullanıcının Nokta/Kare çiz tercihi (area.kind) değişmez
+    selectArea(sel);
+    const cam = sel.kind === "box"
+      ? map.cameraForBounds([[sel.west, sel.south], [sel.east, sel.north]], { padding: viewPadding(), maxZoom: 10 })
+      : { center: [sel.lon, sel.lat], zoom: Math.max(map.getZoom(), 8.5) };
+    if (cam) map.flyTo({ ...cam, pitch: 0, bearing: 0, padding: viewPadding(), duration: 1600, essential: true });
+  }
+
+  searchForm.onsubmit = e => { e.preventDefault(); runSearch(searchQ.value); };
+  document.addEventListener("pointerdown", e => { if (!searchForm.contains(e.target)) hideResults(); });
 
   function renderLegend() {
     const p = palette(state.variable), c = a => `rgb(${a.join(",")})`;
