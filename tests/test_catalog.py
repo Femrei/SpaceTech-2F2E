@@ -14,8 +14,6 @@ from src.detective import (
     CATALOG_PATH,
     THEMES,
     CONTEXT_KEYS,
-    get_actions,
-    get_cases,
     get_context,
     get_region,
     get_variable,
@@ -47,7 +45,6 @@ VARIABLE_FIELDS = {"id", "name", "short_description", "long_description", "datas
                    "dataset_variable", "source", "unit", "period", "themes"}
 REGION_FIELDS = {"id", "name", "name_in_text", "bbox", "lat", "lon", "description", "teaser", "themes",
                  "compare_with"}
-CASE_FIELDS = {"id", "title", "story", "region_id", "variable_id", "compare_region_id", "chain"}
 SOURCES_PATH = CATALOG_PATH.parent / "SOURCES.md"
 
 
@@ -141,32 +138,11 @@ def test_glossary_covers_result_card_terms():
     assert all(text.strip() for text in g.values())
 
 
-def test_cases_reference_known_ids():
-    cases = get_cases()
-    assert cases
-    assert len({c["id"] for c in cases}) == len(cases)
-    for c in cases:
-        assert CASE_FIELDS <= set(c)
-        assert c["region_id"] in REGION_IDS
-        assert c["variable_id"] in VARIABLE_IDS
-        assert c["compare_region_id"] in REGION_IDS | {None}
-        assert c["compare_region_id"] != c["region_id"]
-        if c["chain"] is not None:
-            assert len(c["chain"]) >= 2 and set(c["chain"]) <= VARIABLE_IDS
-            assert c["chain"][0] == c["variable_id"]
-
-
-def test_case_chains_follow_real_data_hints():
-    # Following the "follow the clue" button on the real data walks the case's chain
-    from src.data_loader import load_series
-    from src.trend import analyze_trend
-
-    for c in get_cases():
-        if c["chain"] is None:
-            continue
-        for here, expected in zip(c["chain"], c["chain"][1:]):
-            step = next_step(analyze_trend(load_series(c["region_id"], here)), here, c["region_id"])
-            assert (step["variable_id"], step["region_id"]) == (expected, c["region_id"]), (c["id"], here)
+def test_unused_sections_are_gone():
+    """The team dropped case files and the "what could be done" list; the catalog must not carry them."""
+    catalog = load_catalog()
+    assert "cases" not in catalog
+    assert all("actions" not in v for v in catalog["variables"])
 
 
 # --------------------------------------------------------------------------- #
@@ -308,12 +284,8 @@ def test_get_context_unknown_variable_raises():
 
 
 # --------------------------------------------------------------------------- #
-# Turkish context and "what could be done" actions (variables[].context_tr / actions)
+# Turkish context texts (variables[].context_tr)
 # --------------------------------------------------------------------------- #
-# Advice must stay general: no doses, no orders, no promises
-PRESCRIPTIVE = ("kg/ha", "dose", "must ", "guarantee", "will fix", "doz", "garanti", "kesinlikle")
-
-
 @pytest.mark.parametrize("variable_id", sorted(VARIABLE_IDS))
 def test_variable_context_tr(variable_id):
     variable = get_variable(variable_id)
@@ -322,44 +294,6 @@ def test_variable_context_tr(variable_id):
         text = variable["context_tr"][key]
         assert 40 <= len(text) <= 450, f"{variable_id}.{key}"
         assert text != variable["context"][key], f"{variable_id}.{key}: not translated"
-
-
-@pytest.mark.parametrize("variable_id", sorted(VARIABLE_IDS))
-def test_variable_actions(variable_id):
-    actions = get_variable(variable_id)["actions"]
-    assert set(actions) == {"increasing", "decreasing", "sources"}
-    for key in ("increasing", "decreasing"):
-        en, tr = actions[key]["en"], actions[key]["tr"]
-        assert 1 <= len(en) <= 3 and len(en) == len(tr), f"{variable_id}.{key}: en/tr must match"
-        for item in en + tr:
-            assert 20 <= len(item) <= 250, item
-            lowered = item.lower()
-            assert not any(p in lowered for p in CAUSAL_PHRASES + PRESCRIPTIVE), item
-    assert actions["sources"]
-    for source in actions["sources"]:
-        assert set(source) == {"title", "url"} and source["url"].startswith("https://")
-
-
-@pytest.mark.parametrize(
-    ("direction", "significant", "expected"),
-    [
-        ("increasing", True, "increasing"),
-        ("decreasing", True, "decreasing"),
-        ("increasing", False, None),
-        ("decreasing", False, None),
-        ("no change", True, None),
-    ],
-)
-@pytest.mark.parametrize("variable_id", sorted(VARIABLE_IDS))
-def test_get_actions_only_for_significant_trends(variable_id, direction, significant, expected):
-    out = get_actions(_result(direction, significant), variable_id)
-    assert out["key"] == expected
-    if expected is None:
-        assert out["en"] == out["tr"] == out["sources"] == []
-    else:
-        actions = get_variable(variable_id)["actions"]
-        assert out["en"] == actions[expected]["en"] and out["tr"] == actions[expected]["tr"]
-        assert out["sources"] == actions["sources"]
 
 
 def test_get_context_has_turkish_text():

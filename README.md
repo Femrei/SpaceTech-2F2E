@@ -17,12 +17,11 @@ api.py                       # FastAPI functions over the Python modules (C); us
 power_loader.py              # NASA POWER point/box loader (C)
 legacy/frontend/             # earlier React + shadcn/ui UI (C); kept for reference, not built or deployed
 requirements.txt             # Python dependencies
-Dockerfile                   # one container serving detective3d
 data/
   raw/                       # 9 raw Giovanni CSVs: <region_id>__<variable_id>.csv (A)
   processed/all_series.csv   # cleaned monthly series used by the app (A)
   SOURCES.md                 # where and when each file was downloaded (A)
-  catalog.json               # variables, regions, themes, glossary, hints, context, cases (D)
+  catalog.json               # variables, regions, themes, glossary, hints, context (D)
 scripts/
   process_giovanni.py        # data/raw -> data/processed/all_series.csv (A)
   check_data.py              # data quality report (A)
@@ -62,30 +61,9 @@ The real data (`data/processed/all_series.csv`) is committed. To rebuild it from
 the raw Giovanni files run `python scripts/process_giovanni.py`; to regenerate the
 app's data files run `python detective3d/build_data.py`.
 
-With Docker (this is what hosting platforms run):
-
-```bash
-docker build -t earth-trend-detective .
-docker run -p 8000:8000 earth-trend-detective     # http://localhost:8000
-# with the LLM agent:  docker run -p 8000:8000 -e LLM_PROVIDER=groq -e LLM_API_KEY=... earth-trend-detective
-```
-
-### Publishing a public link
-
-The `Dockerfile` works on any host that builds Docker images and sets `$PORT`.
-Two free options that give a public URL with no login for visitors:
-
-- **Render** (render.com): New → Web Service → connect this GitHub repo →
-  Runtime: Docker → Instance type: Free → Create. Add `LLM_PROVIDER` and
-  `LLM_API_KEY` under Environment as secrets. The URL looks like
-  `https://<name>.onrender.com`. Free instances sleep when idle, so the first
-  visit can take ~1 minute.
-- **Hugging Face Spaces** (huggingface.co/new-space): SDK: Docker → push this
-  repo to the Space, add `app_port: 8000` to the Space's README header and the
-  key as a Space secret.
-
-After deploying, open the link in a private/incognito window to check it works
-without being signed in.
+To show the app on another computer, run the same two commands there (Python and
+internet access are all it needs). To open it from other devices on the same network,
+start it with `HOST=0.0.0.0`.
 
 UI language: the 3D app has a TR / EN switch (top right). It opens in English unless
 the browser language is Turkish, and remembers the choice. Space Apps requires
@@ -109,8 +87,8 @@ Variable → region → time series → statistics, in that order:
 ### Earlier React UI (C)
 
 `legacy/frontend/` + `api.py` still run on their own (`uvicorn api:app --reload` and
-`cd legacy/frontend && npm install && npm run dev`), but they are no longer part of the
-Docker image. API endpoints (`api.py`): `/api/meta`, `/api/analysis`,
+`cd legacy/frontend && npm install && npm run dev`), but the team uses the 3D app above.
+API endpoints (`api.py`): `/api/meta`, `/api/analysis`,
 `/api/overview`, `/api/compare`, `/api/suggest`, `/api/point`, `/api/box`.
 
 ## Contribution workflow

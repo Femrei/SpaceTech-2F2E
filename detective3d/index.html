@@ -604,9 +604,13 @@
 
       <h3>3. Dedektif dosyasını incele</h3>
       <ul>
-        <li>Soldaki panel seçili bölgenin özetidir: tek cümlelik hikâye, <b>Sen eğimi</b> (on yılda ne kadar değişmiş), güven aralığı ve <b>anlamlılık</b>.</li>
-        <li><b>Anlamlı</b> rozeti, değişimin doğal dalgalanmadan ayırt edilebildiğini söyler (p &lt; 0,05). "Anlamlı değil" ise "değişim yok" demek değildir; henüz ayırt edilemiyordur.</li>
-        <li>Aşağıda yıllık şeritler (<b>Büyüt</b> ile yıl × ay haritası), NASA POWER ile 45 yıllık kontrol, kaynaklar ve <b>CSV indir</b> düğmesi var.</li>
+        <li>En üstteki <b>karar kartı</b> beş soruyu cevaplar: <b>ne</b> değişiyor, <b>nerede</b>, <b>ne kadar</b> (Sen eğimi: on yılda ne kadar değişmiş), <b>anlamlı mı</b> ve anlamlı değilse <b>ne zaman belli olur</b> (kaç yıl daha veri gerekir, kaba tahmin).</li>
+        <li><b>Anlamlı</b> rozeti, değişimin doğal yıldan yıla dalgalanmayla açıklanamayacak kadar büyük olduğunu söyler (p &lt; 0,05). "Anlamlı değil" ise "değişim yok" demek değildir; henüz ayırt edilemiyordur.</li>
+        <li><b>Yıllık kontrol:</b> Ana test her ayı kendi ayıyla karşılaştırır, ama kurak bir yılın neredeyse bütün ayları kurak geçer. Bu yüzden her yıl tek bir değere indirilip test bir kez daha yapılır (Hamed-Rao). Kartta "yine anlamlı" yazıyorsa sonuç sağlamdır; iki test ayrışırsa kart bunu söyler ve sonucu temkinli yorumlamanı önerir.</li>
+        <li><b>İpucu kutusu</b> değişkenin ne olduğunu ve bu eğilimin ne anlama geldiğini kaynaklarıyla anlatır. <b>Sıradaki ipucu</b> düğmesi dedektif zincirinde bir sonraki adıma geçer (ör. toprak kuruyorsa: yağış mı azaldı?).</li>
+        <li><b>Grafiği büyüt</b> seriyi eksenleriyle açar: üzerinde gezinince ay ve değer görünür; ham seri ile mevsimsellikten arındırılmış seri arasında geçebilirsin. Sarı kesikli çizgi Sen eğimi, sarı bant onun %95 güven aralığıdır.</li>
+        <li><b>Yıllık şeritler:</b> Her şerit bir yıl; rengi o yılın normalden sapmasıdır (kahverengi kuru / mavi ıslak ya da mavi serin / kırmızı sıcak; koyuluk büyüklüğü gösterir). <b>Büyüt</b> ile iki görünüm açılır: <b>Yıllar</b> (her yılın sapması çubuk olarak) ve <b>Yıl × ay</b> (her ayın kendi normalinden sapması). Bir aya tıklayınca harita o aya gider. "25 yıl" Giovanni, "45 yıl" NASA POWER verisidir.</li>
+        <li>Altta NASA POWER ile 45 yıllık kontrol, kaynaklar ve <b>CSV indir</b> düğmesi var.</li>
       </ul>
 
       <h3>4. Kendi alanını seç</h3>
@@ -614,6 +618,7 @@
         <li>Sağ üstteki <b>Alan seç</b> ile dünyanın herhangi bir yerine bakabilirsin.</li>
         <li><b>Nokta:</b> haritaya bir kez tıkla. <b>Kare çiz:</b> bir köşeye, sonra karşı köşeye tıkla (en fazla 10° × 10°). <kbd>Esc</kbd> vazgeçer.</li>
         <li>Sonuç soldaki panelde çıkar (NASA POWER, 1981–2025). <b>Bölgelere dön</b> ile üç bölgeye geri dönersin.</li>
+        <li>Haritadaki sarı kare, verinin gerçek çözünürlüğüdür: NASA POWER yaklaşık 55 × 55 km'lik hücreler için tek değer verir. Tıkladığın noktanın kendi değeri değil, o hücrenin ortalamasıdır.</li>
       </ul>
 
       <h3>5. Dedektife sor</h3>
@@ -626,8 +631,7 @@
       <ul>
         <li><b>Sürükle:</b> kaydır. <b>Sağ tık + sürükle</b> (veya <kbd>Ctrl</kbd> + sürükle): döndür ve eğ. <b>Tekerlek:</b> yakınlaş.</li>
         <li>Sağdaki düğmeler: genel görünüm, yakınlaş/uzaklaş, döndür, 3B/2B ve yavaşça dönme (sunum modu).</li>
-        <li><b>Katmanlar</b> menüsü: uydu görüntüsü ya da NASA Blue Marble, NDVI bitki örtüsü katmanı, şehir adları, otomatik tur.</li>
-        <li>Paneldeki <b>Grafiği büyüt</b> düğmesi grafiği eksenleriyle açar; üzerinde gezinince ay ve değer görünür, ham seri ile mevsimsellikten arındırılmış seri arasında geçilebilir.</li>
+        <li><b>Katmanlar</b> menüsü: uydu görüntüsü ya da NASA Blue Marble, NDVI bitki örtüsü katmanı (yalnızca görsel, analizde kullanılmaz), 3B sütunlar, şehir adları, otomatik tur.</li>
       </ul>
 
       <div class="warn">Unutma: Veriler ~25–50 km'lik bölge ortalamalarıdır, tarla ölçümü değildir. Bir trend, sebebini tek başına söylemez; karar vermeden önce yerel ölçümlerle (ör. MGM istasyonları, toprak analizi) kontrol edilmelidir.</div>
@@ -651,9 +655,13 @@
 
       <h3>3. Read the detective file</h3>
       <ul>
-        <li>The left panel sums up the selected region: a one-sentence story, the <b>Sen slope</b> (how much it changed per decade), the confidence interval and the <b>significance</b>.</li>
-        <li>The <b>Significant</b> badge means the change can be told apart from natural variability (p &lt; 0.05). "Not significant" does not mean "no change"; it means it can't be told apart yet.</li>
-        <li>Below are the yearly stripes (<b>Enlarge</b> shows the year × month map), the 45-year check with NASA POWER, the sources and a <b>Download CSV</b> button.</li>
+        <li>The <b>decision card</b> at the top answers five questions: <b>what</b> is changing, <b>where</b>, <b>how much</b> (Sen slope: change per decade), <b>is it significant</b> and, if not, <b>when will we know</b> (roughly how many more years of data it would take).</li>
+        <li>The <b>Significant</b> badge means the change is too large to be explained by natural year-to-year swings (p &lt; 0.05). "Not significant" does not mean "no change"; it means it can't be told apart yet.</li>
+        <li><b>Yearly check:</b> the main test compares each month with the same month in other years, but a dry year is dry in most of its months. So each year is reduced to one value and tested again (Hamed-Rao). "Still significant" means the result is robust; if the two tests disagree, the card says so and asks you to read the trend with caution.</li>
+        <li>The <b>hint box</b> explains the variable and what the trend means, with sources. <b>Next clue</b> takes the next step of the detective chain (e.g. if the soil is drying: is it less rain?).</li>
+        <li><b>Enlarge chart</b> opens the series with axes: hover to read a month and its value, and switch between the raw and the deseasonalised series. The dashed yellow line is the Sen slope and the yellow band its 95% confidence interval.</li>
+        <li><b>Yearly stripes:</b> each stripe is one year, coloured by its departure from normal (brown dry / blue wet, or blue cool / red warm; darker means larger). <b>Enlarge</b> opens two views: <b>Years</b> (one bar per year) and <b>Year × month</b> (each month's departure from its own normal). Click a month to move the map there. "25 yrs" is Giovanni, "45 yrs" is NASA POWER.</li>
+        <li>Below are the 45-year check with NASA POWER, the sources and a <b>Download CSV</b> button.</li>
       </ul>
 
       <h3>4. Pick your own area</h3>
@@ -661,6 +669,7 @@
         <li>With <b>Pick an area</b> (top right) you can look at any place in the world.</li>
         <li><b>Point:</b> click the map once. <b>Draw a box:</b> click one corner, then the opposite corner (up to 10° × 10°). <kbd>Esc</kbd> cancels.</li>
         <li>The result appears in the left panel (NASA POWER, 1981–2025). <b>Back to the regions</b> returns to the three regions.</li>
+        <li>The yellow square on the map is the data's real resolution: NASA POWER gives one value per cell of about 55 × 55 km. It is that cell's average, not the value at the exact point you clicked.</li>
       </ul>
 
       <h3>5. Ask the detective</h3>
@@ -673,8 +682,7 @@
       <ul>
         <li><b>Drag:</b> pan. <b>Right-click + drag</b> (or <kbd>Ctrl</kbd> + drag): rotate and tilt. <b>Wheel:</b> zoom.</li>
         <li>Buttons on the right: overview, zoom in/out, rotate, 3D/2D and slow orbit (presentation mode).</li>
-        <li>The <b>Layers</b> menu: satellite imagery or NASA Blue Marble, the NDVI vegetation layer, city names, auto tour.</li>
-        <li>The <b>Enlarge chart</b> button in the panel opens the chart with axes; hover to read a month and its value, and switch between the raw and the deseasonalised series.</li>
+        <li>The <b>Layers</b> menu: satellite imagery or NASA Blue Marble, the NDVI vegetation layer (visual only, not used in the analysis), 3D columns, city names, auto tour.</li>
       </ul>
 
       <div class="warn">Keep in mind: the data are regional averages over ~25–50 km, not field measurements. A trend alone does not tell its cause; check with local measurements (e.g. MGM weather stations, soil tests) before deciding.</div>

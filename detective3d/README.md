@@ -22,7 +22,7 @@ Ardından tarayıcıda http://localhost:8765 adresini aç.
 3. `detective3d/` klasöründe `.env.example` dosyasını kopyala, adını `.env` yap ve `LLM_API_KEY=` satırına anahtarı yapıştır. `LLM_PROVIDER=groq` zaten yazılı.
 4. Sunucuyu yeniden başlat. Konsolda `LLM: açık (Groq · …)` yazmalı; sohbet panelinde de "çevrimiçi" görünmeli.
 
-`.env` dosyası `.gitignore` sayesinde git'e girmez. Asla commit etme, kimseyle paylaşma, sohbete yapıştırma. Yayındaki sunucuda (Render vb.) anahtarı `.env` yerine sunucunun gizli ortam değişkeni (`LLM_PROVIDER`, `LLM_API_KEY`) olarak tanımla.
+`.env` dosyası `.gitignore` sayesinde git'e girmez. Asla commit etme, kimseyle paylaşma, sohbete yapıştırma.
 
 ### Diğer seçenekler (hepsi `.env` ile değiştirilir)
 
