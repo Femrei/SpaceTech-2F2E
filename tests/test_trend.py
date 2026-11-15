@@ -223,3 +223,29 @@ def test_sen_interval_matches_significance_and_noise():
     quiet = analyze_trend(make_series(trend_per_decade=0.5, noise=0.1, seed=4))
     loud = analyze_trend(make_series(trend_per_decade=0.5, noise=1.0, seed=4))
     assert quiet["sen_ci_high"] - quiet["sen_ci_low"] < loud["sen_ci_high"] - loud["sen_ci_low"]
+
+
+def test_annual_check_agrees_on_clear_cases():
+    """Yearly robustness check: a clear trend stays significant, pure noise stays not significant."""
+    strong = analyze_trend(make_series(trend_per_decade=1.0, noise=0.3, amp=3.0, seed=1))
+    assert strong["annual_significant"] is True and strong["annual_p"] < 0.05
+    assert strong["annual_n_years"] == len(set(INDEX.year))
+    noise = analyze_trend(make_series(trend_per_decade=0.0, noise=1.0, seed=2))
+    assert noise["annual_significant"] is False and noise["annual_p"] >= 0.05
+
+
+def test_annual_check_is_less_confident_than_seasonal_test():
+    """Months of one year move together; one value per year must give a larger p than the seasonal test."""
+    rng = np.random.default_rng(3)
+    years = sorted(set(INDEX.year))
+    year_shock = dict(zip(years, rng.normal(0, 1.0, len(years))))   # a dry or wet year affects all its months
+    values = (10 + 0.06 * (INDEX.year - years[0]) + np.array([year_shock[y] for y in INDEX.year])
+              + rng.normal(0, 0.1, len(INDEX)))
+    r = analyze_trend(pd.Series(values, index=INDEX))
+    assert r["annual_p"] > r["mk_p"] * 10
+
+
+def test_annual_check_needs_enough_years():
+    short = pd.Series(np.arange(48, dtype=float), index=pd.date_range("2001-01-01", periods=48, freq="MS"))
+    r = analyze_trend(short)  # 4 years: not enough for the yearly check
+    assert r["annual_p"] is None and r["annual_significant"] is None and r["annual_n_years"] == 4

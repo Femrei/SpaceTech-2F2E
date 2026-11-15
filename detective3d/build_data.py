@@ -43,7 +43,9 @@ for region, variable in meta["pairs"]:
             "direction", "mk_p", "mean_value", "ci_low", "ci_high", "slope_per_decade",
             # decision card: Sen slope's own interval, record length and the rough
             # "years of data needed" estimate (None when the trend is significant)
-            "sen_ci_low", "sen_ci_high", "years_needed_estimate", "n_years", "start_year", "end_year")},
+            "sen_ci_low", "sen_ci_high", "years_needed_estimate", "n_years", "start_year", "end_year",
+            # robustness check (yearly means, Hamed-Rao modified Mann-Kendall)
+            "annual_p", "annual_significant", "annual_n_years")},
         "interpretation": a["interpretation"],
         # D's catalog clue (text, text_tr and the variable/region it points to) for the panel button
         "next_step": a["next_step"],

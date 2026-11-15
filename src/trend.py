@@ -25,6 +25,8 @@ from scipy import stats
 ALPHA = 0.05
 MIN_VALID_POINTS = 24
 MONTHS_PER_YEAR = 12
+MIN_MONTHS_PER_YEAR = 9      # robustness check: a year counts if it has at least this many valid months
+MIN_YEARS_ANNUAL_CHECK = 8   # robustness check needs at least this many years
 
 RESULT_KEYS = (
     "n",                         # number of valid (non-NaN) monthly values
@@ -45,6 +47,9 @@ RESULT_KEYS = (
     "significant",               # mk_p < ALPHA
     "direction",                 # "increasing" | "decreasing" | "no change" (sign of Sen's slope)
     "years_needed_estimate",     # rough total record length (years) for significance; None if significant
+    "annual_p",                  # robustness check: Hamed-Rao modified MK p on yearly mean anomalies (None if < 8 years)
+    "annual_significant",        # annual_p < ALPHA (None if annual_p is None)
+    "annual_n_years",            # number of years in the robustness check
     "anomalies",                 # pd.Series, same index as input, NaNs kept in place
     "trend_line",                # pd.Series, OLS line in original units, same index as input, NaNs kept
     "method",                    # human-readable description of the primary test
@@ -178,6 +183,15 @@ def analyze_trend(series: pd.Series) -> dict:
        It ignores autocorrelation and assumes the slope stays the same,
        so treat it as an order of magnitude only. ``None`` when the trend is
        already significant or the Sen slope is exactly zero.
+    7. **Robustness check** (``annual_p`` / ``annual_significant``): the
+       seasonal test treats the 12 months of a year as independent, but a dry
+       year is usually dry in most months, so ``mk_p`` is over-confident (often
+       by several orders of magnitude). The check averages the anomalies of
+       each year (years with at least 9 valid months) and runs the Hamed & Rao
+       (1998) modified Mann-Kendall test, which also corrects for
+       autocorrelation between years. It is reported next to the primary
+       result; ``significant`` still comes from the seasonal test. ``None``
+       when fewer than 8 years are available.
 
     Raises
     ------
@@ -231,6 +245,14 @@ def analyze_trend(series: pd.Series) -> dict:
         n_needed = n * (t_crit * reg.stderr / abs(sen_per_year)) ** (2 / 3)
         years_needed = float(max(n_needed, n) / MONTHS_PER_YEAR)
 
+    # --- robustness check: one value per year, autocorrelation-corrected MK ---
+    by_year = valid.groupby(valid.index.year).agg(["mean", "count"])
+    yearly = by_year.loc[by_year["count"] >= MIN_MONTHS_PER_YEAR, "mean"].to_numpy()
+    annual_p = annual_significant = None
+    if len(yearly) >= MIN_YEARS_ANNUAL_CHECK:
+        annual_p = float(mk.hamed_rao_modification_test(yearly, alpha=ALPHA).p)
+        annual_significant = bool(annual_p < ALPHA)
+
     start, end = valid.index.min(), valid.index.max()
     n_years = ((end.year - start.year) * MONTHS_PER_YEAR + end.month - start.month + 1) / MONTHS_PER_YEAR
 
@@ -253,6 +275,9 @@ def analyze_trend(series: pd.Series) -> dict:
         "significant": significant,
         "direction": direction,
         "years_needed_estimate": years_needed,
+        "annual_p": annual_p,
+        "annual_significant": annual_significant,
+        "annual_n_years": int(len(yearly)),
         "anomalies": anomalies,
         "trend_line": trend_line,
         "method": "Seasonal Mann-Kendall test (period 12) with seasonal Sen's slope",

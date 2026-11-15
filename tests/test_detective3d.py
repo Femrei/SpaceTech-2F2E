@@ -195,3 +195,19 @@ def test_page_has_yearly_stripes_and_heat_window():
     assert "heatmapSVG" not in html
     for key in ("stripesTitle", "heatBig", "viewYears", "viewMonths", "yearRead", "monthRead", "heatNoteY", "heatNoteM"):
         assert html.count(f"{key}:") == 2, key  # Turkish and English
+
+
+def test_yearly_check_reaches_data_card_and_agent(server):
+    text = (APP_DIR / "data.js").read_text(encoding="utf-8")
+    data = json.loads(text[text.index("=") + 1:].strip().rstrip(";"))
+    for key, pair in data["pairs"].items():
+        res = pair["result"]
+        assert {"annual_p", "annual_significant", "annual_n_years"} <= set(res), key
+        # on the real data the yearly check agrees with the seasonal test for every pair
+        assert res["annual_significant"] == res["significant"], key
+    html = (APP_DIR / "index.html").read_text(encoding="utf-8")
+    assert "function annualCheckHTML" in html
+    for key in ("annualSame", "annualDiff"):
+        assert html.count(f"{key}:") == 2, key
+    check = server.tool_get_trend("konya", "soil_moisture")["robustness_check"]
+    assert check["significant_at_0_05"] is True and 0.001 < check["yearly_means_p"] < 0.05
