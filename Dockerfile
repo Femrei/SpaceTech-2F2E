@@ -20,7 +20,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PORT=8000
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY api.py ./
+COPY api.py power_loader.py ./
 COPY src/ src/
 COPY data/ data/
 # No processed CSV yet (A's real data not committed)? Fall back to B's mock data

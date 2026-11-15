@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parent
 
 
 from src import data_loader, detective, trend  # A, D, B (all on main now)
+import power_loader  # EXPERIMENT: "Pick a place" tab (NASA POWER); remove with /api/point + /api/box
 
 # A's processed CSV is built from the raw Giovanni downloads in data/raw/. If there
 # are none, the CSV can only have come from B's `python -m src.mock_data`, so the
@@ -80,7 +81,7 @@ def _analyse(region_id: str, variable_id: str) -> tuple[pd.Series, dict]:
 # Endpoints
 # --------------------------------------------------------------------------- #
 # Arayüzün açılışta ihtiyaç duyduğu her şey: katalog (bölgeler, değişkenler,
-# sözlük, vakalar), temalar, verisi olan çiftler, veri indirme tarihi, stub listesi.
+# sözlük, ipuçları), temalar, verisi olan çiftler, veri indirme tarihi, stub listesi.
 @app.get("/api/meta")
 def meta() -> dict:
     catalog = detective.load_catalog()
@@ -88,7 +89,6 @@ def meta() -> dict:
         "variables": catalog["variables"],
         "regions": catalog["regions"],
         "glossary": detective.glossary(),
-        "cases": detective.get_cases(),
         "themes": detective.THEMES,
         # D's hint rules, so the UI can show its own translation of the matched rule.
         "hints": catalog.get("hints", []),
@@ -96,7 +96,18 @@ def meta() -> dict:
         "data_downloaded_on": data_loader.DATA_DOWNLOADED_ON,
         "mock_data": MOCK_DATA,
         # B: "% change" is meaningless on an interval scale such as °C; hide it for these.
-        "no_percent_variables": sorted(getattr(trend, "NO_PERCENT_VARIABLES", ())),
+        "no_percent_variables": sorted(getattr(trend, "NO_PERCENT_VARIABLES", ())) + [
+            vid for vid, v in power_loader.POINT_VARIABLES.items()
+            if v["interpret_as"] in getattr(trend, "NO_PERCENT_VARIABLES", ())
+        ],
+        # EXPERIMENT: variables offered in the "Pick a place" tab (NASA POWER).
+        "point_variables": [
+            {"id": vid, "name": v["name"], "unit": v["unit"], "short_description": v["short_description"],
+             "dataset": "NASA POWER (MERRA-2)", "period": {"start": f"{power_loader.START_YEAR}-01",
+                                                         "end": f"{power_loader.END_YEAR}-12"},
+             "long_description": "", "themes": []}
+            for vid, v in power_loader.POINT_VARIABLES.items()
+        ],
     }
 
 
@@ -154,10 +165,23 @@ def _checked(region: str, variable: str) -> tuple[dict, dict, pd.Series, dict]:
 @app.get("/api/analysis")
 def analysis(region: str, variable: str) -> dict:
     region_info, variable_info, series, result = _checked(region, variable)
+    return {
+        "points": _chart_points(series, result),
+        "result": _scalars(result),
+        # B: interpret(result, variable_id, region_name); D's name_in_text reads
+        # naturally in a sentence ("in the Konya Closed Basin").
+        "interpretation": trend.interpret(result, variable, region_info.get("name_in_text", region_info["name"])),
+        "next_step": detective.next_step(result, variable, region),
+    }
+
+
+# Grafik için aylık noktalar: ham değer, 12 aylık ortalama, anomali, eğilim (anomali
+# ölçeğinde) ve güven bandı. Pano ve "Konumunu seç" sekmesi aynı biçimi kullanır.
+def _chart_points(series: pd.Series, result: dict) -> list[dict]:
     smooth = _smooth12(series)
     trend_anom = _anomaly_trend(result)
     low, high = _ci_fan(result)
-    points = [
+    return [
         {
             "date": d.strftime("%Y-%m-%d"),
             "value": _num(series.get(d)),
@@ -169,13 +193,80 @@ def analysis(region: str, variable: str) -> dict:
         }
         for d in series.index
     ]
+
+
+# Bir enlem/boylam aralığını cümlede okunur yazar: "37.00°N–39.00°N".
+def _span(lo: float, hi: float, pos: str, neg: str) -> str:
+    return f"{abs(lo):.2f}°{pos if lo >= 0 else neg}–{abs(hi):.2f}°{pos if hi >= 0 else neg}"
+
+
+# EXPERIMENT – "Konumunu seç" sekmesinin "Nokta" modu: dünyadaki herhangi bir nokta için
+# NASA POWER'dan 1981–2025 aylık seriyi (tek ızgara hücresi) çeker ve B'nin aynı
+# analizini uygular. Cevap /api/analysis ile aynı biçimdedir (+ noktanın ve ızgara
+# hücresinin bilgisi); D'nin ipucu kuralları katalogdaki bölgelere bağlı olduğu için
+# burada ipucu yoktur.
+@app.get("/api/point")
+def point(lat: float, lon: float, variable: str) -> dict:
+    if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        raise HTTPException(422, "Latitude must be within ±90 and longitude within ±180.")
+    if variable not in power_loader.POINT_VARIABLES:
+        raise HTTPException(404, f"Unknown variable {variable!r}.")
+    try:
+        series = power_loader.load_point_series(lat, lon, variable)
+    except ValueError as err:  # e.g. soil wetness over open water
+        raise HTTPException(422, str(err)) from err
+    except power_loader.PowerError as err:
+        raise HTTPException(502, str(err)) from err
+    try:
+        result = trend.analyze_trend(series)
+    except ValueError as err:  # e.g. too few valid months
+        raise HTTPException(422, str(err)) from err
+    cell = power_loader.merra2_cell(lat, lon)
+    place = f"the grid cell around {abs(lat):.2f}°{'N' if lat >= 0 else 'S'}, {abs(lon):.2f}°{'E' if lon >= 0 else 'W'}"
     return {
-        "points": points,
+        "points": _chart_points(series, result),
         "result": _scalars(result),
-        # B: interpret(result, variable_id, region_name); D's name_in_text reads
-        # naturally in a sentence ("in the Konya Closed Basin").
-        "interpretation": trend.interpret(result, variable, region_info.get("name_in_text", region_info["name"])),
-        "next_step": detective.next_step(result, variable, region),
+        "interpretation": trend.interpret(result, power_loader.POINT_VARIABLES[variable]["interpret_as"], place),
+        "next_step": {"text": "", "variable_id": None, "region_id": None},
+        "point": {"lat": lat, "lon": lon, "cell": cell, "n_cells": 1,
+                  "cells": [[(cell["south"] + cell["north"]) / 2, (cell["west"] + cell["east"]) / 2]],
+                  "source": power_loader.POINT_SOURCE},
+    }
+
+
+# EXPERIMENT – "Konumunu seç" sekmesi ("Kare çiz"): kullanıcının haritada çizdiği
+# kutunun (güney, batı, kuzey, doğu) NASA POWER alan ortalamasını B'nin aynı
+# analizinden geçirir. Kutunun kenarları en fazla 10 derece olabilir (POWER kuralı).
+# Cevap /api/analysis ile aynı biçimdedir; ek olarak "point" alanında kullanılan
+# hücreler ve kaynak bulunur. D'nin ipucu kuralları katalogdaki bölgelere bağlı
+# olduğu için burada ipucu yoktur.
+@app.get("/api/box")
+def box(south: float, west: float, north: float, east: float, variable: str) -> dict:
+    if not (-90 <= south < north <= 90 and -180 <= west < east <= 180):
+        raise HTTPException(422, "Give the box as south < north (±90) and west < east (±180).")
+    if variable not in power_loader.POINT_VARIABLES:
+        raise HTTPException(404, f"Unknown variable {variable!r}.")
+    try:
+        loaded = power_loader.load_box_series(south, west, north, east, variable)
+    except ValueError as err:  # box too large, or soil wetness over open water only
+        raise HTTPException(422, str(err)) from err
+    except power_loader.PowerError as err:
+        raise HTTPException(502, str(err)) from err
+    series = loaded["series"]
+    try:
+        result = trend.analyze_trend(series)
+    except ValueError as err:  # e.g. too few valid months
+        raise HTTPException(422, str(err)) from err
+    area = loaded["area"]
+    place = f"the box {_span(south, north, 'N', 'S')}, {_span(west, east, 'E', 'W')}"
+    return {
+        "points": _chart_points(series, result),
+        "result": _scalars(result),
+        "interpretation": trend.interpret(result, power_loader.POINT_VARIABLES[variable]["interpret_as"], place),
+        "next_step": {"text": "", "variable_id": None, "region_id": None},
+        "point": {"lat": (area["south"] + area["north"]) / 2, "lon": (area["west"] + area["east"]) / 2,
+                  "cell": area, "n_cells": loaded["n_cells"], "cells": loaded["cells"],
+                  "source": power_loader.BOX_SOURCE},
     }
 
 

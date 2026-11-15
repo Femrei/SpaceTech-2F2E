@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react"
 import {
-  FolderOpenIcon,
   LayoutDashboardIcon,
+  MapPinIcon,
   SatelliteIcon,
   ScaleIcon,
   SearchIcon,
@@ -22,8 +22,9 @@ import { t } from "@/lib/i18n"
 // Pano dışındaki sekmelerin kodu ayrı dosyalara bölünür ve ancak sekme ilk
 // açıldığında indirilir; açılışta sadece Pano yüklenir.
 const DetectiveTab = lazy(() => import("@/components/DetectiveTab").then((m) => ({ default: m.DetectiveTab })))
-const CasesTab = lazy(() => import("@/components/CasesTab").then((m) => ({ default: m.CasesTab })))
 const CompareTab = lazy(() => import("@/components/CompareTab").then((m) => ({ default: m.CompareTab })))
+// DENEME: "Konumunu seç" sekmesi (NASA POWER). Kaldırmak için bu satırı ve aşağıdaki sekmeyi sil.
+const PlaceTab = lazy(() => import("@/components/PlaceTab").then((m) => ({ default: m.PlaceTab })))
 
 // Bir sekme ilk açıldığında oluşturulur; sonra gizlense de bellekte kalır
 // (forceMount), böylece örneğin Dedektif Modu'ndaki ilerleme kaybolmaz.
@@ -100,15 +101,15 @@ export default function App() {
             <TabsList variant="line" className="h-auto w-full group-data-horizontal/tabs:h-auto justify-start gap-1 overflow-x-auto border-b px-0 pb-1.5 [scrollbar-width:none]">
               <TabsTrigger className="h-10 flex-none px-3" value="explore"><LayoutDashboardIcon />{t("tabExplore")}</TabsTrigger>
               <TabsTrigger className="h-10 flex-none px-3" value="detective"><SearchIcon />{t("tabDetective")}</TabsTrigger>
-              <TabsTrigger className="h-10 flex-none px-3" value="cases"><FolderOpenIcon />{t("tabCases")}</TabsTrigger>
               <TabsTrigger className="h-10 flex-none px-3" value="compare"><ScaleIcon />{t("tabCompare")}</TabsTrigger>
+              {meta.point_variables?.length ? (
+                <TabsTrigger className="h-10 flex-none px-3" value="place"><MapPinIcon />{t("tabPlace")}</TabsTrigger>
+              ) : null}
             </TabsList>
             <Panel value="explore" visited={visited}><Dashboard meta={meta} /></Panel>
             <Panel value="detective" visited={visited}><DetectiveTab meta={meta} /></Panel>
-            <Panel value="cases" visited={visited}>
-              <CasesTab meta={meta} />
-            </Panel>
             <Panel value="compare" visited={visited}><CompareTab meta={meta} /></Panel>
+            <Panel value="place" visited={visited}><PlaceTab meta={meta} /></Panel>
           </Tabs>
         )}
       </main>

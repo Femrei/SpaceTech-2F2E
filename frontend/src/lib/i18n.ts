@@ -24,8 +24,8 @@ const TEXTS = {
   },
   tabDetective: { en: "Detective Mode", tr: "Dedektif Modu" },
   tabExplore: { en: "Dashboard", tr: "Pano" },
-  tabCases: { en: "Case Files", tr: "Vaka Dosyaları" },
   tabCompare: { en: "Compare", tr: "Karşılaştır" },
+  tabPlace: { en: "Pick a place", tr: "Konumunu seç" },
   comingSoon: {
     en: "{what} is coming soon. Use the {explore} tab for now.",
     tr: "{what} yakında geliyor. Şimdilik {explore} sekmesini kullan.",
@@ -133,6 +133,62 @@ const TEXTS = {
   // --- Map ----------------------------------------------------------------
   mapTitle: { en: "Regions on the map", tr: "Bölgeler haritada" },
   mapHint: { en: "Click a region to select it.", tr: "Seçmek için bir bölgeye tıkla." },
+  // --- Pick a place (experiment, NASA POWER) -------------------------------
+  placeIntro: {
+    en: "Click anywhere on Earth to see how one measurement has changed there since 1981.",
+    tr: "Dünyada herhangi bir yere tıkla; o noktada bir ölçümün 1981'den beri nasıl değiştiğini gör.",
+  },
+  placeMapHint: {
+    en: "Click the map to choose a place. The box shows the area the data comes from.",
+    tr: "Yer seçmek için haritaya tıkla. Kutu, verinin geldiği alanı gösterir.",
+  },
+  placeExamples: { en: "Try", tr: "Örnekler" },
+  placeMyLocation: { en: "My location", tr: "Konumum" },
+  placeLocating: { en: "Finding you…", tr: "Konum bulunuyor…" },
+  placeLocateError: {
+    en: "Your location is not available. Click the map instead.",
+    tr: "Konumuna ulaşılamadı. Haritaya tıklayarak seçebilirsin.",
+  },
+  placeMode: { en: "Choose", tr: "Seçim şekli" },
+  placeModePoint: { en: "Point", tr: "Nokta" },
+  placeModeBox: { en: "Draw a box", tr: "Kare çiz" },
+  placeBoxHint: {
+    en: "Click two opposite corners on the map to draw a box (up to 10° × 10°).",
+    tr: "Kare çizmek için haritada iki karşı köşeye tıkla (en fazla 10° × 10°).",
+  },
+  placeBoxHintSecond: { en: "Now click the opposite corner.", tr: "Şimdi karşı köşeye tıkla." },
+  placeBoxTooBig: {
+    en: "Too large: each side can be at most 10°. Click a closer corner.",
+    tr: "Çok büyük: her kenar en fazla 10° olabilir. Daha yakın bir köşeye tıkla.",
+  },
+  placeBoxCancel: { en: "Cancel", tr: "Vazgeç" },
+  placeBoxEmpty: {
+    en: "Draw a box on the map to see the average trend for that area.",
+    tr: "O alanın ortalama eğilimini görmek için haritada bir kare çiz.",
+  },
+  placeHere: { en: "the point {coords}", tr: "{coords} noktası" },
+  placeBoxName: { en: "the box {box}", tr: "{box} alanı" },
+  placeCaption: {
+    en: "Source: NASA POWER (MERRA-2) · monthly, one grid cell (about 55 × 55 km)",
+    tr: "Kaynak: NASA POWER (MERRA-2) · aylık, tek ızgara hücresi (yaklaşık 55 × 55 km)",
+  },
+  placeBoxCaption: {
+    en: "Source: NASA POWER (MERRA-2) · monthly, area-weighted average of {n} grid cells in your box",
+    tr: "Kaynak: NASA POWER (MERRA-2) · aylık, çizdiğin alandaki {n} ızgara hücresinin alan ağırlıklı ortalaması",
+  },
+  placeNote: {
+    en: "This tab uses NASA POWER, based on the MERRA-2 model analysis (1981–2025): one grid cell for a point, or the average of the cells in your box. The rest of the app uses Giovanni region averages from 2001, so numbers can differ.",
+    tr: "Bu sekme MERRA-2 model analizine dayanan NASA POWER verisini kullanır (1981–2025): noktada tek bir ızgara hücresi, karede çizdiğin alandaki hücrelerin ortalaması. Diğer sekmeler 2001'den başlayan Giovanni bölge ortalamalarını kullanır; sayılar farklı çıkabilir.",
+  },
+  placeNoLand: {
+    en: "Soil wetness is only measured over land, and this place is open water. Pick a spot on land.",
+    tr: "Toprak ıslaklığı yalnızca karada ölçülür; burası açık deniz. Karada bir yer seç.",
+  },
+  placeFetchError: {
+    en: "NASA POWER did not answer. Try again in a moment.",
+    tr: "NASA POWER şu an cevap vermedi. Birazdan tekrar dene.",
+  },
+  placeLoading: { en: "Fetching 45 years of data from NASA POWER…", tr: "NASA POWER'dan 45 yıllık veri getiriliyor…" },
   // --- Compare ------------------------------------------------------------
   compareIntro: {
     en: "Same measurement, two regions: are they changing the same way?",
@@ -181,15 +237,6 @@ const TEXTS = {
     en: "You've checked every measurement here. Compare with another region next.",
     tr: "Bu bölgedeki tüm ölçümlere baktın. Sırada başka bir bölgeyle karşılaştırmak var.",
   },
-  // --- Case Files ---------------------------------------------------------
-  casesIntro: {
-    en: "Open a ready-made case and solve it like a detective.",
-    tr: "Hazır bir vakayı aç ve bir dedektif gibi çöz.",
-  },
-  openCase: { en: "Open case", tr: "Vakayı aç" },
-  backToCases: { en: "Back to cases", tr: "Vakalara dön" },
-  compareCase: { en: "Two regions", tr: "İki bölge" },
-  chainLabel: { en: "Suspects, in order", tr: "Şüpheliler, sırayla" },
   // --- About sheet --------------------------------------------------------
   about: { en: "About", tr: "Hakkında" },
   aboutTitle: { en: "About this app", tr: "Bu uygulama hakkında" },
