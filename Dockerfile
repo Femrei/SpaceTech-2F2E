@@ -1,31 +1,23 @@
-# Earth Trend Detective: one container serving the FastAPI backend and the built React UI.
+# Earth Trend Detective: one container serving the 3D detective app (detective3d/).
 #   docker build -t earth-trend-detective .
 #   docker run -p 8000:8000 earth-trend-detective      ->  http://localhost:8000
 # Hosting platforms (Render, Hugging Face Spaces, Railway …) set $PORT; we honour it.
+#
+# The chat agent needs an LLM key to answer freely; set it as a secret environment
+# variable on the host (never in the image), e.g. LLM_PROVIDER=groq + LLM_API_KEY=...
+# Without a key the chat runs in offline (rule-based) mode and everything else works.
+#
+# The React UI in frontend/ is kept in the repo but no longer built or served here.
 
-# --- 1) Build the React frontend -------------------------------------------
-FROM node:22-slim AS web
-# Override if the default npm registry is unreachable from your network, e.g.
-#   docker build --build-arg NPM_REGISTRY=https://registry.yarnpkg.com/ .
-ARG NPM_REGISTRY=https://registry.npmjs.org/
-WORKDIR /app/frontend
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci --no-audit --no-fund --registry=$NPM_REGISTRY
-COPY frontend/ ./
-RUN npm run build
-
-# --- 2) Python runtime: API + static frontend ------------------------------
 FROM python:3.12-slim
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PORT=8000
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PORT=8000 HOST=0.0.0.0
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+# agent_server.py imports api.py (which imports power_loader.py) and src/
 COPY api.py power_loader.py ./
 COPY src/ src/
 COPY data/ data/
-# No processed CSV yet (A's real data not committed)? Fall back to B's mock data
-# so the app still starts; the UI then shows a "synthetic data" warning.
-RUN [ -f data/processed/all_series.csv ] || python -m src.mock_data
-COPY --from=web /app/frontend/dist frontend/dist
+COPY detective3d/ detective3d/
 EXPOSE 8000
-CMD ["sh", "-c", "uvicorn api:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["python", "detective3d/agent_server.py"]
