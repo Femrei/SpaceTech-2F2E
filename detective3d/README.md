@@ -94,7 +94,9 @@ python detective3d/build_power.py
 - **Sol panel ("Dedektif dosyası"):** Karar kartı, ipucu kutusu, istatistikler ve seri grafiği. Bütün yazılar TR/EN sözlüğünden gelir.
 - **NDVI katmanı:** NASA GIBS üzerinden MODIS Terra 16 günlük NDVI. Yalnızca görseldir, analizde kullanılmaz.
 - **Otomatik tur:** Genel görünümden sırayla her bölgeye uçar (Katmanlar menüsü).
-- **Isı haritası (yıl × ay):** Sol panelde yer alır. Her hücre, o ayın kendi ortalamasından sapmasını gösterir. "25 yıl" Giovanni, "45 yıl" NASA POWER verisidir.
+- **Yıllık şeritler:** Sol panelde her yıl bir renkli şerit olarak görünür: o yılın aylık sapmalarının (mevsim etkisi çıkarılmış) ortalaması. Renk kuru/ıslak ya da serin/sıcak yönü, koyuluk büyüklüğü gösterir; ölçek ±2 standart sapmada doygunlaşır. "25 yıl" Giovanni, "45 yıl" NASA POWER verisidir.
+  - **Büyüt** iki görünümlü bir pencere açar. **Yıllar:** üstte şerit, altında her yılın sapması çubuk olarak. **Yıl × ay:** her hücre o ayın kendi ortalamasından sapması, sağda yılın ortalaması.
+  - Fareyle üzerine gelince değer görünür. Giovanni'de bir hücreye tıklayınca harita ve zaman çubuğu o aya gider.
 - **45 yıllık kontrol:** Aynı kutu için NASA POWER ile 1981–2025 ve 2001–2025 trendleri gösterilir.
   - İki veri seti ters yön gösteriyorsa ⚠️ uyarısı çıkar.
   - İkisi aynı yönde ve anlamlıysa ✓ işareti çıkar.
@@ -105,7 +107,7 @@ python detective3d/build_power.py
   - **Nokta:** Haritaya tıklayınca o noktayı içeren NASA POWER ızgara hücresi (~55 km) analiz edilir.
   - **Kare çiz:** İki karşı köşeye tıklanır (en fazla 10° × 10°). Kutunun içindeki hücrelerin alan ağırlıklı ortalaması analiz edilir.
   - Veri sunucunun `/api/point` ve `/api/box` adreslerinden canlı gelir (C'nin `api.py` + `power_loader.py`, 1981–2025). Trend B'nin aynı analiziyle hesaplanır; internet gerekir.
-  - Sonuç sol panelde gösterilir: hikâye cümlesi, istatistikler, grafik, ısı haritası ve CSV. **Bölgelere dön** ile üç bölgeye dönülür.
+  - Sonuç sol panelde gösterilir: hikâye cümlesi, istatistikler, grafik, yıllık şeritler ve CSV. **Bölgelere dön** ile üç bölgeye dönülür.
 - **Ajan aracı `get_long_record`:** "Uzun vadede de böyle mi?" sorusunu POWER verisiyle cevaplar. Veri setleri çelişirse ajan bunu söyler ve yerel istasyon (MGM) kontrolü önerir.
 
 ### Veri setlerinin çeliştiği yer: Doğu Karadeniz

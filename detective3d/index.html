@@ -422,6 +422,14 @@
   #chartBody svg { display: block; width: 100%; height: auto; touch-action: none; cursor: crosshair; }
   #chartBody .cg { stroke: rgba(255,255,255,.08); stroke-width: 1; }
   #chartBody .ct { font-size: 11px; fill: var(--muted); }
+  /* ---------- yıllık şeritler (panel) ve büyük sapma penceresi ---------- */
+  .stripes svg { display: block; width: 100%; height: 56px; border-radius: 6px; margin-top: 6px; }
+  .hm-scale { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); margin-top: 6px;
+    font-variant-numeric: tabular-nums; }
+  .hm-scale i { flex: 1; height: 7px; border-radius: 4px; min-width: 40px; }
+  #heatBody svg { display: block; width: 100%; height: auto; touch-action: none; cursor: crosshair; }
+  #heatBody .ct { font-size: 11px; fill: var(--muted); }
+  #heatBody .cg { stroke: rgba(255,255,255,.08); stroke-width: 1; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -548,6 +556,28 @@
     </div>
   </section>
 </div>
+<div class="guide-back" id="heatBack" hidden>
+  <section class="guide panel chart-modal" role="dialog" aria-modal="true" aria-labelledby="heatHead">
+    <div class="guide-head">
+      <div style="flex:1;min-width:160px"><span class="kicker" id="heatSub"></span><h2 id="heatHead"></h2></div>
+      <div class="seg-mini" id="heatView" role="group" data-i18n-attr="aria-label:heatViewA">
+        <button type="button" data-hv="years" data-i18n="viewYears"></button>
+        <button type="button" data-hv="months" data-i18n="viewMonths"></button>
+      </div>
+      <div class="seg-mini" id="heatSrcSeg" role="group" data-i18n-attr="aria-label:heatSrcA">
+        <button type="button" data-hs="giovanni" data-i18n="y25"></button>
+        <button type="button" data-hs="power" data-i18n="y45"></button>
+      </div>
+      <button type="button" class="guide-close" id="heatClose" data-i18n-attr="aria-label:close">✕</button>
+    </div>
+    <div class="chart-body">
+      <div class="chart-read" id="heatRead" role="status"></div>
+      <div id="heatBody"></div>
+      <div id="heatScale"></div>
+      <p class="note" id="heatNote"></p>
+    </div>
+  </section>
+</div>
 <div class="guide-back" id="guideBack" hidden>
   <section class="guide panel" id="guide" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
     <div class="guide-head">
@@ -576,7 +606,7 @@
       <ul>
         <li>Soldaki panel seçili bölgenin özetidir: tek cümlelik hikâye, <b>Sen eğimi</b> (on yılda ne kadar değişmiş), güven aralığı ve <b>anlamlılık</b>.</li>
         <li><b>Anlamlı</b> rozeti, değişimin doğal dalgalanmadan ayırt edilebildiğini söyler (p &lt; 0,05). "Anlamlı değil" ise "değişim yok" demek değildir; henüz ayırt edilemiyordur.</li>
-        <li>Aşağıda ısı haritası, NASA POWER ile 45 yıllık kontrol, kaynaklar ve <b>CSV indir</b> düğmesi var.</li>
+        <li>Aşağıda yıllık şeritler (<b>Büyüt</b> ile yıl × ay haritası), NASA POWER ile 45 yıllık kontrol, kaynaklar ve <b>CSV indir</b> düğmesi var.</li>
       </ul>
 
       <h3>4. Kendi alanını seç</h3>
@@ -623,7 +653,7 @@
       <ul>
         <li>The left panel sums up the selected region: a one-sentence story, the <b>Sen slope</b> (how much it changed per decade), the confidence interval and the <b>significance</b>.</li>
         <li>The <b>Significant</b> badge means the change can be told apart from natural variability (p &lt; 0.05). "Not significant" does not mean "no change"; it means it can't be told apart yet.</li>
-        <li>Below are the heat map, the 45-year check with NASA POWER, the sources and a <b>Download CSV</b> button.</li>
+        <li>Below are the yearly stripes (<b>Enlarge</b> shows the year × month map), the 45-year check with NASA POWER, the sources and a <b>Download CSV</b> button.</li>
       </ul>
 
       <h3>4. Pick your own area</h3>
@@ -694,6 +724,17 @@
       olsLine: (sl, lo, hi) => `Karşılaştırma için OLS (doğrusal regresyon) eğimi: ${sl} / 10 yıl, %95 güven aralığı ${lo} … ${hi}.`,
       areaSoilDef: "Toprağın en üst katmanının ne kadar ıslak olduğu: %0 tamamen kuru, %100 suya doymuş demektir.",
       nextBtn: (v, r) => `Sıradaki ipucu: ${v} · ${r}`,
+      // yıllık şeritler ve büyük sapma penceresi
+      stripesTitle: "Yıllık şeritler", stripesNote: "Her şerit bir yıl: o yılın normalden sapması", heatBig: "Büyüt",
+      stripesAria: "Yıllara göre normalden sapma şeritleri", heatViewA: "Görünüm", viewYears: "Yıllar", viewMonths: "Yıl × ay",
+      heatSrcA: "Veri kaynağı", yearCol: "Yıl ort.", stripesSrc: s => `${s} · normal = tüm yılların ortalaması`,
+      heatHoverY: "Fareyi bir yılın üzerine getir: o yılın normalden sapması burada görünür.",
+      heatHoverM: "Fareyi bir hücrenin üzerine getir: o ayın normalden sapması burada görünür.",
+      heatHoverMLink: "Fareyi bir hücrenin üzerine getir; tıklarsan harita ve zaman çubuğu o aya gider.",
+      yearRead: (y, val, n) => `<b>${y}</b> · yıl ortalaması normalden ${val}` + (n < 12 ? ` (${n} ay)` : ""),
+      monthRead: (m, y, val) => `<b>${m} ${y}</b> · o ayın normalinden ${val}`,
+      heatNoteY: "Her çubuk bir yıl: o yılın aylık sapmalarının ortalaması (mevsim etkisi çıkarılmış). Üstteki şerit aynı değerleri renkle gösterir. Renk ±2 standart sapmada doygunlaşır.",
+      heatNoteM: "Her hücre, o ayın tüm yıllardaki ortalamasından sapması (mevsim etkisi çıkarılmış). Sağdaki sütun yılın ortalaması. Renk ±2 standart sapmada doygunlaşır.",
       chartBig: "Grafiği büyüt", chartViewA: "Seri görünümü", viewRaw: "Ham seri", viewAnom: "Mevsimsellikten arındırılmış",
       chartHover: "Fareyi ya da parmağını grafiğin üzerinde gezdir: ay ve değer burada görünür.", mean12: "12 ay ort.",
       chartNoteRaw: "Aylık değer (soluk), 12 aylık ortalama (beyaz), Sen eğimi (sarı kesikli) ve eğimin %95 güven aralığı (sarı bant).",
@@ -741,7 +782,7 @@
       "pw.T2M": "Hava sıcaklığı (T2M)", "pw.T2M_MAX": "Günlük en yüksek sıcaklık (T2M_MAX)",
       "pw.PRECTOTCORR": "Yağış (PRECTOTCORR)", "pw.GWETROOT": "Kök bölgesi toprak ıslaklığı (GWETROOT)",
       unit: u => u,
-      cellNoData: "veri yok", vsNormal: "(normale göre)", heatAria: "Yıl-ay sapma ısı haritası",
+      cellNoData: "veri yok", vsNormal: "(normale göre)",
       noPower: "power_data.js yok. <code>build_power.py</code> çalıştırılınca 45 yıllık kontrol burada görünür.",
       conflict: (a, b) => `⚠️ Veri setleri çelişiyor: Giovanni ${a}, POWER ${b} (2001–2025). Farklı ürünler ve derinlikler, kaba ızgara ve dağlık arazi etkili olabilir. Karar vermeden önce yerel istasyon verisiyle (MGM) kontrol edilmeli.`,
       agree: a => `✓ İki bağımsız veri seti aynı yönü gösteriyor (${a}). Bulgu daha güvenilir.`,
@@ -753,7 +794,7 @@
       noVarData: "Bu değişken için veri yok.", kicker: "Dedektif dosyası", hideFileA: "Dedektif dosyasını gizle", hide: "Gizle ◂",
       senPerDec: "Sen eğimi / 10 yıl", senCi95: "Sen eğimi %95 güven aralığı", olsCi95: "OLS eğimi %95 güven aralığı", longMean: "Uzun dönem ortalama", pctPerDec: "% değişim / 10 yıl",
       chartLegend: "Aylık değer (soluk), 12 aylık ortalama (beyaz), Sen trendi (sarı kesikli)",
-      heatTitle: "Isı haritası (yıl × ay)", y25: "25 yıl", y45: "45 yıl", heatNote: "her hücre o ayın kendi ortalamasından sapması",
+      y25: "25 yıl", y45: "45 yıl",
       longTitle: "45 yıllık kontrol · NASA POWER", sources: "Kaynaklar",
       flyRegion: "Bölgeye yakınlaş", csv: "CSV indir",
       "av.temp": "Hava sıcaklığı", "av.precip": "Yağış", "av.soil_moisture": "Yüzey toprak ıslaklığı",
@@ -817,6 +858,17 @@
       olsLine: (sl, lo, hi) => `For comparison, the OLS (linear regression) slope: ${sl} per decade, 95% confidence interval ${lo} … ${hi}.`,
       areaSoilDef: "How wet the top layer of the soil is: 0% is completely dry, 100% is saturated with water.",
       nextBtn: (v, r) => `Next clue: ${v} · ${r}`,
+      // yearly stripes and the large anomaly window
+      stripesTitle: "Yearly stripes", stripesNote: "Each stripe is one year: its departure from normal", heatBig: "Enlarge",
+      stripesAria: "Stripes of the departure from normal by year", heatViewA: "View", viewYears: "Years", viewMonths: "Year × month",
+      heatSrcA: "Data source", yearCol: "Year avg", stripesSrc: s => `${s} · normal = mean of all years`,
+      heatHoverY: "Move over a year: its departure from normal appears here.",
+      heatHoverM: "Move over a cell: that month's departure from normal appears here.",
+      heatHoverMLink: "Move over a cell; click it to move the map and the timeline to that month.",
+      yearRead: (y, val, n) => `<b>${y}</b> · yearly mean ${val} vs normal` + (n < 12 ? ` (${n} months)` : ""),
+      monthRead: (m, y, val) => `<b>${m} ${y}</b> · ${val} vs that month's normal`,
+      heatNoteY: "Each bar is one year: the mean of its monthly departures (seasons removed). The stripe on top shows the same values as colour. Colours saturate at ±2 standard deviations.",
+      heatNoteM: "Each cell is the departure from that month's mean over all years (seasons removed). The column on the right is the yearly mean. Colours saturate at ±2 standard deviations.",
       chartBig: "Enlarge chart", chartViewA: "Series view", viewRaw: "Raw series", viewAnom: "Deseasonalised",
       chartHover: "Move the mouse or your finger over the chart: the month and its value appear here.", mean12: "12-mo mean",
       chartNoteRaw: "Monthly value (faint), 12-month mean (white), Sen slope (dashed yellow) and the slope's 95% confidence interval (yellow band).",
@@ -864,7 +916,7 @@
       "pw.T2M": "Air temperature (T2M)", "pw.T2M_MAX": "Daily maximum temperature (T2M_MAX)",
       "pw.PRECTOTCORR": "Precipitation (PRECTOTCORR)", "pw.GWETROOT": "Root-zone soil wetness (GWETROOT)",
       unit: u => u === "mm/ay" ? "mm/month" : u,
-      cellNoData: "no data", vsNormal: "(vs normal)", heatAria: "Year × month anomaly heat map",
+      cellNoData: "no data", vsNormal: "(vs normal)",
       noPower: "power_data.js is missing. Run <code>build_power.py</code> to see the 45-year check here.",
       conflict: (a, b) => `⚠️ The datasets disagree: Giovanni ${a}, POWER ${b} (2001–2025). Different products and depths, coarse grids and mountains can cause this. Check local station data (MGM) before deciding.`,
       agree: a => `✓ Two independent datasets show the same direction (${a}). The finding is more reliable.`,
@@ -876,7 +928,7 @@
       noVarData: "No data for this variable.", kicker: "Detective file", hideFileA: "Hide the detective file", hide: "Hide ◂",
       senPerDec: "Sen slope / decade", senCi95: "Sen slope 95% confidence interval", olsCi95: "OLS slope 95% confidence interval", longMean: "Long-term mean", pctPerDec: "% change / decade",
       chartLegend: "Monthly value (faint), 12-month mean (white), Sen trend (dashed yellow)",
-      heatTitle: "Heat map (year × month)", y25: "25 yrs", y45: "45 yrs", heatNote: "each cell is the departure from that month's own mean",
+      y25: "25 yrs", y45: "45 yrs",
       longTitle: "45-year check · NASA POWER", sources: "Sources",
       flyRegion: "Zoom to region", csv: "Download CSV",
       "av.temp": "Air temperature", "av.precip": "Precipitation", "av.soil_moisture": "Surface soil wetness",
@@ -1173,30 +1225,46 @@
   const pTxt = p => p == null ? "—" : p < 1e-15 ? "< 1×10⁻¹⁵" : fmtP(p);
   const dirArrow = d => d === "increasing" ? "↑" : d === "decreasing" ? "↓" : "→";
 
-  // Yıl × ay ızgarası: her hücre o ayın kendi ay ortalamasından (klimatoloji) sapması.
-  function heatmapSVG(vals, monthKeys, v, W = 296, unitOverride = null) {
-    const years = [...new Set(monthKeys.map(m => m.slice(0, 4)))];
-    const clim = Array.from({ length: 12 }, (_, k) => {
-      const xs = vals.filter((x, i) => x != null && +monthKeys[i].slice(5, 7) === k + 1);
-      return xs.reduce((a, b) => a + b, 0) / Math.max(1, xs.length);
+  // Aylık seriden sapmalar: her ay, o ayın tüm yıllardaki ortalamasından (klimatoloji) farkı.
+  // Yıllık değer, o yılın aylık sapmalarının ortalamasıdır (en az 6 ay varsa; yoksa boş).
+  function anomalyGrid(vals, keys) {
+    const years = [...new Set(keys.map(k => k.slice(0, 4)))];
+    const mon = keys.map(k => +k.slice(5, 7) - 1);
+    const clim = Array.from({ length: 12 }, (_, m) => {
+      const xs = vals.filter((x, i) => x != null && mon[i] === m);
+      return xs.length ? avg(xs) : null;
     });
-    const anom = vals.map((x, i) => x == null ? null : x - clim[+monthKeys[i].slice(5, 7) - 1]);
-    const ok = anom.filter(a => a != null);
-    const sd = Math.sqrt(ok.reduce((s, a) => s + a * a, 0) / Math.max(1, ok.length - 1)) || 1;
-    const left = 30, top = 12, cw = (W - left) / 12, ch = Math.max(3, Math.min(6, 200 / years.length));
-    const H = top + ch * years.length + 2;
-    const unit = unitOverride || VAR_TR[v]?.unit || "";
-    let cells = "";
-    anom.forEach((a, i) => {
-      const y = years.indexOf(monthKeys[i].slice(0, 4)), m = +monthKeys[i].slice(5, 7) - 1;
-      const cur = heatSrc === "giovanni" && state.mode === "time" && monthKeys[i] === months[state.i];
-      cells += `<rect x="${(left + m * cw).toFixed(1)}" y="${(top + y * ch).toFixed(1)}" width="${(cw - 0.6).toFixed(1)}" height="${(ch - 0.4).toFixed(1)}"
-        fill="${a == null ? "rgba(255,255,255,.05)" : colorFor(v, a / sd)}" ${cur ? 'stroke="#fff" stroke-width="1.2"' : ""}>
-        <title>${monthNames()[m]} ${monthKeys[i].slice(0, 4)}: ${a == null ? t("cellNoData") : signed(a, 2) + " " + escH(unit) + " " + t("vsNormal")}</title></rect>`;
+    const anom = vals.map((x, i) => x == null || clim[mon[i]] == null ? null : x - clim[mon[i]]);
+    const sdOf = xs => { const ok = xs.filter(a => a != null); return Math.sqrt(ok.reduce((q, a) => q + a * a, 0) / Math.max(1, ok.length - 1)) || 1; };
+    const yearly = years.map(y => {
+      const xs = anom.filter((a, i) => a != null && keys[i].startsWith(y));
+      return { year: y, n: xs.length, a: xs.length >= 6 ? avg(xs) : null };
     });
-    const mLab = t("monthLetters").split("").map((c, k) => `<text class="axis" x="${left + k * cw + cw / 2}" y="9" text-anchor="middle">${c}</text>`).join("");
-    const yLab = years.map((y, k) => (+y % 5 === 0) ? `<text class="axis" x="${left - 4}" y="${top + k * ch + ch}" text-anchor="end">${y}</text>` : "").join("");
-    return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img" aria-label="${t("heatAria")}">${mLab}${yLab}${cells}</svg>`;
+    return { years, mon, anom, sd: sdOf(anom), yearly, sdY: sdOf(yearly.map(r => r.a)) };
+  }
+  // Sapma rengi: 0 = açık gri, ±2 standart sapmada değişkenin kuru/ıslak ya da serin/sıcak rengi.
+  function anomColor(v, z) {
+    if (z == null) return "rgba(255,255,255,.06)";
+    const p = palette(v), k = Math.min(1, Math.abs(z) / 2), base = [232, 235, 238], c = z < 0 ? p.neg : p.pos;
+    return `rgb(${base.map((b, j) => Math.round(b + (c[j] - b) * k)).join(",")})`;
+  }
+  const anomDec = (sd) => 2 * sd >= 10 ? 1 : 2;
+  // Ölçek çubuğu: −2σ … +2σ, birimiyle ve iki ucun adıyla (kuru/ıslak, serin/sıcak).
+  function scaleHTML(v, sd, unit) {
+    const p = palette(v), c = a => `rgb(${a.join(",")})`, d = anomDec(sd), u = escH(t("unit", unit));
+    return `<div class="hm-scale"><span>${p.negName} ${signed(-2 * sd, d)} ${u}</span>
+      <i style="background:linear-gradient(90deg,${c(p.neg)},rgb(232,235,238),${c(p.pos)})"></i>
+      <span>${signed(2 * sd, d)} ${u} ${p.posName}</span></div>`;
+  }
+  // Paneldeki yıllık şeritler: her yıl bir dikey şerit; gösterilen ayın yılı beyaz çerçeveli.
+  function stripesSVG(g, v, unit, curYear) {
+    const W = 296, H = 56, n = g.yearly.length, w = W / n, d = anomDec(g.sdY), u = escH(t("unit", unit));
+    const bars = g.yearly.map((r, k) => `<rect x="${(k * w).toFixed(2)}" y="0" width="${(w + 0.4).toFixed(2)}" height="${H}"
+      fill="${anomColor(v, r.a == null ? null : r.a / g.sdY)}"><title>${r.year}: ${r.a == null ? t("cellNoData") : `${signed(r.a, d)} ${u} ${t("vsNormal")}`}</title></rect>`).join("");
+    const k = curYear ? g.years.indexOf(curYear) : -1;
+    const mark = k >= 0 ? `<rect x="${(k * w + 0.6).toFixed(2)}" y="0.6" width="${Math.max(1, w - 1.2).toFixed(2)}" height="${H - 1.2}" fill="none" stroke="#fff" stroke-width="1.2"/>` : "";
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${t("stripesAria")}">${bars}${mark}</svg>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:3px"><span>${g.years[0]}</span><span>${g.years[n - 1]}</span></div>`;
   }
 
   function powerSeries(regionId, param) {
@@ -1374,14 +1442,7 @@
         </svg>
         <div class="ends" style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>${months[0].slice(0, 4)}</span><span>${months[N - 1].slice(0, 4)}</span></div>
       </div>
-      <div class="sec">
-        <h3>${t("heatTitle")}
-          <span class="seg-mini">${PW ? `<button data-h="giovanni" class="${heatSrc === "giovanni" ? "on" : ""}">${t("y25")}</button><button data-h="power" class="${heatSrc === "power" ? "on" : ""}">${t("y45")}</button>` : ""}</span></h3>
-        <div class="hm">${heatSrc === "power" && PW && powerSeries(r.id, POWER_PARAMS[v][0])
-          ? heatmapSVG(powerSeries(r.id, POWER_PARAMS[v][0]).values, PW.months, v)
-          : heatmapSVG(p.value, months, v)}
-          <small style="color:var(--muted);font-size:11px">${heatSrc === "power" ? PW_TR[POWER_PARAMS[v][0]] + " · NASA POWER" : meta.name + " · Giovanni"} · ${t("heatNote")}</small></div>
-      </div>
+      ${heatPanelHTML()}
       <div class="sec"><h3>${t("longTitle")}</h3>${longRecordHTML(r, v, res)}</div>
       <div class="sec"><h3>${t("sources")}</h3>${sourcesHTML(r, v)}</div>
       <div class="btn-row"><button class="fly" id="flyBtn">${t("flyRegion")}</button><button class="ghost" id="csvBtn">${t("csv")}</button></div>`;
@@ -1390,6 +1451,7 @@
     document.getElementById("csvBtn").onclick = () => downloadCSV(r, v);
     el.querySelectorAll(".seg-mini button").forEach(b => b.onclick = () => { heatSrc = b.dataset.h; renderLeft(); });
     document.getElementById("chartOpen").onclick = () => setChart(true);
+    document.getElementById("heatOpen")?.addEventListener("click", () => setHeat(true));
     const nextBtn = document.getElementById("nextBtn");
     if (nextBtn) nextBtn.onclick = () => followClue(p.next_step);
   }
@@ -1615,9 +1677,7 @@
         </svg>
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>${keys[0].slice(0, 4)}</span><span>${keys[n - 1].slice(0, 4)}</span></div>
       </div>
-      <div class="sec"><h3>${t("heatTitle")}</h3>
-        <div class="hm">${heatmapSVG(vals, keys, state.variable, 296, av.unit)}
-          <small style="color:var(--muted);font-size:11px">${av.name} · NASA POWER · ${t("heatNote")}</small></div></div>
+      ${heatPanelHTML()}
       <div class="warn">${t("areaWarn")}</div>
       <div class="sec"><h3>${t("sources")}</h3><ul class="src">
         <li>${escH(pt.source)} · <a href="https://power.larc.nasa.gov/docs/services/api/" target="_blank" rel="noopener">${t("powerDoc")}</a></li>
@@ -1638,6 +1698,7 @@
     on("areaCsv", downloadAreaCSV);
     on("areaCopy", copyAreaCoords); // B
     on("chartOpen", () => setChart(true));
+    on("heatOpen", () => setHeat(true));
   }
 
   // B: panelde başlığın altındaki "Koordinatı kopyala" düğmesi; arama kutu modunda yerin
@@ -1876,6 +1937,8 @@
   // ham / mevsimsellikten arındırılmış geçişi, Sen eğimi ve eğimin %95 güven aralığı bandı.
   const chartBack = document.getElementById("chartBack"), chartClose = document.getElementById("chartClose");
   const chart = { open: false, view: "raw", opener: null };
+  const heatBack = document.getElementById("heatBack"), heatClose = document.getElementById("heatClose");
+  const heat = { open: false, view: "years" };
 
   // Şu an panelde gösterilen serinin verisi (bölge ya da seçilen alan); yoksa null.
   function chartData() {
@@ -1981,14 +2044,177 @@
   document.querySelectorAll("#chartView button").forEach(b => b.onclick = () => { chart.view = b.dataset.view; renderChart(); });
   // Pencere açıkken klavye: Esc kapatır, Tab odağı pencerenin düğmeleri arasında tutar, harita kısayolları çalışmaz.
   window.addEventListener("keydown", e => {
-    if (chartBack.hidden) return;
-    if (e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); setChart(false); return; }
+    const back = !chartBack.hidden ? chartBack : !heatBack.hidden ? heatBack : null;
+    if (!back) return;
+    if (e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); if (back === chartBack) setChart(false); else setHeat(false); return; }
     if (e.key === "Tab") {
-      const f = [...chartBack.querySelectorAll("button:not(:disabled)")].filter(b => b.offsetParent), k = f.indexOf(document.activeElement);
+      const f = [...back.querySelectorAll("button:not(:disabled)")].filter(b => b.offsetParent), k = f.indexOf(document.activeElement);
       e.preventDefault(); f[(k + (e.shiftKey ? f.length - 1 : 1) + f.length) % f.length].focus();
     }
     if (e.code === "Space" || e.key.startsWith("Arrow")) e.stopImmediatePropagation();
   }, true);
+
+  // ------------------------------------------------------------------ yıllık şeritler ve büyük sapma penceresi
+  // Panelde gösterilen serinin aylık değerleri: bölgede Giovanni (25 yıl) ya da NASA POWER (45 yıl),
+  // seçilen alanda NASA POWER. link: hücreye tıklayınca zaman çubuğu o aya gidebilir mi (yalnız Giovanni ayları).
+  function heatData() {
+    if (area.active) {
+      const d = area.sel && area.dataKey === areaKey(area.sel, state.variable) ? area.data : null;
+      if (!d) return null;
+      const av = AREA_VAR[state.variable];
+      return { title: area.sel.label ? t("around", area.sel.label) : areaTitle(area.sel), sub: `${av.name} · NASA POWER`,
+        unit: av.unit, keys: d.points.map(p => p.date.slice(0, 7)), vals: d.points.map(p => p.value), v: state.variable,
+        link: false, srcToggle: false };
+    }
+    const r = regions.find(x => x.id === state.region), v = state.variable, meta = VAR_TR[v], p = P[`${r.id}|${v}`];
+    if (!p) return null;
+    const param = POWER_PARAMS[v][0], pw = heatSrc === "power" && PW ? powerSeries(r.id, param) : null;
+    if (pw) return { title: r.name_tr, sub: `${PW_TR[param]} · NASA POWER`, unit: PW.variables?.[param]?.unit || meta.unit,
+      keys: PW.months, vals: pw.values, v, link: false, srcToggle: true };
+    return { title: r.name_tr, sub: `${meta.name} · Giovanni`, unit: meta.unit, keys: months, vals: p.value, v,
+      link: true, srcToggle: !!PW };
+  }
+  function heatPanelHTML() {
+    const h = heatData(); if (!h) return "";
+    const g = anomalyGrid(h.vals, h.keys);
+    const curYear = h.link && state.mode === "time" ? months[state.i].slice(0, 4) : null;
+    const seg = h.srcToggle ? `<span class="seg-mini">${["giovanni", "power"].map(x =>
+      `<button data-h="${x}" class="${heatSrc === x ? "on" : ""}">${t(x === "giovanni" ? "y25" : "y45")}</button>`).join("")}</span>` : "";
+    return `<div class="sec"><h3>${t("stripesTitle")} ${seg}</h3>
+      <div class="hm stripes">
+        <div class="bc-head"><small>${t("stripesNote")}</small><button type="button" class="mini-btn" id="heatOpen">⤢ ${t("heatBig")}</button></div>
+        ${stripesSVG(g, h.v, h.unit, curYear)}
+        ${scaleHTML(h.v, g.sdY, h.unit)}
+        <small style="display:block;margin-top:4px;color:var(--muted);font-size:11px">${escH(t("stripesSrc", h.sub))}</small>
+      </div></div>`;
+  }
+
+  function renderHeat() {
+    const h = heatData();
+    if (!h) { setHeat(false); return; }
+    const g = anomalyGrid(h.vals, h.keys), byYears = heat.view === "years", u = escH(t("unit", h.unit));
+    document.getElementById("heatHead").textContent = h.title;
+    document.getElementById("heatSub").textContent = `${h.sub} · ${t("unit", h.unit)}`;
+    document.querySelectorAll("#heatView button").forEach(b => {
+      b.classList.toggle("on", b.dataset.hv === heat.view); b.setAttribute("aria-pressed", String(b.dataset.hv === heat.view));
+    });
+    const srcSeg = document.getElementById("heatSrcSeg");
+    srcSeg.hidden = !h.srcToggle;
+    srcSeg.querySelectorAll("button").forEach(b => {
+      b.classList.toggle("on", b.dataset.hs === heatSrc); b.setAttribute("aria-pressed", String(b.dataset.hs === heatSrc));
+    });
+    document.getElementById("heatNote").textContent = t(byYears ? "heatNoteY" : "heatNoteM");
+    document.getElementById("heatScale").innerHTML = scaleHTML(h.v, byYears ? g.sdY : g.sd, h.unit);
+    const read = document.getElementById("heatRead"), body = document.getElementById("heatBody");
+    const hint = t(byYears ? "heatHoverY" : h.link ? "heatHoverMLink" : "heatHoverM");
+    read.textContent = hint;
+    const cur = h.link && state.mode === "time" ? months[state.i] : null;
+    if (byYears) heatYears(body, read, hint, g, h, u, cur); else heatMonths(body, read, hint, g, h, u, cur);
+  }
+
+  // Yıllar görünümü: üstte renk şeridi, altında her yılın sapması çubuk olarak (0 çizgisinden yukarı/aşağı).
+  function heatYears(body, read, hint, g, h, u, cur) {
+    const W = 880, H = 360, L = 56, R = 12, T = 8, SH = 34, G = 14, B = 26, n = g.yearly.length, d = anomDec(g.sdY);
+    const vals = g.yearly.map(r => r.a).filter(a => a != null);
+    const m = Math.max(...vals.map(Math.abs), g.sdY * 0.5) * 1.08;
+    const { ticks, dec } = niceTicks(-m, m, 6);
+    const top = T + SH + G, bw = (W - L - R) / n, X = k => L + k * bw, Y = a => top + (1 - (a + m) / (2 * m)) * (H - top - B);
+    const fill = r => anomColor(h.v, r.a == null ? null : r.a / g.sdY);
+    const strip = g.yearly.map((r, k) => `<rect x="${X(k).toFixed(1)}" y="${T}" width="${(bw + 0.4).toFixed(1)}" height="${SH}" fill="${fill(r)}"/>`).join("");
+    const bars = g.yearly.map((r, k) => r.a == null ? "" : `<rect x="${(X(k) + bw * 0.12).toFixed(1)}" y="${Math.min(Y(r.a), Y(0)).toFixed(1)}"
+      width="${(bw * 0.76).toFixed(1)}" height="${Math.max(1, Math.abs(Y(r.a) - Y(0))).toFixed(1)}" rx="2" fill="${fill(r)}"/>`).join("");
+    const grid = ticks.map(x => `<line class="cg" x1="${L}" x2="${W - R}" y1="${Y(x).toFixed(1)}" y2="${Y(x).toFixed(1)}"/>
+      <text class="ct" x="${L - 7}" y="${(Y(x) + 4).toFixed(1)}" text-anchor="end">${signed(x, dec)}</text>`).join("");
+    const lab = g.years.map((y, k) => (+y % 5 === 0 || k === 0 || k === n - 1) ? `<text class="ct" x="${(X(k) + bw / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle">${y}</text>` : "").join("");
+    const ck = cur ? g.years.indexOf(cur.slice(0, 4)) : -1;
+    body.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escH(h.title)} · ${t("stripesAria")}">
+      <text class="ct" x="${L}" y="${top - 3}">${u} · ${t("vsNormal")}</text>
+      ${strip}${grid}<line x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
+      ${bars}${lab}
+      ${ck >= 0 ? `<rect x="${(X(ck) + 0.6).toFixed(1)}" y="${T + 0.6}" width="${Math.max(1, bw - 1.2).toFixed(1)}" height="${SH - 1.2}" fill="none" stroke="#fff" stroke-width="1.5"/>` : ""}
+      <rect id="hvSel" y="${T}" height="${H - T - B + 4}" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.5)" visibility="hidden"/>
+    </svg>`;
+    const svg = body.querySelector("svg"), sel = svg.querySelector("#hvSel");
+    const show = e => {
+      const box = svg.getBoundingClientRect(), x = (e.clientX - box.left) / box.width * W;
+      const k = Math.floor((x - L) / bw);
+      if (k < 0 || k >= n) { sel.setAttribute("visibility", "hidden"); read.textContent = hint; return; }
+      const r = g.yearly[k];
+      sel.setAttribute("x", X(k)); sel.setAttribute("width", bw); sel.setAttribute("visibility", "visible");
+      read.innerHTML = r.a == null ? `<b>${r.year}</b> · ${t("cellNoData")}` : t("yearRead", r.year, `${signed(r.a, d)} ${u}`, r.n);
+    };
+    svg.onpointermove = show; svg.onpointerdown = show;
+    svg.onpointerleave = () => { sel.setAttribute("visibility", "hidden"); read.textContent = hint; };
+  }
+
+  // Yıl × ay görünümü: satırlar yıllar, sütunlar aylar; sağda yılın ortalaması. Giovanni'de hücreye tıklayınca
+  // zaman çubuğu o aya gider (harita da o ayı gösterir).
+  function heatMonths(body, read, hint, g, h, u, cur) {
+    const ny = g.years.length, W = 880, L = 46, R = 86, T = 24, ch = Math.max(7, Math.min(16, 400 / ny)), H = T + ch * ny + 6;
+    const cw = (W - L - R) / 12, YX = W - R + 12, YW = R - 14, d = anomDec(g.sd), dY = anomDec(g.sdY);
+    const names = monthNames();
+    let cells = "";
+    g.anom.forEach((a, i) => {
+      const y = g.years.indexOf(h.keys[i].slice(0, 4)), m = g.mon[i], on = cur && h.keys[i] === cur;
+      cells += `<rect x="${(L + m * cw).toFixed(1)}" y="${(T + y * ch).toFixed(1)}" width="${(cw - 1).toFixed(1)}" height="${(ch - 1).toFixed(1)}"
+        rx="1.5" fill="${anomColor(h.v, a == null ? null : a / g.sd)}"${on ? ' stroke="#fff" stroke-width="2"' : ""}/>`;
+    });
+    const yearCells = g.yearly.map((r, k) => `<rect x="${YX}" y="${(T + k * ch).toFixed(1)}" width="${YW}" height="${(ch - 1).toFixed(1)}" rx="1.5"
+      fill="${anomColor(h.v, r.a == null ? null : r.a / g.sdY)}"/>`).join("");
+    const mLab = names.map((nm, k) => `<text class="ct" x="${(L + k * cw + cw / 2).toFixed(1)}" y="${T - 8}" text-anchor="middle">${escH(nm.slice(0, 3))}</text>`).join("");
+    const every = ch >= 13 ? 1 : 5;
+    const yLab = g.years.map((y, k) => (+y % every === 0 || k === 0 || k === ny - 1)
+      ? `<text class="ct" x="${L - 7}" y="${(T + k * ch + ch / 2 + 4).toFixed(1)}" text-anchor="end">${y}</text>` : "").join("");
+    body.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escH(h.title)} · ${t("viewMonths")}" style="${h.link ? "" : "cursor:default"}">
+      ${mLab}<text class="ct" x="${YX + YW / 2}" y="${T - 8}" text-anchor="middle">${t("yearCol")}</text>${yLab}${cells}${yearCells}
+      <rect id="hmSel" width="${(cw - 1).toFixed(1)}" height="${(ch - 1).toFixed(1)}" fill="none" stroke="#2f7de1" stroke-width="2" visibility="hidden"/>
+    </svg>`;
+    const svg = body.querySelector("svg"), sel = svg.querySelector("#hmSel");
+    const at = e => {
+      const box = svg.getBoundingClientRect(), x = (e.clientX - box.left) / box.width * W, y = (e.clientY - box.top) / box.height * H;
+      const row = Math.floor((y - T) / ch);
+      if (row < 0 || row >= ny) return null;
+      if (x >= YX && x <= YX + YW) return { row, col: 12 };
+      const col = Math.floor((x - L) / cw);
+      return col >= 0 && col < 12 ? { row, col } : null;
+    };
+    const show = e => {
+      const c = at(e);
+      if (!c) { sel.setAttribute("visibility", "hidden"); read.textContent = hint; return null; }
+      const yr = g.years[c.row];
+      if (c.col === 12) {
+        sel.setAttribute("visibility", "hidden");
+        const r = g.yearly[c.row];
+        read.innerHTML = r.a == null ? `<b>${yr}</b> · ${t("cellNoData")}` : t("yearRead", yr, `${signed(r.a, dY)} ${u}`, r.n);
+        return null;
+      }
+      const key = `${yr}-${String(c.col + 1).padStart(2, "0")}`, i = h.keys.indexOf(key), a = i >= 0 ? g.anom[i] : null;
+      sel.setAttribute("x", (L + c.col * cw).toFixed(1)); sel.setAttribute("y", (T + c.row * ch).toFixed(1)); sel.setAttribute("visibility", "visible");
+      read.innerHTML = a == null ? `<b>${escH(names[c.col])} ${yr}</b> · ${t("cellNoData")}` : t("monthRead", escH(names[c.col]), yr, `${signed(a, d)} ${u}`);
+      return key;
+    };
+    svg.onpointermove = show;
+    svg.onpointerleave = () => { sel.setAttribute("visibility", "hidden"); read.textContent = hint; };
+    svg.onpointerdown = e => {
+      const key = show(e);
+      if (!h.link || !key) return;
+      const k = months.indexOf(key);
+      if (k < 0) return;
+      state.i = k; state.mode = "time"; setPlaying(false); save(); renderAll(false);
+    };
+  }
+
+  function setHeat(open) {
+    if (open && !heatData()) return;
+    heat.open = open;
+    heatBack.hidden = !open;
+    if (open) { setPlaying(false); renderHeat(); heatClose.focus(); return; }
+    document.getElementById("heatOpen")?.focus();
+  }
+  heatClose.onclick = () => setHeat(false);
+  heatBack.addEventListener("click", e => { if (e.target === heatBack) setHeat(false); });
+  document.querySelectorAll("#heatView button").forEach(b => b.onclick = () => { heat.view = b.dataset.hv; renderHeat(); });
+  document.querySelectorAll("#heatSrcSeg button").forEach(b => b.onclick = () => { heatSrc = b.dataset.hs; renderLeft(); renderHeat(); });
 
 
   function renderLegend() {
@@ -2042,6 +2268,7 @@
     if (full !== false) { renderLeft(); renderLegend(); }
     else { renderLeft(); }
     if (chart.open) renderChart();
+    if (heat.open) renderHeat();
   }
 
   // ------------------------------------------------------------------ interactions

@@ -7,7 +7,7 @@ NASA Space Apps Challenge team project.
 ```
 detective3d/                 # THE APP: 3D map UI + chat agent (D)
   index.html                 # 3D MapLibre UI in Turkish and English (decision card, enlargeable chart,
-                             # auto tour, time player, NDVI imagery layer, heat map, chat panel)
+                             # auto tour, time player, NDVI imagery layer, yearly stripes, chat panel)
   agent_server.py            # serves the UI + /api/chat agent over the repo's analysis
   data.js, power_data.js,    # generated data the UI reads (committed)
   cities.js
