@@ -111,7 +111,6 @@ def _load_js(path: Path) -> dict:
 
 SOURCES = {k: v.get("source") for k, v in _load_js(HERE / "data.js").get("pairs", {}).items()}
 POWER = _load_js(HERE / "power_data.js")
-NDVI = _load_js(HERE / "ndvi_data.js")
 POWER_PARAMS = {"temp": ["T2M", "T2M_MAX"], "precip": ["PRECTOTCORR"], "soil_moisture": ["GWETROOT"]}
 
 
@@ -143,30 +142,6 @@ def tool_get_trend(region: str, variable: str) -> dict:
         "detective_next_step": a["next_step"],
         "what_it_means": detective.get_context(result, variable),
         "source": SOURCES.get(f"{region}|{variable}"),
-    }
-
-
-def tool_get_ndvi_trend(region: str) -> dict:
-    if not NDVI:
-        raise ValueError("ndvi_data.js is missing; run build_ndvi.py first.")
-    if region not in NDVI["sites"]:
-        raise ValueError(f"MODIS NDVI for {REGIONS[region]['name']} has not been downloaded yet "
-                         "(the ORNL server was overloaded). Say that NDVI is not available for this region yet.")
-    site, ser = NDVI["sites"][region], NDVI["series"][region]
-    return {
-        "region": REGIONS[region]["name"],
-        "site": {"name": site["name"], "kind": site["kind"], "lat": site["lat"], "lon": site["lon"],
-                 "window_km": NDVI["window_km"], "land_cover_2020": site["land_cover"]},
-        "monthly_trend_2001_2025": ser["trend"],
-        "peak_greenness_trend": {k: ser["peak"][k] for k in ("sen_slope_per_decade", "mk_p", "significant", "direction")},
-        "peak_by_year": dict(zip(ser["peak"]["years"], ser["peak"]["values"])),
-        "caveats": [
-            "NDVI is measured in one 10 km x 10 km window chosen with MODIS land cover, not over the whole region box.",
-            "Monthly value = maximum of the 16-day composites in that month (reduces cloud effects).",
-            "Greening on irrigated cropland can come from more irrigation or crop changes, not from more rain; "
-            "browning can come from fallow, crop rotation or drought. NDVI alone cannot tell which.",
-        ],
-        "source": NDVI["source"],
     }
 
 
@@ -435,23 +410,6 @@ TOOLS = [
         "strict": True,
     },
     {
-        "name": "get_ndvi_trend",
-        "description": (
-            "Vegetation greenness trend from MODIS Terra NDVI (MOD13Q1, 250 m), 2001-2025, in a 10 km x 10 km "
-            "farm window inside the region (konya: Çumra plain, van: Erciş plain; black_sea has no cropland in "
-            "MODIS land cover, so its window is natural vegetation on the Rize coastal slopes). Returns the "
-            "seasonal Mann-Kendall + Sen trend of monthly NDVI, the trend of each year's peak NDVI, land cover "
-            "shares and caveats. Use it for questions about crops, vegetation or farming."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {"region": {"type": "string", "enum": REGION_IDS}},
-            "required": ["region"],
-            "additionalProperties": False,
-        },
-        "strict": True,
-    },
-    {
         "name": "get_background",
         "description": (
             "Catalog background: a region's description and bounding box, a variable's dataset, "
@@ -521,7 +479,6 @@ HANDLERS = {
     "get_period_stats": tool_get_period_stats,
     "get_background": tool_get_background,
     "get_long_record": tool_get_long_record,
-    "get_ndvi_trend": tool_get_ndvi_trend,
     "analyze_place": tool_analyze_place,
 }
 
@@ -532,7 +489,6 @@ STEP_LABELS = {
     "get_period_stats": "Dönem istatistiği",
     "get_background": "Katalog bilgisi",
     "get_long_record": "45 yıllık kontrol (POWER)",
-    "get_ndvi_trend": "Bitki örtüsü (MODIS NDVI)",
     "analyze_place": "Konum analizi (NASA POWER)",
     "control_map": "Harita",
 }
@@ -544,12 +500,11 @@ TR_VAR = {"precip": "yağış", "soil_moisture": "toprak nemi", "temp": "sıcakl
 STEP_LABELS_EN = {
     "get_trend": "Trend analysis", "compare_regions": "Region comparison", "get_overview": "Overview scan",
     "get_period_stats": "Period statistics", "get_background": "Catalog background",
-    "get_long_record": "45-year check (POWER)", "get_ndvi_trend": "Vegetation (MODIS NDVI)",
+    "get_long_record": "45-year check (POWER)",
     "analyze_place": "Place analysis (NASA POWER)", "control_map": "Map",
 }
 EN_REGION = {"konya": "Konya", "van": "Van", "black_sea": "Eastern Black Sea", "overview": "Türkiye"}
 EN_VAR = {"precip": "precipitation", "soil_moisture": "soil moisture", "temp": "temperature"}
-SITE_EN = {"Çumra ovası": "Çumra plain", "Erciş ovası": "Erciş plain", "Rize kıyı yamaçları": "Rize coastal slopes"}
 MESSAGES = {  # key -> (Türkçe, English)
     "too_many": ("Çok fazla adım gerekti; soruyu daha dar sorabilir misin?",
                  "That needed too many steps; could you ask a narrower question?"),
@@ -621,9 +576,6 @@ How to work:
 cross-check with an independent dataset. When the two datasets disagree, say so plainly, give the likely
 reasons (different products and depths, coarse grids, mountains) and suggest checking local station data
 (MGM) instead of picking a winner.
-- Use get_ndvi_trend for crops and vegetation. Combine it with water clues carefully: e.g. greener
-irrigated fields while the soil dries may point to more groundwater irrigation, but say this is a
-hypothesis, not a finding.
 - Use control_map so the map shows what you are describing.
 - When the user asks about a place outside konya, van and black_sea, never say you only cover three regions: \
 call analyze_place (it moves the map itself). Follow the clue chain there too by calling analyze_place for the \
@@ -940,28 +892,6 @@ def run_offline(user_text: str, ui_state: dict) -> dict:
                 lines.append(f"{'45-year check' if en else '45 yıllık kontrol'} ({item['parameter']}, NASA POWER): 1981–2025 "
                              f"{f['sen_slope_per_decade']:+.2f} ({mark(f)}), 2001–2025 "
                              f"{r['sen_slope_per_decade']:+.2f} ({mark(r)}) {unit}{per_decade}.")
-    veg_words = ("bitki", "ndvi", "tarım", "tarim", "yeşil", "yesil", "ürün", "urun", "tarla",
-                 "vegetation", "crop", "green", "farm", "plant")
-    if NDVI and any(w in user_text.lower() for w in veg_words):
-        for region in regions[:2]:
-            steps.append(_step_label("get_ndvi_trend", {"region": region}, lang))
-            try:
-                n = tool_get_ndvi_trend(region)
-            except ValueError:
-                lines.append(f"**{reg_name[region]} · NDVI**: " + ("not downloaded yet." if en else "veri henüz indirilmedi."))
-                continue
-            _add_source(sources, n["source"])
-            t, pk = n["monthly_trend_2001_2025"], n["peak_greenness_trend"]
-            mark = lambda x: _sig_word(x["significant"], lang)
-            site = SITE_EN.get(n["site"]["name"], n["site"]["name"]) if en else n["site"]["name"]
-            if en:
-                lines.append(f"**{reg_name[region]} · vegetation (MODIS NDVI, {site})**: monthly "
-                             f"{t['sen_slope_per_decade']:+.3f}/decade ({mark(t)}), yearly peak "
-                             f"{pk['sen_slope_per_decade']:+.3f}/decade ({mark(pk)}).")
-            else:
-                lines.append(f"**{reg_name[region]} · bitki örtüsü (MODIS NDVI, {site})**: aylık "
-                             f"{t['sen_slope_per_decade']:+.3f}/10 yıl ({mark(t)}), yıllık zirve "
-                             f"{pk['sen_slope_per_decade']:+.3f}/10 yıl ({mark(pk)}).")
     actions.append({"region": regions[0] if len(regions) == 1 else "overview", "variable": variable})
     steps.append(_step_label("control_map", actions[0], lang))
     lines.append(OFFLINE_NOTE[en])
@@ -1068,7 +998,7 @@ def index():
 
 @app.get("/{name}")
 def static_file(name: str):
-    if name not in {"index.html", "data.js", "power_data.js", "ndvi_data.js", "cities.js"}:
+    if name not in {"index.html", "data.js", "power_data.js", "cities.js"}:
         raise HTTPException(404)
     return FileResponse(HERE / name)
 

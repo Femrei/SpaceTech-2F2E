@@ -3,7 +3,7 @@
 Kaynak: Natural Earth 10m populated places (kamu malı),
 https://github.com/nvkelso/natural-earth-vector (geojson/ne_10m_populated_places_simple.geojson).
 Türkiye'deki yerleşimler alınır, birkaç ad Türkçeleştirilir ve listede olmayan bazı il
-merkezleri ile NDVI pencerelerinin ilçeleri (Çumra, Erciş) elle eklenir.
+merkezleri ile birkaç ilçe (Çumra, Erciş) elle eklenir.
 
 Kullanım (repo kökünden):  python detective3d/build_cities.py
 """
@@ -18,7 +18,7 @@ CACHE = HERE / "ne_raw" / "ne_10m_populated_places_simple.geojson"
 
 RENAME = {"Istanbul": "İstanbul", "Icel": "Mersin", "Corum": "Çorum", "Afyon": "Afyonkarahisar",
           "Samandagi": "Samandağ"}
-# Province centres missing from Natural Earth + NDVI window towns: (name, lat, lon, min_zoom, population)
+# Province centres missing from Natural Earth + a few towns: (name, lat, lon, min_zoom, population)
 EXTRA = [
     ("Aksaray", 38.3687, 34.0370, 6.1, 230000), ("Osmaniye", 37.0742, 36.2478, 6.7, 280000),
     ("Düzce", 40.8438, 31.1565, 6.7, 200000), ("Yalova", 40.6500, 29.2667, 6.7, 150000),

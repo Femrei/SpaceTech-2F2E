@@ -57,7 +57,7 @@ Sağ alttaki **Dedektife sor** düğmesi sohbet panelini açar.
 
 ## Veriyi yenileme
 
-Uygulama, betiklerin ürettiği hazır `*.js` veri dosyalarıyla çalışır; bunlar repoda. Betiklerin ham indirme klasörleri (`power_raw/`, `ndvi_raw/`, `ne_raw/`) repoya girmez (`.gitignore`); betik tekrar çalıştırılınca yeniden indirilir.
+Uygulama, betiklerin ürettiği hazır `*.js` veri dosyalarıyla çalışır; bunlar repoda. Betiklerin ham indirme klasörleri (`power_raw/`, `ne_raw/`) repoya girmez (`.gitignore`); betik tekrar çalıştırılınca yeniden indirilir.
 
 `build_data.py`, repodaki `api.py` fonksiyonlarını yalnızca okuyarak çağırır ve `data.js` dosyasını üretir. İçinde B'nin trend analizi ve D'nin kataloğu kullanılır.
 
@@ -76,47 +76,6 @@ Kaynak linkleri (veri seti adı ve tam Giovanni isteği) A'nın `data/SOURCES.md
 ```bash
 python detective3d/build_power.py
 ```
-
-`build_ndvi.py`, MODIS NDVI 2001–2025 verisini işleyip `ndvi_data.js` dosyasını üretir.
-
-- **Veri:** MOD13Q1 v061 (250 m, 16 günlük). ORNL DAAC'nin hesap istemeyen MODIS servisinden gelir.
-- **İndirme:** Servis istek başına en çok 10 tarih verdiği için seri yaklaşık 175 parçada iner; her parça ~30 sn sürer. Parçalar `ndvi_raw/` klasöründe saklanır. Yarıda kesilirse tekrar çalıştırınca kaldığı yerden devam eder.
-- **Pencereler:** Her bölgede 10 km × 10 km'lik bir pencere kullanılır. Pencereler MODIS arazi örtüsüne (MCD12Q1 2020, IGBP) bakılarak seçildi:
-
-| Bölge | Pencere | Arazi örtüsü |
-|---|---|---|
-| Konya | Çumra ovası (37.57°K, 32.77°D) | %90 tarım |
-| Van | Erciş ovası (39.03°K, 43.35°D) | %64 tarım, %20 çayır |
-| Doğu Karadeniz | Rize kıyı yamaçları (40.97°K, 40.55°D) | Tarım sınıfı yok; odunsu savan ve orman. Doğal bitki örtüsü penceresi olarak etiketlendi. |
-
-- **Yöntem:**
-  - Her kompozitte penceredeki geçerli piksellerin ortalaması alınır.
-  - Aylık değer, o aydaki kompozitlerin en yükseğidir (bulut etkisini azaltır).
-  - Trend için B'nin `analyze_trend` fonksiyonu kullanılır. Her yılın zirve NDVI'si için ayrıca Mann-Kendall testi ve Sen eğimi hesaplanır.
-
-```bash
-python detective3d/build_ndvi.py
-```
-
-ORNL sunucusu yoğunken çok sayıda "502" hatası verir. Betik inmeyen parçaları 6 tura kadar yeniden dener; yine de eksik kalırsa durur. Sadece tamamlanmış bölgelerle sonuç üretmek için:
-
-```bash
-NDVI_PARTIAL=1 python detective3d/build_ndvi.py
-```
-
-**Şu anki durum (2026-11-15):**
-- Konya ve Van tamamlandı.
-- Doğu Karadeniz'in 58 parçasından 11'i indi. Panel ve ajan "veri henüz yok" diyor.
-- Betiği normal çalıştırınca Karadeniz kaldığı yerden tamamlanır.
-
-**İlk sonuçlar:**
-
-| Pencere | Aylık NDVI trendi | Yıllık zirve trendi |
-|---|---|---|
-| Konya · Çumra | +0,029 /10 yıl, p≈5e-10 | +0,076 /10 yıl, p≈5e-5 |
-| Van · Erciş | +0,021 /10 yıl, p≈2e-11 | +0,035 /10 yıl, p≈6e-4 |
-
-İki pencerede de anlamlı yeşillenme var.
 
 ## Ekranda neler var
 
@@ -141,10 +100,6 @@ NDVI_PARTIAL=1 python detective3d/build_ndvi.py
   - İkisi aynı yönde ve anlamlıysa ✓ işareti çıkar.
   - 45 yılda ve son 25 yılda anlamlılık farklıysa 🕵️ ipucu çıkar.
 - **Kaynaklar:** Veri seti adı, tam Giovanni isteğinin linki ve POWER API belgesi. Kutusu denize ya da göle taşan bölgelerde (Doğu Karadeniz ~%15 deniz, Van ~%14 göl; `scripts/check_bbox_water.py`) bunu söyleyen bir not da çıkar. Ajanın cevaplarının altında da kullandığı veri setleri link olarak görünür.
-- **Bitki örtüsü · MODIS NDVI:**
-  - Sol panelde tarım penceresi, arazi örtüsü, aylık ve yıllık zirve NDVI trendleri ve zirve NDVI çubuk grafiği yer alır.
-  - Pencereler haritada yeşil karelerle gösterilir.
-  - Ajan bu veriyi `get_ndvi_trend` aracıyla kullanır.
 - **CSV indir:** Seçili bölge ve değişken için Giovanni ve POWER aylık serileri tek dosyada indirilir.
 - **Alan seç (C):** Sağ üstteki **Alan seç** düğmesi haritayı tepeden görünüme alır.
   - **Nokta:** Haritaya tıklayınca o noktayı içeren NASA POWER ızgara hücresi (~55 km) analiz edilir.
@@ -167,4 +122,4 @@ Bunu saklamıyoruz; dedektif hikâyesinin parçası olarak gösteriyoruz.
 
 ## Sınırlar
 
-Veriler Giovanni'den alınmış bölge ortalamalarıdır (~25 km ızgara). Tarla ölçeğinde parsel ya da NDVI bölgesi yoktur. Bunlar Faz 2'deki ayrı agri projesinin konusu.
+Veriler Giovanni'den alınmış bölge ortalamalarıdır (~25 km ızgara). Tarla ölçeğinde parsel yoktur; NDVI katmanı yalnızca görseldir. Bunlar Faz 2'deki ayrı agri projesinin konusu.

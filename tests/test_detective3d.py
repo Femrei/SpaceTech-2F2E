@@ -11,6 +11,8 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
+import shutil
 import subprocess
 import sys
 import time
@@ -33,7 +35,7 @@ def server():
 
 
 def test_app_files_exist():
-    for name in ("index.html", "data.js", "power_data.js", "ndvi_data.js", "cities.js"):
+    for name in ("index.html", "data.js", "power_data.js", "cities.js"):
         assert (APP_DIR / name).is_file(), name
 
 
@@ -127,12 +129,36 @@ def test_data_js_carries_hint_box_context():
         assert {"context", "context_tr"} <= set(variable), variable["id"]
 
 
-def test_page_has_no_projection_or_case():
-    """The team chose not to show 2035/2050 projections, a "what could be done" list or case files."""
+def test_page_has_no_projection_case_or_ndvi_window():
+    """The team chose not to show 2035/2050 projections, a "what could be done" list, case files
+    or the MODIS NDVI farm windows (the green squares). The GIBS NDVI imagery layer stays."""
     html = (APP_DIR / "index.html").read_text(encoding="utf-8")
-    for needle in ("p2035", "p2050", "outlookOf", "olActs", "caseBtn", "goCase"):
+    for needle in ("p2035", "p2050", "outlookOf", "olActs", "caseBtn", "goCase",
+                   "ndvi_data.js", "NDVI_DATA", "ndvi-sites", "ndviHTML"):
         assert needle not in html, needle
-    assert 'id="tourToggle"' in html
+    assert 'id="tourToggle"' in html and 'id="ndviToggle"' in html
+
+
+def test_page_script_parses(tmp_path):
+    """A broken edit in index.html leaves a blank page; node --check catches it (skipped without Node.js)."""
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("Node.js is not installed")
+    html = (APP_DIR / "index.html").read_text(encoding="utf-8")
+    script = tmp_path / "page.js"
+    script.write_text("\n".join(re.findall(r"<script>(.*?)</script>", html, re.S)), encoding="utf-8")
+    result = subprocess.run([node, "--check", str(script)], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
+def test_agent_has_no_ndvi_window_tool(server):
+    assert "get_ndvi_trend" not in server.HANDLERS
+    assert all(tool["name"] != "get_ndvi_trend" for tool in server.TOOLS)
+    with pytest.raises(server.HTTPException):
+        server.static_file("ndvi_data.js")
+    out = server.run_offline("Konya'da bitki örtüsü yeşilleniyor mu?", {})
+    assert "NDVI" not in out["text"]
+
 
 
 def test_data_js_carries_decision_card_inputs():
