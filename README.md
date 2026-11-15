@@ -7,7 +7,7 @@ NASA Space Apps Challenge team project.
 ```
 detective3d/                 # THE APP: 3D map UI + chat agent (D)
   index.html                 # 3D MapLibre UI in Turkish and English (decision card, enlargeable chart,
-                             # guided case, time player, NDVI, heat map, chat panel)
+                             # auto tour, time player, NDVI, heat map, chat panel)
   agent_server.py            # serves the UI + /api/chat agent over the repo's analysis
   data.js, power_data.js,    # generated data the UI reads (committed)
   ndvi_data.js, cities.js
@@ -105,10 +105,6 @@ Variable → region → time series → statistics, in that order:
    switch, the Sen trend line and its 95% confidence band.
 4. The hint box explains the variable and what the trend means; **Next clue** follows the
    catalog's detective hint to the next variable or region.
-5. The **Case** button walks through "Is the soil drying in Konya?" in three steps.
-
-The 2035 / 2050 "if the trend goes on" view and the "what could be done" list are
-secondary: they are labelled as not a forecast and only appear for significant trends.
 
 ### Earlier React UI (C)
 

@@ -126,16 +126,15 @@ NDVI_PARTIAL=1 python detective3d/build_ndvi.py
 - **Yere bağlı kartlar:** Her bölgede o ayın değeri, sapma, bir sparkline ve Sen trendi ile anlamlılık rozeti var.
 - **Zaman oynatıcı (2001→2025):** Hız seçilebilir. Space tuşu oynatır/durdurur, ← → tuşları birer ay ilerler/geriler.
 - **Önce/Sonra karşılaştırması:** 2001–05 ile 2021–25 ortalamaları.
-- **2035 / 2050 · eğilim sürerse (D):** Zaman çubuğunda ve sol paneldeki "Önce → sonra → bu gidişle" bölümünde. Son 5 yılın ortalamasından başlayıp ölçülen Sen eğimiyle ileri uzatılır; aralık eğimin %95 güven aralığıdır. **Tahmin değildir** ve yalnızca anlamlı eğilimlerde gösterilir; anlamlı olmayanlar gri kalır. Aynı bölüm "Alan seç" ile seçilen her yerde de çalışır (1981–85 → 2021–25 → 2035 → 2050) ve seçilen kutu haritada döneme göre boyanır.
 - **Karar kartı:** Sol panelin en üstünde. Ne / nerede / ne kadar (Sen eğimi /10 yıl ve %) / anlamlı mı (p değeri ve rozet) satırlarını gösterir. Eğilim anlamlı değilse B'nin `years_needed_estimate` alanından "yaklaşık X yıl daha veriyle anlamlı olabilir" yazar; 50 yıldan fazla ek veri gerekiyorsa sayı yerine "ayırt edilemeyecek kadar zayıf" der. Bu bir kaba tahmindir ve eğimin aynı kaldığını varsayar. "Alan seç" sonuçlarında da aynı kart çıkar.
 - **İpucu kutusu:** Değişkenin tek cümlelik tanımı (`short_description` / `short_description_tr`) ve "Bu ne anlama geliyor?" metni, kaynaklarıyla.
 - **Sıradaki ipucu:** Katalogdaki dedektif ipucu (`hints[].text` / `text_tr`) ve onu izleyen düğme; sohbetteki ipucuyla aynıdır.
 - **Güven aralıkları:** Kutudaki aralık Sen eğiminin kendi %95 güven aralığıdır (B'nin `sen_ci_low` / `sen_ci_high`; mevsimsel Kendall eğimi, Gilbert 1987). OLS eğimi ve onun aralığı altında ayrı bir satırda, adıyla yazılır.
 - **Grafiği büyüt:** Eksenli büyük grafik: y ekseni ve değer etiketleri, üzerinde gezinince ay ve değer, ham / mevsimsellikten arındırılmış geçişi, Sen eğimi ve güven aralığı bandı. Esc ya da × kapatır.
-- **Vaka (rehberli demo):** Sağ üstteki **Vaka** düğmesi "Konya'da toprak kuruyor mu?" sorusunu üç adımda gezdirir: ipucu kutusu → büyük grafik → karar kartı. Eski otomatik turun yerini aldı.
-- **Bu ne anlama geliyor? / Ne yapılabilir? (D):** Katalogdaki bağlam metni (`variables[].context_tr`) ve kaynaklı genel seçenekler (`variables[].actions`, FAO, WHO, IPCC, drought.gov). Öneriler yalnızca anlamlı eğilimlerde listelenir; doz ya da reçete içermez.
+- **Bu ne anlama geliyor? (D):** İpucu kutusundaki bağlam metni katalogdan gelir (`variables[].context` / `context_tr`), kaynaklarıyla.
 - **Sol panel ("Dedektif dosyası"):** Karar kartı, ipucu kutusu, istatistikler ve seri grafiği. Bütün yazılar TR/EN sözlüğünden gelir.
 - **NDVI katmanı:** NASA GIBS üzerinden MODIS Terra 16 günlük NDVI. Yalnızca görseldir, analizde kullanılmaz.
+- **Otomatik tur:** Genel görünümden sırayla her bölgeye uçar (Katmanlar menüsü).
 - **Isı haritası (yıl × ay):** Sol panelde yer alır. Her hücre, o ayın kendi ortalamasından sapmasını gösterir. "25 yıl" Giovanni, "45 yıl" NASA POWER verisidir.
 - **45 yıllık kontrol:** Aynı kutu için NASA POWER ile 1981–2025 ve 2001–2025 trendleri gösterilir.
   - İki veri seti ters yön gösteriyorsa ⚠️ uyarısı çıkar.

@@ -178,19 +178,6 @@
   .hm svg { display: block; }
   .hm .axis { font-size: 10px; fill: var(--muted); }
 
-  /* ---------- D: önce → sonra → eğilim sürerse ---------- */
-  .ol { background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
-  .ol-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; background: rgba(255,255,255,.05);
-    border-radius: 8px; padding: 3px; }
-  .ol-steps button { background: none; border: 0; color: var(--muted); border-radius: 6px; padding: 4px 2px;
-    font: inherit; font-size: 12px; line-height: 1.15; cursor: pointer; }
-  .ol-steps button small { display: block; font-size: 10px; opacity: .75; }
-  .ol-steps button.on { background: rgba(255,255,255,.12); color: var(--text); }
-  .ol-steps button.off { opacity: .45; }
-  .ol-text { font-size: 13px; margin: 8px 0 0; }
-  .ol ul.acts { margin: 4px 0 0; padding-left: 18px; font-size: 13px; }
-  .ol ul.acts li { margin: 3px 0; }
-  .ol svg .ax { font-size: 9.5px; fill: var(--muted); }
   .lr { background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; font-size: 12.5px; }
   .lr table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
   .lr td { padding: 3px 0; vertical-align: top; }
@@ -421,7 +408,6 @@
   .next { margin-top: 10px; background: rgba(217,164,65,.1); border: 1px solid rgba(217,164,65,.35); border-radius: 10px;
     padding: 8px 10px; font-size: 13px; }
   .next p { margin: 0 0 8px; } .next .fly { margin-top: 0; }
-  .case-focus { outline: 2px solid var(--brand); outline-offset: 2px; }
   .bc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
   .mini-btn { flex: none; background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 7px; padding: 3px 9px;
     font-size: 12px; color: var(--text); white-space: nowrap; }
@@ -437,33 +423,6 @@
   #chartBody svg { display: block; width: 100%; height: auto; touch-action: none; cursor: crosshair; }
   #chartBody .cg { stroke: rgba(255,255,255,.08); stroke-width: 1; }
   #chartBody .ct { font-size: 11px; fill: var(--muted); }
-  /* ---------- rehberli vaka ---------- */
-  .case-bar { position: absolute; top: 104px; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; gap: 10px;
-    align-items: center; padding: 10px 12px; width: min(620px, calc(100% - 32px)); }
-  .case-bar[hidden] { display: none; }
-  @media (min-width: 1101px) {
-    body:not(.left-closed) .case-bar { left: 362px; transform: none; width: min(620px, calc(100% - 362px - 150px)); }
-  }
-  .case-txt { flex: 1; min-width: 0; }
-  .case-txt small { color: var(--brand); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
-  .case-txt p { margin: 2px 0 0; font-size: 13px; }
-  .case-btns { display: flex; gap: 6px; flex: none; }
-  .case-btns button { flex: none; width: auto; margin: 0; padding: 6px 12px; }
-  .case-btns button:disabled { opacity: .4; cursor: default; }
-  .chart-modal .case-bar { position: static; transform: none; width: auto !important; margin-bottom: 10px; box-shadow: none; }
-  @media (max-width: 1100px) {
-    body.case-on .left { display: block; }
-  }
-  @media (min-width: 761px) and (max-width: 1100px) {
-    body.case-on .left { top: 190px; max-height: calc(100% - 310px); }
-  }
-  @media (max-width: 760px) {
-    .case-bar { top: 8px; left: 8px; right: 8px; transform: none; width: auto; flex-wrap: wrap; z-index: 8; }
-    .case-bar .case-txt { flex-basis: 100%; }
-    .case-bar .case-btns { margin-left: auto; }
-    body.case-on .top, body.case-on .timeline, body.case-on .ask-btn, body.case-on .navbar, body.case-on .tr { display: none; }
-    body.case-on .left { top: auto; bottom: 16px; left: 8px; right: 8px; width: auto; max-height: 52%; z-index: 7; }
-  }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -482,7 +441,6 @@
       <button type="button" class="lang-btn" data-lang="en" lang="en" aria-label="English">EN</button>
     </div>
     <button class="layers-btn area-btn" id="guideBtn" aria-haspopup="dialog" data-i18n-attr="aria-label:guide;title:guideTip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7M9 12h5"/></svg><span class="btn-txt" data-i18n="guide"></span></button>
-    <button class="layers-btn area-btn" id="caseBtn" aria-pressed="false" data-i18n-attr="aria-label:caseTip;title:caseTip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M9.5 8.5v5l4-2.5z" fill="currentColor"/></svg><span class="btn-txt" data-i18n="caseBtn"></span></button>
     <button class="layers-btn area-btn" id="areaBtn" aria-pressed="false" data-i18n-attr="aria-label:area;title:areaTip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span class="btn-txt" data-i18n="area"></span></button>
   </div>
   <button class="layers-btn" id="layersBtn" aria-expanded="false"></button>
@@ -494,6 +452,7 @@
     <label><input type="checkbox" id="ndviToggle"> <span data-i18n="ndviLayer"></span></label>
     <label><input type="checkbox" id="colToggle" checked> <span data-i18n="columns"></span></label>
     <label><input type="checkbox" id="cityToggle" checked> <span data-i18n="cityNames"></span></label>
+    <label><input type="checkbox" id="tourToggle"> <span data-i18n="tour"></span></label>
   </div>
 </div>
 
@@ -538,8 +497,6 @@
     <button data-mode="time" class="on" data-i18n="modeTime"></button>
     <button data-mode="before"><span data-i18n="before"></span><small>2001–05</small></button>
     <button data-mode="after"><span data-i18n="after"></span><small>2021–25</small></button>
-    <button data-mode="p2035" data-i18n-attr="title:projTip">2035<small data-i18n="ifTrend"></small></button>
-    <button data-mode="p2050" data-i18n-attr="title:projTip">2050<small data-i18n="ifTrend"></small></button>
   </div>
   <button class="play" id="play"></button>
   <div class="track">
@@ -574,14 +531,6 @@
     <button type="submit" id="chatSend" data-i18n-attr="aria-label:sendA"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg></button>
   </form>
 </section>
-<div class="case-bar panel" id="caseBar" hidden>
-  <div class="case-txt"><small id="caseStep"></small><p id="caseText"></p></div>
-  <div class="case-btns">
-    <button type="button" class="ghost" id="casePrev" data-i18n="casePrev"></button>
-    <button type="button" class="fly" id="caseNext"></button>
-    <button type="button" class="ghost" id="caseEnd" data-i18n-attr="aria-label:caseEnd;title:caseEnd">✕</button>
-  </div>
-</div>
 <div class="guide-back" id="chartBack" hidden>
   <section class="guide panel chart-modal" role="dialog" aria-modal="true" aria-labelledby="chartTitle">
     <div class="guide-head">
@@ -593,7 +542,6 @@
       <button type="button" class="guide-close" id="chartClose" data-i18n-attr="aria-label:close">✕</button>
     </div>
     <div class="chart-body">
-      <div id="chartCase"></div>
       <div class="chart-stat" id="chartStat"></div>
       <div class="chart-read" id="chartRead" role="status"></div>
       <div id="chartBody"></div>
@@ -649,8 +597,7 @@
       <ul>
         <li><b>Sürükle:</b> kaydır. <b>Sağ tık + sürükle</b> (veya <kbd>Ctrl</kbd> + sürükle): döndür ve eğ. <b>Tekerlek:</b> yakınlaş.</li>
         <li>Sağdaki düğmeler: genel görünüm, yakınlaş/uzaklaş, döndür, 3B/2B ve yavaşça dönme (sunum modu).</li>
-        <li><b>Katmanlar</b> menüsü: uydu görüntüsü ya da NASA Blue Marble, NDVI bitki örtüsü katmanı, şehir adları.</li>
-        <li><b>Vaka</b> düğmesi: “Konya'da toprak kuruyor mu?” sorusunu üç adımda gezdirir: ipucu → grafik → karar kartı.</li>
+        <li><b>Katmanlar</b> menüsü: uydu görüntüsü ya da NASA Blue Marble, NDVI bitki örtüsü katmanı, şehir adları, otomatik tur.</li>
         <li>Paneldeki <b>Grafiği büyüt</b> düğmesi grafiği eksenleriyle açar; üzerinde gezinince ay ve değer görünür, ham seri ile mevsimsellikten arındırılmış seri arasında geçilebilir.</li>
       </ul>
 
@@ -697,8 +644,7 @@
       <ul>
         <li><b>Drag:</b> pan. <b>Right-click + drag</b> (or <kbd>Ctrl</kbd> + drag): rotate and tilt. <b>Wheel:</b> zoom.</li>
         <li>Buttons on the right: overview, zoom in/out, rotate, 3D/2D and slow orbit (presentation mode).</li>
-        <li>The <b>Layers</b> menu: satellite imagery or NASA Blue Marble, the NDVI vegetation layer, city names.</li>
-        <li>The <b>Case</b> button walks through “Is the soil drying in Konya?” in three steps: clue → chart → decision card.</li>
+        <li>The <b>Layers</b> menu: satellite imagery or NASA Blue Marble, the NDVI vegetation layer, city names, auto tour.</li>
         <li>The <b>Enlarge chart</b> button in the panel opens the chart with axes; hover to read a month and its value, and switch between the raw and the deseasonalised series.</li>
       </ul>
 
@@ -742,22 +688,8 @@
       copyTipPoint: "Enlem, boylam", copyTipBox: "Giovanni sırası: batı, güney, doğu, kuzey",
       placeBoxBig: n => `Bu yerin sınırı ${n}° × ${n}°'den büyük; merkez noktası analiz edildi.`,
       placeBoxSmall: "Bu yerin sınırı kutu için çok küçük; merkez noktası analiz edildi.",
-      // D: önce → sonra → eğilim sürerse (2035/2050)
-      ifTrend: "eğilim sürerse", projTip: "Ölçülen eğilim aynı hızla sürerse (tahmin değil)", tagProj: y => `${y} · eğilim sürerse`,
-      projVsAfter: (c, val, unit, lo, hi) => `2021–25'e göre <b style="color:${c}">${val}</b> ${unit} · aralık ${lo}…${hi}`,
-      projNone: "Anlamlı eğilim yok · ileriye uzatılmıyor",
-      legendTipProj: "Ölçülen eğilim sürerse varılacak değerin normalden sapması (tahmin değil; anlamlı olmayan eğilimler gri). Kutu rengi sapmanın yönünü, sütun yüksekliği büyüklüğünü (σ) gösterir.",
-      olTitle: "Önce → sonra → bu gidişle", olPeriodA: "Dönem", olOffTip: "Eğilim anlamlı değil; ileriye uzatılmıyor",
-      olBefore: (from, to, val) => `${from}–${to} ortalaması: <b>${val}</b>.`,
-      olAfter: (from, to, val, ref, diff) => `${from}–${to} ortalaması: <b>${val}</b>` + (ref ? ` (${ref}'e göre ${diff}).` : "."),
-      olProj: (year, val, lo, hi, u) => `Ölçülen eğilim aynı hızla sürerse ${year === 2035 ? "2035'te" : year + "'de"} ortalama yaklaşık <b>${val}${u}</b> olur (aralık ${lo} … ${hi}${u}).`,
-      olProjNone: "Bu eğilim istatistiksel olarak anlamlı olmadığı için ileriye uzatılmıyor: güvenilir bir yön yok.",
-      olHow: "Dönemleri karşılaştırmak için yukarıdaki düğmeleri ya da zaman çubuğundaki <b>Önce · Sonra · 2035 · 2050</b> adımlarını kullan.",
-      olNote: "Tahmin değil: ölçülen eğimin aynen sürdüğü varsayılır. Aralık eğimin %95 güven aralığıdır; yıldan yıla dalgalanma ve gelecekteki salımlar dahil değildir. Gerçek projeksiyon için iklim modelleri (ör. NASA NEX-GDDP-CMIP6) gerekir.",
-      olMeans: "Bu ne anlama geliyor?", olActs: "Bu gidişle ne yapılabilir?",
-      olActsNote: "Genel seçenekler; tarla ölçeğinde karar için yerel ölçüm ve uzman görüşü gerekir.",
-      olNoActs: "Anlamlı bir eğilim olmadığı için öneri listelenmiyor.",
-      // karar kartı, ipucu kutusu, sıradaki ipucu, büyük grafik, rehberli vaka
+      olMeans: "Bu ne anlama geliyor?",
+      // karar kartı, ipucu kutusu, sıradaki ipucu, büyük grafik
       vdUp: "Artıyor", vdDown: "Azalıyor", vdFlat: "Belirgin bir yön yok",
       vdSigHead: dir => `${dir} · anlamlı eğilim`, vdNsHead: "Anlamlı bir eğilim yok",
       vdWhat: "Ne", vdWhere: "Nerede", vdHowMuch: "Ne kadar", vdSigQ: "Anlamlı mı", vdWhen: "Ne zaman belli olur",
@@ -774,13 +706,8 @@
       chartNoteRaw: "Aylık değer (soluk), 12 aylık ortalama (beyaz), Sen eğimi (sarı kesikli) ve eğimin %95 güven aralığı (sarı bant).",
       chartNoteAnom: "Mevsimsellikten arındırılmış seri: her aydan o ayın uzun dönem ortalaması çıkarılır (0 = normal). Sen eğimi (sarı kesikli) ve eğimin %95 güven aralığı (sarı bant).",
       chartStat: (sl, lo, hi, pv) => `Sen eğimi ${sl} / 10 yıl (%95 güven aralığı ${lo} … ${hi}) · Mann-Kendall p = ${pv}`,
-      caseBtn: "Vaka", caseTip: "Rehberli vaka: Konya'da toprak kuruyor mu? (3 adım)",
-      caseStep: (k, n) => `Vaka · adım ${k}/${n}`, casePrev: "Geri", caseNext: "İleri", caseDone: "Bitir", caseEnd: "Vakayı kapat",
-      case1: r => `<b>Konya'da toprak kuruyor mu?</b> İpucu: soldaki mavi kutu neye baktığımızı anlatıyor (${r}, toprağın üst 10 cm'si). Haritadaki renk, son 12 ayın normalden sapmasını gösterir.`,
-      case2: "<b>Grafik:</b> mevsim etkisi çıkarılınca seri yıllar içinde aşağı mı kayıyor? Sarı kesikli çizgi Sen eğimi, sarı bant onun %95 güven aralığı. Bant yatay bir çizgiyi (sıfır eğim) içermiyorsa değişim tesadüfle açıklanamaz.",
-      case3: o => `<b>Karar:</b> eğilim on yılda ${o.amount} ve ${o.sig ? "istatistiksel olarak anlamlı" : "anlamlı değil"} (p = ${o.p}). Bu, değişimi gösterir; nedenini değil.` + (o.next ? ` Nedenin izini sürmek için kartın altındaki “Sıradaki ipucu: ${o.next}” düğmesine bas.` : ""),
       layers: "Katmanlar", baseMap: "Taban harita", esri: "Uydu görüntüsü (Esri)", ndviLayer: "NDVI · MODIS 16 günlük (NASA GIBS)",
-      columns: "3B sapma sütunları", cityNames: "Şehir adları", mapControls: "Harita kontrolleri",
+      columns: "3B sapma sütunları", cityNames: "Şehir adları", tour: "Otomatik tur", mapControls: "Harita kontrolleri",
       navHome: "Genel görünüm (Türkiye)", navHomeA: "Genel görünüm", navZin: "Yakınlaş", navZout: "Uzaklaş",
       navRotl: "Sola döndür (sağ tık + sürükle)", navRotlA: "Sola döndür", navRotr: "Sağa döndür", navNorth: "Kuzeyi yukarı al",
       navTiltup: "Daha eğik (3B)", navTiltupA: "Daha eğik", navTiltdown: "Tepeden bak (2B)", navTiltdownA: "Tepeden bak",
@@ -892,22 +819,8 @@
       copyTipPoint: "Latitude, longitude", copyTipBox: "Giovanni order: west, south, east, north",
       placeBoxBig: n => `This place's boundary is larger than ${n}° × ${n}°; its centre point was analysed.`,
       placeBoxSmall: "This place's boundary is too small for a box; its centre point was analysed.",
-      // D: before → after → if the trend goes on (2035/2050)
-      ifTrend: "if the trend goes on", projTip: "If the measured trend continues at the same rate (not a forecast)", tagProj: y => `${y} · if the trend goes on`,
-      projVsAfter: (c, val, unit, lo, hi) => `vs 2021–25 <b style="color:${c}">${val}</b> ${unit} · range ${lo}…${hi}`,
-      projNone: "No significant trend · not extended",
-      legendTipProj: "Departure from normal of the value reached if the measured trend goes on (not a forecast; trends that are not significant are grey). The box colour shows the direction, the column height the size (σ).",
-      olTitle: "Before → after → if this goes on", olPeriodA: "Period", olOffTip: "The trend is not significant, so it is not extended",
-      olBefore: (from, to, val) => `${from}–${to} mean: <b>${val}</b>.`,
-      olAfter: (from, to, val, ref, diff) => `${from}–${to} mean: <b>${val}</b>` + (ref ? ` (${diff} vs ${ref}).` : "."),
-      olProj: (year, val, lo, hi, u) => `If the measured trend continues at the same rate, the mean would be about <b>${val}${u}</b> in ${year} (range ${lo} … ${hi}${u}).`,
-      olProjNone: "This trend is not statistically significant, so it is not extended into the future: there is no reliable direction.",
-      olHow: "To compare periods, use the buttons above or the <b>Before · After · 2035 · 2050</b> steps on the timeline.",
-      olNote: "Not a forecast: it assumes the measured slope simply continues. The range is the slope's 95% confidence interval; year-to-year swings and future shifts are not included. Real projections need climate models (e.g. NASA NEX-GDDP-CMIP6).",
-      olMeans: "What does this mean?", olActs: "What could be done if this goes on?",
-      olActsNote: "General options; field-scale decisions need local measurements and expert advice.",
-      olNoActs: "No options are listed because there is no significant trend.",
-      // decision card, hint box, next clue, large chart, guided case
+      olMeans: "What does this mean?",
+      // decision card, hint box, next clue, large chart
       vdUp: "Rising", vdDown: "Falling", vdFlat: "No clear direction",
       vdSigHead: dir => `${dir} · significant trend`, vdNsHead: "No significant trend",
       vdWhat: "What", vdWhere: "Where", vdHowMuch: "How much", vdSigQ: "Significant?", vdWhen: "When will we know",
@@ -924,13 +837,8 @@
       chartNoteRaw: "Monthly value (faint), 12-month mean (white), Sen slope (dashed yellow) and the slope's 95% confidence interval (yellow band).",
       chartNoteAnom: "Deseasonalised series: each month minus that month's long-term mean (0 = normal). Sen slope (dashed yellow) and the slope's 95% confidence interval (yellow band).",
       chartStat: (sl, lo, hi, pv) => `Sen slope ${sl} per decade (95% confidence interval ${lo} … ${hi}) · Mann-Kendall p = ${pv}`,
-      caseBtn: "Case", caseTip: "Guided case: is the soil drying in Konya? (3 steps)",
-      caseStep: (k, n) => `Case · step ${k}/${n}`, casePrev: "Back", caseNext: "Next", caseDone: "Finish", caseEnd: "Close the case",
-      case1: r => `<b>Is the soil drying in Konya?</b> Clue: the blue box on the left says what we are looking at (${r}, the top 10 cm of soil). The colour on the map shows how far the last 12 months are from normal.`,
-      case2: "<b>Chart:</b> with the seasons removed, does the series drift down over the years? The dashed yellow line is the Sen slope and the yellow band its 95% confidence interval. If the band does not include a flat line (zero slope), chance alone is an unlikely explanation.",
-      case3: o => `<b>Decision:</b> the trend is ${o.amount} per decade and ${o.sig ? "statistically significant" : "not significant"} (p = ${o.p}). This shows the change, not its cause.` + (o.next ? ` To follow the cause, press “Next clue: ${o.next}” below the card.` : ""),
       layers: "Layers", baseMap: "Base map", esri: "Satellite imagery (Esri)", ndviLayer: "NDVI · MODIS 16-day (NASA GIBS)",
-      columns: "3D anomaly columns", cityNames: "City names", mapControls: "Map controls",
+      columns: "3D anomaly columns", cityNames: "City names", tour: "Auto tour", mapControls: "Map controls",
       navHome: "Overview (Türkiye)", navHomeA: "Overview", navZin: "Zoom in", navZout: "Zoom out",
       navRotl: "Rotate left (right-click + drag)", navRotlA: "Rotate left", navRotr: "Rotate right", navNorth: "North up",
       navTiltup: "Tilt more (3D)", navTiltupA: "Tilt more", navTiltdown: "Top-down view (2D)", navTiltdownA: "Top-down view",
@@ -1051,44 +959,7 @@
   const signed = (x, d = 1) => x == null ? "—" : (x > 0 ? "+" : x < 0 ? "−" : "") + fmt(Math.abs(x), d);
   const fmtP = p => p == null ? "—" : p < 0.001 ? p.toExponential(1).replace("e", "×10^") : fmt(p, 3);
 
-  // ------------------------------------------------------------------ D: önce → sonra → eğilim sürerse
-  // Üç bölge ve "Alan seç" aynı hesabı kullanır. "Eğilim sürerse" bir tahmin DEĞİLDİR: son 5 yılın
-  // ortalamasından başlayıp ölçülen Sen eğimiyle ileri uzatılır. Aralık, eğimin %95 güven aralığından
-  // (B'nin ci_low/ci_high; Sen eğimi de içine alınır) gelir; yıldan yıla dalgalanma ve gelecekteki
-  // salımlar dahil değildir. Yalnızca anlamlı (artan/azalan) eğilimlerde hesaplanır.
-  const PROJ_YEARS = { p2035: 2035, p2050: 2050 };
-  const isProj = m => Object.prototype.hasOwnProperty.call(PROJ_YEARS, m);
   const avg = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
-  function outlookOf(values, keys, res) {
-    const years = keys.map(k => +k.slice(0, 4)), y0 = Math.min(...years), y1 = Math.max(...years);
-    const period = (a, b) => {
-      const xs = [], ts = [];
-      keys.forEach((k, i) => {
-        if (years[i] >= a && years[i] <= b && values[i] != null) { xs.push(values[i]); ts.push(years[i] + (+k.slice(5, 7) - 0.5) / 12); }
-      });
-      return xs.length ? { mean: avg(xs), t: avg(ts), from: a, to: b } : null;
-    };
-    const before = period(y0, y0 + 4), after = period(y1 - 4, y1);
-    const sig = !!res.significant && (res.direction === "increasing" || res.direction === "decreasing");
-    const slopes = [res.ci_low, res.ci_high, res.sen_slope_per_decade].map(x => x == null ? null : x / 10);
-    const proj = {};
-    for (const [m, Y] of Object.entries(PROJ_YEARS)) {
-      if (!sig || !after || slopes.some(x => x == null)) { proj[m] = null; continue; }
-      const dt = Y + 0.5 - after.t;
-      proj[m] = { year: Y, mean: after.mean + slopes[2] * dt,
-        lo: after.mean + Math.min(...slopes) * dt, hi: after.mean + Math.max(...slopes) * dt };
-    }
-    return { before, after, proj, sig };
-  }
-  // Yıllık ortalamaların standart sapması: dönem ortalamalarını haritada renklendirmek için ölçek.
-  function yearlySd(values, keys) {
-    const by = {};
-    keys.forEach((k, i) => { if (values[i] != null) (by[k.slice(0, 4)] ||= []).push(values[i]); });
-    const ym = Object.values(by).filter(a => a.length >= 10).map(avg);
-    if (ym.length < 2) return 1;
-    const m = avg(ym);
-    return Math.sqrt(ym.reduce((s, a) => s + (a - m) ** 2, 0) / (ym.length - 1)) || 1;
-  }
   const catVar = v => D.variables.find(x => x.id === v);
 
   // ------------------------------------------------------------------ data prep
@@ -1128,7 +999,7 @@
     const ym = Object.values(yearly).filter(a => a.length >= 10).map(a => a.reduce((x, y) => x + y, 0) / a.length);
     const ymMean = ym.reduce((a, b) => a + b, 0) / ym.length;
     const sdYear = Math.sqrt(ym.reduce((s, a) => s + (a - ymMean) ** 2, 0) / Math.max(1, ym.length - 1)) || 1;
-    P[key] = { ...pair, value, smooth, anom, anomS, sd, mean, before, after, sdYear, outlook: outlookOf(value, months, pair.result) };
+    P[key] = { ...pair, value, smooth, anom, anomS, sd, mean, before, after, sdYear };
   }
 
   // ------------------------------------------------------------------ state
@@ -1161,7 +1032,6 @@
   function zFor(regionId, v = state.variable) {
     const p = P[`${regionId}|${v}`]; if (!p) return null;
     if (state.mode === "time") { const a = p.anomS[state.i]; return a == null ? null : a / p.sd; }
-    if (isProj(state.mode)) { const pr = p.outlook.proj[state.mode]; return pr ? (pr.mean - p.mean) / p.sdYear : null; }
     const m = state.mode === "before" ? p.before : p.after;
     return m == null ? null : (m - p.mean) / p.sdYear;
   }
@@ -1286,11 +1156,6 @@
         big = p.value[state.i];
         const a = p.anomS[state.i];
         anomLine = a == null ? t("edgeMonth") : t("anomLine", colorFor(v, z), signed(a, meta.dec), meta.unit);
-      } else if (isProj(state.mode)) {
-        const pr = p.outlook.proj[state.mode];
-        big = pr ? pr.mean : null;
-        anomLine = pr ? t("projVsAfter", colorFor(v, z), signed(pr.mean - p.after, meta.dec), meta.unit, fmt(pr.lo, meta.dec), fmt(pr.hi, meta.dec))
-          : t("projNone");
       } else {
         big = state.mode === "before" ? p.before : p.after;
         const diff = p.after != null && p.before != null ? p.after - p.before : null;
@@ -1300,7 +1165,7 @@
       const cx = sp.X ? sp.X(state.i) : 0;
       const showCursor = state.mode === "time" && sp.X;
       c.card.innerHTML = `
-        <div class="fc-head">${r.name_tr}<i>${isProj(state.mode) ? t("tagProj", PROJ_YEARS[state.mode]) : t(state.mode === "time" ? "tagMonthly" : state.mode === "before" ? "tagBefore" : "tagAfter")}</i></div>
+        <div class="fc-head">${r.name_tr}<i>${t(state.mode === "time" ? "tagMonthly" : state.mode === "before" ? "tagBefore" : "tagAfter")}</i></div>
         <div class="fc-val">${fmt(big, meta.dec)}${big == null ? "" : `<u>${meta.unit}</u>`}</div>
         <div class="fc-anom">${anomLine}</div>
         <svg width="190" height="34" style="display:block;margin-top:6px" aria-hidden="true">
@@ -1451,62 +1316,9 @@
     </div>`;
   }
 
-  // D: sol paneldeki "Önce → sonra → bu gidişle" bölümü (bölgeler ve seçilen alan için ortak).
-  // Adım düğmeleri zaman çubuğundaki modla aynı durumu (state.mode) değiştirir; harita da ona göre boyanır.
-  // "Bu ne anlama geliyor?" metni ipucu kutusunda (hintBoxHTML) gösterilir.
-  function outlookHTML(o, res, v, unit, dec) {
-    const cv = catVar(v), key = o.sig ? res.direction : "no_clear_trend", m = state.mode, u = ` ${unit}`;
-    const yy = p => p ? `${p.from}–${String(p.to).slice(2)}` : "—";
-    const sub = { before: yy(o.before), after: yy(o.after), p2035: t("ifTrend"), p2050: t("ifTrend") };
-    const label = { before: t("before"), after: t("after"), p2035: "2035", p2050: "2050" };
-    const steps = Object.keys(label).map(s => `<button type="button" data-ol="${s}" class="${m === s ? "on" : ""}${isProj(s) && !o.proj[s] ? " off" : ""}"
-      ${isProj(s) && !o.proj[s] ? `title="${escH(t("olOffTip"))}"` : ""}>${label[s]}<small>${sub[s]}</small></button>`).join("");
-
-    // Küçük grafik: dönem ortalamaları (beyaz), eğilim sürerse değerleri ve genişleyen aralık (sarı).
-    const pts = [o.before, o.after].filter(Boolean).map(p => ({ t: p.t, y: p.mean, k: p === o.before ? "before" : "after", lab: yy(p) }));
-    const pr = Object.entries(o.proj).filter(([, x]) => x).map(([k, x]) => ({ t: x.year + 0.5, y: x.mean, lo: x.lo, hi: x.hi, k, lab: String(x.year) }));
-    const ys = [...pts.map(p => p.y), ...pr.flatMap(p => [p.lo, p.hi])];
-    let chart = "";
-    if (pts.length) {
-      const W = 276, H = 74, t0 = pts[0].t - 2, t1 = 2052, lo = Math.min(...ys), hi = Math.max(...ys), sp = (hi - lo) || 1;
-      const X = t => 6 + (t - t0) / (t1 - t0) * (W - 12), Y = y => H - 16 - (y - lo) / sp * (H - 26);
-      const a = o.after;
-      const fan = a && pr.length ? `<path d="M${X(a.t)},${Y(a.mean)} ${pr.map(p => `L${X(p.t)},${Y(p.hi)}`).join(" ")} ${[...pr].reverse().map(p => `L${X(p.t)},${Y(p.lo)}`).join(" ")} Z" fill="rgba(217,164,65,.18)"/>
-        <path d="M${X(a.t)},${Y(a.mean)} ${pr.map(p => `L${X(p.t)},${Y(p.y)}`).join(" ")}" fill="none" stroke="#d9a441" stroke-width="1.5" stroke-dasharray="4 3"/>` : "";
-      const dot = (p, c) => `<circle cx="${X(p.t)}" cy="${Y(p.y)}" r="${m === p.k ? 5 : 3.2}" fill="${c}" stroke="${m === p.k ? "#fff" : "none"}" stroke-width="1.5"/>`;
-      const tick = p => `<text class="ax" x="${X(p.t)}" y="${H - 3}" text-anchor="middle">${p.lab}</text>`;
-      chart = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;margin-top:8px" aria-hidden="true">
-        ${pts.length === 2 ? `<line x1="${X(pts[0].t)}" y1="${Y(pts[0].y)}" x2="${X(pts[1].t)}" y2="${Y(pts[1].y)}" stroke="rgba(255,255,255,.35)" stroke-width="1"/>` : ""}
-        ${fan}${pts.map(p => dot(p, "#fff")).join("")}${pr.map(p => dot(p, "#d9a441")).join("")}
-        ${[...pts, ...pr].map(tick).join("")}</svg>`;
-    }
-
-    let line;
-    if (m === "before" && o.before) line = t("olBefore", o.before.from, o.before.to, fmt(o.before.mean, dec) + u);
-    else if (m === "after" && o.after) line = t("olAfter", o.after.from, o.after.to, fmt(o.after.mean, dec) + u,
-      o.before ? yy(o.before) : null, o.before ? signed(o.after.mean - o.before.mean, dec) + u : null);
-    else if (isProj(m) && o.proj[m]) {
-      const x = o.proj[m];
-      line = t("olProj", x.year, fmt(x.mean, dec), fmt(x.lo, dec), fmt(x.hi, dec), u);
-    } else if (isProj(m)) line = t("olProjNone");
-    else line = t("olHow");
-
-    const note = o.sig ? `<p class="note">${t("olNote")}</p>` : "";
-    const acts = cv && o.sig && cv.actions?.[key]
-      ? `<p class="ol-text"><b>${t("olActs")}</b></p><ul class="acts">${(cv.actions[key][LANG] || cv.actions[key].en).map(a => `<li>${escH(a)}</li>`).join("")}</ul>
-         <p class="note">${t("olActsNote")}</p>`
-      : `<p class="note">${t("olNoActs")}</p>`;
-    const srcs = (o.sig ? cv?.actions?.sources || [] : [])
-      .filter((s, i, all) => all.findIndex(x => x.url === s.url) === i);
-    const srcHTML = srcs.length ? `<ul class="src">${srcs.map(s => `<li><a href="${escH(s.url)}" target="_blank" rel="noopener">${escH(s.title)}</a></li>`).join("")}</ul>` : "";
-    return `<div class="sec"><h3>${t("olTitle")}</h3><div class="ol">
-      <div class="ol-steps" role="group" aria-label="${t("olPeriodA")}">${steps}</div>${chart}
-      <p class="ol-text">${line}</p>${note}${acts}${srcHTML}</div></div>`;
-  }
   function setMode(mode) {
     state.mode = mode; if (mode !== "time") setPlaying(false); renderAll(true); updateNdvi(true);
   }
-  function wireOutlook(el) { el.querySelectorAll("[data-ol]").forEach(b => b.onclick = () => setMode(b.dataset.ol)); }
 
   // ------------------------------------------------------------------ karar kartı, ipucu kutusu, sıradaki ipucu
   // Anlamlı olmayan eğilim için "ne zaman belli olur" satırı. B'nin years_needed_estimate alanı, eğilimin
@@ -1623,7 +1435,6 @@
         </svg>
         <div class="ends" style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>${months[0].slice(0, 4)}</span><span>${months[N - 1].slice(0, 4)}</span></div>
       </div>
-      ${outlookHTML(p.outlook, res, v, meta.unit, meta.dec)}
       <div class="sec">
         <h3>${t("heatTitle")}
           <span class="seg-mini">${PW ? `<button data-h="giovanni" class="${heatSrc === "giovanni" ? "on" : ""}">${t("y25")}</button><button data-h="power" class="${heatSrc === "power" ? "on" : ""}">${t("y45")}</button>` : ""}</span></h3>
@@ -1643,8 +1454,6 @@
     document.getElementById("chartOpen").onclick = () => setChart(true);
     const nextBtn = document.getElementById("nextBtn");
     if (nextBtn) nextBtn.onclick = () => followClue(p.next_step);
-    wireOutlook(el);
-    caseFocus();
   }
 
   // ------------------------------------------------------------------ C: "Alan seç" modu (NASA POWER)
@@ -1702,10 +1511,8 @@
     const dot = (lon, lat, kind) => f.push({ type: "Feature", properties: { kind },
       geometry: { type: "Point", coordinates: [lon, lat] } });
     const s = area.active ? area.sel : null, d = s && area.data;
-    // D: önce/sonra/eğilim sürerse modlarında seçilen alan, bölgeler gibi normalden sapmaya göre boyanır.
-    const tint = d && state.mode !== "time" ? { color: colorFor(state.variable, areaZ(d)) } : {};
-    if (s?.kind === "box") poly(s, "sel", tint);
-    if (s?.kind === "point" && d) poly(d.point.cell, "sel", tint);
+    if (s?.kind === "box") poly(s, "sel");
+    if (s?.kind === "point" && d) poly(d.point.cell, "sel");
     if (d) d.point.cells.forEach(([la, lo]) => dot(lo, la, "cell"));
     if (s?.kind === "point") dot(s.lon, s.lat, "pin");
     if (area.picking && area.kind === "box" && area.corner && area.hover) {
@@ -1715,22 +1522,12 @@
     return { type: "FeatureCollection", features: f };
   }
 
-  // D: seçilen alanın şu anki moddaki z skoru (dönem ortalamasının uzun dönem ortalamadan sapması / yıllık sd).
-  function areaZ(d) {
-    if (!d || state.mode === "time") return null;
-    const vals = d.points.map(p => p.value), keys = d.points.map(p => p.date.slice(0, 7));
-    const o = outlookOf(vals, keys, d.result);
-    const val = state.mode === "before" ? o.before?.mean : state.mode === "after" ? o.after?.mean : o.proj[state.mode]?.mean;
-    return val == null ? null : (val - d.result.mean_value) / yearlySd(vals, keys);
-  }
-
   // Alan katmanlarını haritaya ekler (harita yüklenince bir kez).
   function addAreaLayers() {
     map.addSource("area", { type: "geojson", data: areaFC() });
     const kind = k => ["==", ["get", "kind"], k];
     map.addLayer({ id: "area-fill", type: "fill", source: "area", filter: kind("sel"),
-      paint: { "fill-color": ["coalesce", ["get", "color"], "#d9a441"],
-        "fill-opacity": ["case", ["has", "color"], 0.45, 0.14] } });
+      paint: { "fill-color": "#d9a441", "fill-opacity": 0.14 } });
     map.addLayer({ id: "area-line", type: "line", source: "area", filter: kind("sel"),
       paint: { "line-color": "#d9a441", "line-width": 2.6 } });
     map.addLayer({ id: "area-preview", type: "line", source: "area", filter: kind("preview"),
@@ -1880,7 +1677,6 @@
         </svg>
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>${keys[0].slice(0, 4)}</span><span>${keys[n - 1].slice(0, 4)}</span></div>
       </div>
-      ${outlookHTML(outlookOf(vals, keys, res), res, state.variable, av.unit, 1)}
       <div class="sec"><h3>${t("heatTitle")}</h3>
         <div class="hm">${heatmapSVG(vals, keys, state.variable, 296, av.unit)}
           <small style="color:var(--muted);font-size:11px">${av.name} · NASA POWER · ${t("heatNote")}</small></div></div>
@@ -1904,7 +1700,6 @@
     on("areaCsv", downloadAreaCSV);
     on("areaCopy", copyAreaCoords); // B
     on("chartOpen", () => setChart(true));
-    wireOutlook(document.getElementById("left")); // D
   }
 
   // B: panelde başlığın altındaki "Koordinatı kopyala" düğmesi; arama kutu modunda yerin
@@ -2241,7 +2036,6 @@
     chart.open = open; if (view) chart.view = view;
     chartBack.hidden = !open;
     if (open) { setPlaying(false); renderChart(); chartClose.focus(); return; }
-    if (caseStep === 1) { goCase(2); return; } // vakada grafik kapatılınca karar adımına geçilir
     document.getElementById("chartOpen")?.focus();
   }
   chartClose.onclick = () => setChart(false);
@@ -2258,61 +2052,11 @@
     if (e.code === "Space" || e.key.startsWith("Arrow")) e.stopImmediatePropagation();
   }, true);
 
-  // ------------------------------------------------------------------ rehberli vaka (otomatik turun yerine)
-  // "Konya'da toprak kuruyor mu?" sorusunu üç adımda gezdirir: ipucu kutusu → büyük grafik → karar kartı.
-  // Metindeki sayılar B'nin analiz sonucundan okunur. Kullanıcı başka bölge/değişkene geçerse vaka kapanır.
-  const CASE = { region: "konya", variable: "soil_moisture", steps: 3 };
-  const caseBtn = document.getElementById("caseBtn"), caseBar = document.getElementById("caseBar");
-  const casePrev = document.getElementById("casePrev"), caseNext = document.getElementById("caseNext");
-  let caseStep = -1; // -1: kapalı; 0: ipucu, 1: grafik, 2: karar
-
-  function caseText() {
-    const p = P[`${CASE.region}|${CASE.variable}`], res = p.result, ns = p.next_step;
-    if (caseStep === 0) return t("case1", REGION_TR[CASE.region]);
-    if (caseStep === 1) return t("case2");
-    return t("case3", { amount: `${signed(res.sen_slope_per_decade, 2)} ${VAR_TR[CASE.variable].unit}`, sig: res.significant,
-      p: pTxt(res.mk_p), next: ns?.variable_id && VAR_TR[ns.variable_id] ? VAR_TR[ns.variable_id].name : null });
-  }
-  // Vakanın o adımda baktırdığı panel öğesini çerçeveler (panel her çizildiğinde yeniden çağrılır).
-  function caseFocus() {
-    const id = caseStep === 0 ? "hintBox" : caseStep === 2 ? "verdict" : null, el = id && document.getElementById(id);
-    if (!el) return;
-    el.classList.add("case-focus");
-    if (caseStep === 2) document.getElementById("nextBox")?.classList.add("case-focus");
-  }
-  function renderCase() {
-    const on = caseStep >= 0;
-    caseBar.hidden = !on; document.body.classList.toggle("case-on", on);
-    caseBtn.classList.toggle("on", on); caseBtn.setAttribute("aria-pressed", String(on));
-    // Grafik adımında çubuk grafik penceresinin içinde, diğer adımlarda haritanın üstünde durur.
-    const home = on && caseStep === 1 ? document.getElementById("chartCase") : document.body;
-    if (caseBar.parentNode !== home) home.appendChild(caseBar);
-    if (!on) return;
-    document.getElementById("caseStep").textContent = t("caseStep", caseStep + 1, CASE.steps);
-    document.getElementById("caseText").innerHTML = caseText();
-    casePrev.disabled = caseStep === 0;
-    caseNext.textContent = t(caseStep === CASE.steps - 1 ? "caseDone" : "caseNext");
-  }
-  function goCase(step) {
-    caseStep = step >= CASE.steps ? -1 : step;
-    if (caseStep < 0) { if (chart.open) setChart(false); renderCase(); renderLeft(); return; }
-    closeArea(true); setLeft(true);
-    state.variable = CASE.variable; state.region = CASE.region; state.mode = "time"; setPlaying(false); save();
-    renderAll(true);
-    if (caseStep === 0) flyToRegion(CASE.region);
-    if (caseStep === 1) setChart(true, "anom"); else if (chart.open) setChart(false);
-    renderCase();
-    document.getElementById(caseStep === 2 ? "verdict" : "hintBox")?.scrollIntoView({ block: "nearest" });
-  }
-  caseBtn.onclick = () => goCase(caseStep >= 0 ? -1 : 0);
-  casePrev.onclick = () => goCase(caseStep - 1);
-  caseNext.onclick = () => goCase(caseStep + 1);
-  document.getElementById("caseEnd").onclick = () => goCase(-1);
 
   function renderLegend() {
     const p = palette(state.variable), c = a => `rgb(${a.join(",")})`;
     const el = document.getElementById("legend");
-    el.title = isProj(state.mode) ? t("legendTipProj") : t("legendTip", state.mode === "time");
+    el.title = t("legendTip", state.mode === "time");
     el.innerHTML = `
       <div>${t("legendTitle")}</div>
       <div class="bar" style="background:linear-gradient(90deg,${c(p.neg)},#e1e4e8,${c(p.pos)})"></div>
@@ -2325,8 +2069,7 @@
       b.classList.toggle("on", b.dataset.v === state.variable);
     });
     const [y, m] = months[state.i].split("-");
-    const label = state.mode === "time" ? `${monthNames()[+m - 1]} ${y}` : state.mode === "before" ? "2001–2005"
-      : state.mode === "after" ? "2021–2025" : t("tagProj", PROJ_YEARS[state.mode]);
+    const label = state.mode === "time" ? `${monthNames()[+m - 1]} ${y}` : state.mode === "before" ? "2001–2005" : "2021–2025";
     document.getElementById("nowLabel").textContent = t(state.mode === "time" ? "nowMonth" : "nowPeriod");
     document.getElementById("nowDate").textContent = label;
     document.getElementById("tlDate").textContent = `${monthNames()[+m - 1]} ${y}`;
@@ -2352,17 +2095,12 @@
     if (!map.getSource("regions")) return;
     map.getSource("regions").setData(regionFC());
     map.getSource("columns").setData(columnFC());
-    renderAreaMap(); // D: seçilen alanın rengi de moda (önce/sonra/eğilim sürerse) göre değişir
     updateNdvi();
   }
 
   function renderAll(full) {
     document.getElementById("slider").value = state.i;
     renderTop(); renderCards(); renderMap();
-    // Vaka sürerken başka bölgeye/değişkene/alana geçilirse vaka kapanır (metinleri artık ekrana uymaz).
-    if (caseStep >= 0 && (area.active || state.region !== CASE.region || state.variable !== CASE.variable)) {
-      caseStep = -1; if (chart.open) setChart(false); renderCase();
-    }
     if (full !== false) { renderLeft(); renderLegend(); }
     else { renderLeft(); }
     if (chart.open) renderChart();
@@ -2519,6 +2257,21 @@
     if (e.key === "ArrowLeft") { state.i = Math.max(0, state.i - 1); renderAll(false); }
   });
 
+  // Otomatik tur: genel görünüm → her bölge
+  let tourTimer = null;
+  document.getElementById("tourToggle").onchange = e => {
+    clearTimeout(tourTimer);
+    if (!e.target.checked) return;
+    const stops = ["overview", ...regions.map(r => r.id)];
+    let k = 0;
+    const next = () => {
+      const s = stops[k++ % stops.length];
+      if (s === "overview") overview(4000); else selectRegion(s, true);
+      tourTimer = setTimeout(next, 7000);
+    };
+    next();
+  };
+
   // ------------------------------------------------------------------ map layers
   map.on("load", () => {
     map.setTerrain({ source: "dem", exaggeration: 2.2 });
@@ -2566,7 +2319,7 @@
   // fonksiyonlarını araç olarak çağırır; control_map aracının istekleri burada uygulanır.
   function applyAction(a) {
     if (a.variable && VAR_TR[a.variable]) state.variable = a.variable;
-    if (a.mode && ["time", "before", "after", "p2035", "p2050"].includes(a.mode)) { state.mode = a.mode; setPlaying(false); }
+    if (a.mode && ["time", "before", "after"].includes(a.mode)) { state.mode = a.mode; setPlaying(false); }
     if (a.month) { const k = months.indexOf(a.month.slice(0, 7)); if (k >= 0) { state.i = k; state.mode = "time"; setPlaying(false); } }
     if (typeof a.ndvi === "boolean") {
       document.getElementById("ndviToggle").checked = a.ndvi;
@@ -2706,7 +2459,7 @@
     if (lang === LANG || !STR[lang]) return;
     LANG = lang;
     try { localStorage.setItem("td3d-lang", lang); } catch (e) {}
-    applyStatic(); renderAll(true); renderAreaBar(); renderAgentStatus(); renderSugg(); renderCase();
+    applyStatic(); renderAll(true); renderAreaBar(); renderAgentStatus(); renderSugg();
     playBtn.setAttribute("aria-label", t(state.playing ? "pause" : "play"));
     if (!sessionId && !busy) welcome();
   }

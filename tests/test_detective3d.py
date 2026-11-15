@@ -119,28 +119,20 @@ def test_city_in_text_needs_a_whole_name(server, text, city):
     assert (found["name"] if found else None) == city
 
 
-def test_get_trend_tool_has_actions_only_when_significant(server):
-    sig = server.tool_get_trend("konya", "soil_moisture")       # significant drying
-    ns = server.tool_get_trend("konya", "precip")               # not significant
-    assert sig["possible_actions"]["key"] == "decreasing" and sig["possible_actions"]["tr"]
-    assert ns["possible_actions"]["key"] is None and ns["possible_actions"]["tr"] == []
-
-
-def test_data_js_carries_outlook_inputs():
-    """The before/after/'if the trend goes on' panel needs these from data.js."""
+def test_data_js_carries_hint_box_context():
+    """The hint box reads the catalog's context texts (English and Turkish) from data.js."""
     text = (APP_DIR / "data.js").read_text(encoding="utf-8")
     data = json.loads(text[text.index("=") + 1:].strip().rstrip(";"))
     for variable in data["variables"]:
-        assert {"context", "context_tr", "actions"} <= set(variable), variable["id"]
-    for pair in data["pairs"].values():
-        assert {"sen_slope_per_decade", "ci_low", "ci_high", "significant", "direction"} <= set(pair["result"])
+        assert {"context", "context_tr"} <= set(variable), variable["id"]
 
 
-def test_page_has_outlook_steps():
+def test_page_has_no_projection_or_case():
+    """The team chose not to show 2035/2050 projections, a "what could be done" list or case files."""
     html = (APP_DIR / "index.html").read_text(encoding="utf-8")
-    assert 'data-mode="p2035"' in html and 'data-mode="p2050"' in html
-    assert "function outlookOf" in html and "eğilim sürerse" in html
-    assert "Tahmin değil" in html  # the projection is always labelled as not a forecast
+    for needle in ("p2035", "p2050", "outlookOf", "olActs", "caseBtn", "goCase"):
+        assert needle not in html, needle
+    assert 'id="tourToggle"' in html
 
 
 def test_data_js_carries_decision_card_inputs():
@@ -158,12 +150,11 @@ def test_data_js_carries_decision_card_inputs():
         assert {"text", "text_tr", "variable_id", "region_id"} <= set(pair["next_step"]), key
 
 
-def test_page_has_decision_card_chart_and_case():
+def test_page_has_decision_card_and_chart():
     html = (APP_DIR / "index.html").read_text(encoding="utf-8")
     for needle in ("function verdictHTML", "function hintBoxHTML", "function nextStepHTML", "function yearsNeededHTML",
-                   'id="chartBack"', "function renderChart", 'id="caseBtn"', "function goCase"):
+                   'id="chartBack"', "function renderChart"):
         assert needle in html, needle
     assert "sen_ci_low" in html and "olsCi95" in html      # the interval is labelled by the slope it belongs to
-    assert 'id="tourToggle"' not in html                    # the auto tour became the guided case
-    for key in ("vdWhat", "ynWeak", "ynNote", "chartBig", "viewAnom", "case1", "nextBtn"):  # both languages
+    for key in ("vdWhat", "ynWeak", "ynNote", "chartBig", "viewAnom", "nextBtn", "tour"):  # both languages
         assert html.count(f"{key}:") == 2, key
