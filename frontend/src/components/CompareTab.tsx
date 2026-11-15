@@ -86,7 +86,7 @@ function RegionSummary({ region, result, unit, color }: {
   )
 }
 
-// İki bölgenin karşılaştırma görünümü (Karşılaştır sekmesi ve iki bölgeli vakalar
+// İki bölgenin karşılaştırma görünümü (Karşılaştır sekmesi ve Dedektif Modu
 // bunu kullanır): iki bölge özeti, ortak grafik ve "aynı yön / zıt yön" özeti.
 export function CompareView({ meta, variableId, regionA, regionB }: {
   meta: Meta

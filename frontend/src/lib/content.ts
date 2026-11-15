@@ -57,6 +57,25 @@ const VARIABLES_TR: Record<string, { name: string; unit: string; short: string; 
     unit: "°C",
     short: "Yerden yaklaşık 2 metre yükseklikteki havanın sıcaklığı: insanların ve ekinlerin hissettiği yükseklik.",
   },
+  // DENEME: "Konumunu seç" sekmesindeki NASA POWER ölçümleri.
+  power_temp: {
+    name: "Hava sıcaklığı",
+    unit: "°C",
+    short: "Yerden yaklaşık 2 metre yükseklikteki havanın sıcaklığı.",
+  },
+  power_precip: {
+    name: "Yağış",
+    unit: "mm/ay",
+    short: "Her ay düşen yağmur ve kar (MERRA-2, ölçümlerle düzeltilmiş).",
+  },
+  power_soil_wetness: {
+    name: "Yüzey toprak ıslaklığı",
+    // "puan": değerin kendisi yüzde olduğu için değişim "yüzde puan"dır; yanındaki
+    // göreli değişimle (%1,6 gibi) karışmasın.
+    unit: "yüzde puan",
+    short: "Toprağın üst katmanının doygunluğa ne kadar yakın olduğu: %0 kupkuru, %100 tamamen doygun.",
+    periodNote: "NASA POWER bu değeri %1'lik adımlarla verir; çok yavaş değişimlerde eğim 0 görünebilir.",
+  },
 }
 
 const GLOSSARY_TR: Record<string, string> = {
@@ -198,7 +217,7 @@ export function explain(
 }
 
 // ---------------------------------------------------------------------------
-// Detective Mode, Case Files and Compare content
+// Detective Mode and Compare content
 // ---------------------------------------------------------------------------
 
 const THEMES_TR: Record<string, { label: string; blurb: string }> = {
@@ -239,46 +258,6 @@ const REASONS_TR: Record<string, string> = {
 export function reasonText(theme: string, variableId: string, region: Region, backendReason: string): string {
   const reason = LANG === "tr" ? REASONS_TR[`${theme}:${variableId}`] : undefined
   return reason ? `${reason} ${regionTeaser(region)}`.trim() : backendReason
-}
-
-const CASES_TR: Record<string, { title: string; story: string }> = {
-  konya_drying: {
-    title: "Vaka 1: Konya kuruyor mu?",
-    story:
-      "Konya Kapalı Havzası'nda kuyular giderek daha derine kazılıyor ve tarlalarda obruklar açılıyor. " +
-      "Peki toprağın kendisi gerçekten kuruyor mu, yoksa birkaç kötü yıldan sonra mı öyle hissediliyor? " +
-      "25 yıllık NASA verisine bak ve kendin karar ver.",
-  },
-  van_warming: {
-    title: "Vaka 2: Van Gölü havzası ısınıyor mu?",
-    story:
-      "Van Gölü çevresinde kışlar uzun ve karlı geçer; göl her bahar eriyen kara bağlıdır. " +
-      "Daha sıcak bir havza daha az kar ve daha erken erime demek olabilir. " +
-      "Ama hava son 25 yılda gerçekten ısındı mı, yoksa birkaç ılık kış mı öyle gösteriyor? Kararı veriye bırak.",
-  },
-  different_climates_same_story: {
-    title: "Vaka 3: Çok farklı iklimler, aynı hikâye mi?",
-    story:
-      "Konya ovası kuru ve güneşli; Doğu Karadeniz'in dağları ise iki kattan fazla yağış alır, çay bahçeleri ve ormanlarla kaplıdır. " +
-      "Topraklarının bambaşka hikâyeler anlatmasını bekleyebilirsin. İkisini yan yana koy ve öyle olup olmadığına bak.",
-  },
-  konya_rain_or_heat: {
-    title: "Vaka 4: Yağmur mu, sıcak mı? Suçlu hangisi?",
-    story:
-      "Toprak iki nedenle kuruyabilir: üzerine daha az su düşer ya da daha sıcak hava ondan daha fazla su çeker. " +
-      "Konya'da iki şüpheli de listede. Yağmurla başla, sonra sıcaklığı sorgula ve kanıtların hangi şüpheliye daha çok uyduğunu gör. " +
-      "Unutma: bir eğilim bir şüpheliyi daha olası ya da daha az olası kılabilir, ama tek başına değişime neyin yol açtığını kanıtlayamaz.",
-  },
-}
-
-// Vakanın başlığı (Türkçe modda çeviri, bilinmeyen vakada backend metni).
-export function caseTitle(c: { id: string; title: string }): string {
-  return (LANG === "tr" && CASES_TR[c.id]?.title) || c.title
-}
-
-// Vakanın giriş hikâyesi.
-export function caseStory(c: { id: string; story: string }): string {
-  return (LANG === "tr" && CASES_TR[c.id]?.story) || c.story
 }
 
 // Turkish templates for D's hint rules, keyed "variable|direction|significant"

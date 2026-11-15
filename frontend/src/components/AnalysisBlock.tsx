@@ -6,16 +6,16 @@ import { KpiTiles } from "@/components/KpiTiles"
 import { TrendChart, type ChartView } from "@/components/TrendChart"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { Analysis, Meta } from "@/lib/api"
+import type { Analysis, Meta, Region, Variable } from "@/lib/api"
 import { makeTermHelp, regionName, variableName, variablePeriodNote, variableUnit } from "@/lib/content"
 import { t } from "@/lib/i18n"
 import { useAnalysis } from "@/lib/useAnalysis"
 
-// Basit/Detaylı seçicisinde seçili seçenek iki temada da net ayrışsın.
-const SEGMENT = "px-3 data-active:bg-card data-active:shadow-sm dark:data-active:border-transparent dark:data-active:bg-white/15"
+// Basit/Detaylı seçicisinde seçili seçenek iki temada da net ayrışsın
+// ("Konumunu seç" sekmesindeki Nokta/Kare seçicisi de aynı görünümü kullanır).
+export const SEGMENT = "px-3 data-active:bg-card data-active:shadow-sm dark:data-active:border-transparent dark:data-active:bg-white/15"
 
-// Bir bölge + değişkenin tam analiz görünümü (Pano, Dedektif Modu ve Vaka
-// Dosyaları aynı bloğu kullanır):
+// Bir bölge + değişkenin tam analiz görünümü (Pano ve Dedektif Modu aynı bloğu kullanır):
 //   4 özet kutusu -> solda grafik (Basit/Detaylı), sağda "Bu ne demek?" kartı.
 // Veriyi kendisi çeker; beklerken iskelet, sorun varsa uyarı gösterir.
 // "extra" verilirse analiz yüklendikten sonra özet kutularının üstünde gösterilir
@@ -26,7 +26,6 @@ export function AnalysisBlock({ meta, regionId, variableId, extra }: {
   variableId: string
   extra?: (analysis: Analysis) => ReactNode
 }) {
-  const [view, setView] = useState<ChartView>("simple")
   const region = meta.regions.find((r) => r.id === regionId)
   const variable = meta.variables.find((v) => v.id === variableId)
   const hasData = meta.pairs.some(([r, v]) => r === regionId && v === variableId)
@@ -38,10 +37,26 @@ export function AnalysisBlock({ meta, regionId, variableId, extra }: {
   }
   if (!state) return <LoadingPanels />
   if (state.error || !state.data) return <Warning>{state.error}</Warning>
+  return <AnalysisPanels meta={meta} region={region} variable={variable} data={state.data} extra={extra} />
+}
 
-  const { data } = state
+// Yüklenmiş bir analizin görünümü: 4 özet kutusu, grafik kartı (Basit/Detaylı) ve
+// "Bu ne demek?" kartı. AnalysisBlock ve "Konumunu seç" sekmesi aynı görünümü kullanır.
+// "region" katalogdaki bir bölge ya da haritada seçilen nokta için kurulmuş bir yer
+// tanımıdır; "note" verilirse grafik kartının altına ek bir not olarak yazılır,
+// "caption" verilirse grafik başlığının altındaki kaynak satırının yerine geçer.
+export function AnalysisPanels({ meta, region, variable, data, extra, note, caption }: {
+  meta: Meta
+  region: Region
+  variable: Variable
+  data: Analysis
+  extra?: (analysis: Analysis) => ReactNode
+  note?: ReactNode
+  caption?: string
+}) {
+  const [view, setView] = useState<ChartView>("simple")
   const termHelp = makeTermHelp(meta.glossary)
-  const showPercent = !(meta.no_percent_variables ?? []).includes(variableId)
+  const showPercent = !(meta.no_percent_variables ?? []).includes(variable.id)
   return (
     <div className="space-y-4">
       {extra?.(data)}
@@ -52,7 +67,7 @@ export function AnalysisBlock({ meta, regionId, variableId, extra }: {
             <CardTitle>
               {regionName(region)} · {variableName(variable)}
             </CardTitle>
-            <CardDescription>{t("sourceCaption", { dataset: variable.dataset })}</CardDescription>
+            <CardDescription>{caption ?? t("sourceCaption", { dataset: variable.dataset })}</CardDescription>
             <CardAction>
               <Tabs value={view} onValueChange={(v) => setView(v as ChartView)}>
                 <TabsList>
@@ -69,6 +84,7 @@ export function AnalysisBlock({ meta, regionId, variableId, extra }: {
                 {t("periodNote")}: {variablePeriodNote(variable)}
               </p>
             )}
+            {note && <div className="mt-3 text-xs text-muted-foreground">{note}</div>}
           </CardContent>
         </Card>
         <ExplainCard
