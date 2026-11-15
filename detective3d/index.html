@@ -281,6 +281,42 @@
     .timeline { flex-wrap: wrap; }
     .foot { white-space: normal; width: calc(100% - 32px); text-align: center; }
   }
+  /* ---------- C: "Alan seç" modu (NASA POWER, kullanıcının seçtiği nokta/kutu) ---------- */
+  .area-btn { display: inline-flex; align-items: center; gap: 6px; }
+  .area-btn svg { width: 15px; height: 15px; }
+  .area-btn.on { border-color: var(--brand); color: #f1cf8a; background: rgba(217,164,65,.15); }
+  .area-bar { position: absolute; top: 104px; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; gap: 10px;
+    align-items: center; padding: 6px 8px; max-width: calc(100% - 32px); }
+  .area-bar[hidden] { display: none; }
+  @media (min-width: 1101px) {
+    body:not(.left-closed) .area-bar { left: 362px; transform: none; max-width: calc(100% - 362px - 150px); }
+  }
+  .area-bar .seg { padding: 0; }
+  .area-msg { font-size: 12.5px; color: #dfe6ec; font-variant-numeric: tabular-nums; }
+  .area-msg.bad { color: #ff9a88; }
+  .area-done { flex: none; padding: 6px 12px; }
+  body.area-on .hint { display: none; }
+  .left .full { width: 100%; margin-top: 8px; }
+  .left h2.box-title { font-size: 16px; }
+  @media (max-width: 1100px) {
+    body.area-on .left { display: block; }
+    body.area-on.left-closed .left-tab { display: block; }
+  }
+  @media (min-width: 761px) and (max-width: 1100px) {
+    body.area-on .left { top: 156px; max-height: calc(100% - 276px); }
+    body.area-on .left-tab { top: 156px; }
+  }
+  @media (max-width: 760px) {
+    .area-bar { top: auto; bottom: 16px; left: 16px; right: 16px; transform: none; max-width: none; flex-wrap: wrap;
+      justify-content: center; z-index: 8; }
+    /* Telefonda alan modunda yer açmak için: zaman çubuğu, sohbet düğmesi ve harita düğmeleri gizlenir
+       (yakınlaştırma parmakla yapılır); panelde "Bölgelere dön" düğmesi olduğu için sağ üst grup da gizlenir. */
+    body.area-on .timeline, body.area-on .ask-btn, body.area-on .navbar, body.area-on .tr { display: none; }
+    body.area-on.picking .tr { display: flex; bottom: 150px; }
+    body.area-on .left { top: auto; bottom: 16px; left: 8px; right: 8px; width: auto; max-height: 52%; z-index: 7; }
+    body.area-on .left-tab { top: auto; bottom: 16px; }
+    body.area-on.picking .left { display: none; }
+  }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -293,6 +329,7 @@
 </div>
 
 <div class="tr">
+  <button class="layers-btn area-btn" id="areaBtn" aria-pressed="false" title="Haritada kendi noktanı ya da kutunu seç (NASA POWER, 1981–2025)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg> Alan seç</button>
   <button class="layers-btn" id="layersBtn" aria-expanded="false">Katmanlar ▾</button>
   <div class="toggles panel" id="toggles">
     <div class="h">Taban harita</div>
@@ -325,6 +362,14 @@
 <div class="hint panel" id="hint" role="status">
   <span>🖱️ <b>Sürükle</b>: kaydır</span><span><b>Sağ tık + sürükle</b> (veya Ctrl + sürükle): döndür ve eğ</span><span><b>Tekerlek</b>: yakınlaş</span>
   <button id="hintClose" aria-label="İpucunu kapat">×</button>
+</div>
+<div class="area-bar panel" id="areaBar" hidden>
+  <div class="seg" id="areaKind" aria-label="Seçim biçimi">
+    <button type="button" data-k="point" class="on">Nokta</button>
+    <button type="button" data-k="box">Kare çiz</button>
+  </div>
+  <span class="area-msg" id="areaMsg" role="status"></span>
+  <button type="button" class="ghost area-done" id="areaDone">Bitti</button>
 </div>
 <aside class="left panel" id="left"></aside>
 <button class="left-tab" id="leftTab" aria-label="Dedektif dosyasını aç">Dedektif dosyası ▸</button>
@@ -477,7 +522,7 @@
       features: regions.map(r => {
         const z = zFor(r.id);
         return { type: "Feature", properties: { id: r.id, color: colorFor(state.variable, z),
-          op: z == null ? 0.08 : 0.16 + 0.32 * Math.min(1, Math.abs(z) / 2), sel: r.id === state.region ? 1 : 0 },
+          op: z == null ? 0.08 : 0.16 + 0.32 * Math.min(1, Math.abs(z) / 2), sel: !area.active && r.id === state.region ? 1 : 0 },
           geometry: { type: "Polygon", coordinates: bboxPoly(r.bbox) } };
       }),
     };
@@ -625,7 +670,7 @@
   const dirArrow = d => d === "increasing" ? "↑" : d === "decreasing" ? "↓" : "→";
 
   // Yıl × ay ızgarası: her hücre o ayın kendi ay ortalamasından (klimatoloji) sapması.
-  function heatmapSVG(vals, monthKeys, v, W = 296) {
+  function heatmapSVG(vals, monthKeys, v, W = 296, unitOverride = null) {
     const years = [...new Set(monthKeys.map(m => m.slice(0, 4)))];
     const clim = Array.from({ length: 12 }, (_, k) => {
       const xs = vals.filter((x, i) => x != null && +monthKeys[i].slice(5, 7) === k + 1);
@@ -636,7 +681,7 @@
     const sd = Math.sqrt(ok.reduce((s, a) => s + a * a, 0) / Math.max(1, ok.length - 1)) || 1;
     const left = 30, top = 12, cw = (W - left) / 12, ch = Math.max(3, Math.min(6, 200 / years.length));
     const H = top + ch * years.length + 2;
-    const unit = VAR_TR[v]?.unit || "";
+    const unit = unitOverride || VAR_TR[v]?.unit || "";
     let cells = "";
     anom.forEach((a, i) => {
       const y = years.indexOf(monthKeys[i].slice(0, 4)), m = +monthKeys[i].slice(5, 7) - 1;
@@ -742,6 +787,7 @@
   }
 
   function renderLeft() {
+    if (area.active) { renderAreaPanel(); return; } // C: "Alan seç" modunda panel seçilen alanı gösterir
     const r = regions.find(x => x.id === state.region), v = state.variable, meta = VAR_TR[v];
     const p = P[`${r.id}|${v}`], el = document.getElementById("left");
     if (!p) { el.innerHTML = `<h2>${r.name_tr}</h2><p class="sub">Bu değişken için veri yok.</p>`; return; }
@@ -795,6 +841,324 @@
     document.getElementById("csvBtn").onclick = () => downloadCSV(r, v);
     el.querySelectorAll(".seg-mini button").forEach(b => b.onclick = () => { heatSrc = b.dataset.h; renderLeft(); });
   }
+
+  // ------------------------------------------------------------------ C: "Alan seç" modu (NASA POWER)
+  // Kullanıcı haritada bir noktaya tıklar ya da iki köşeye tıklayarak kutu çizer. Sunucu
+  // C'nin api.py'deki point()/box() fonksiyonlarıyla NASA POWER 1981–2025 aylık verisini
+  // B'nin aynı trend analizinden geçirir. Sonuç sol panelde bölge dosyasının yerine gösterilir.
+  const AREA_VAR = {
+    temp: { id: "power_temp", name: "Hava sıcaklığı", unit: "°C", slopeUnit: "°C", hint: "2 m · T2M", pct: false },
+    precip: { id: "power_precip", name: "Yağış", unit: "mm/ay", slopeUnit: "mm/ay", hint: "Aylık toplam · PRECTOTCORR", pct: true },
+    soil_moisture: { id: "power_soil_wetness", name: "Yüzey toprak ıslaklığı", unit: "%", slopeUnit: "yüzde puan",
+      hint: "Yüzey katmanı · GWETTOP", pct: false },
+  };
+  const AREA_MAX_DEG = 10; // NASA POWER bölgesel isteğinde kutu kenarı en fazla 10°
+  const area = { active: false, picking: false, kind: "point", sel: null, corner: null, hover: null, flash: null,
+    key: null, data: null, dataKey: null, error: null, loading: false, seq: 0 };
+  const areaBtn = document.getElementById("areaBtn"), areaBar = document.getElementById("areaBar");
+  const areaMsg = document.getElementById("areaMsg");
+
+  // Seçimi ve değişkeni tek bir anahtar metne çevirir; aynı istek iki kez gönderilmez,
+  // geç gelen eski cevaplar da bu anahtarla ayırt edilir.
+  function areaKey(sel, v) {
+    if (!sel) return null;
+    const c = sel.kind === "point" ? [sel.lat, sel.lon] : [sel.south, sel.west, sel.north, sel.east];
+    return `${v}|${sel.kind}|${c.join(",")}`;
+  }
+
+  // Enlem ve boylamı Türkçe yazar: 37,87°K ve 32,49°D (G = güney, B = batı).
+  const latTxt = (x, d = 2) => `${fmt(Math.abs(x), d)}°${x >= 0 ? "K" : "G"}`;
+  const lonTxt = (x, d = 2) => `${fmt(Math.abs(x), d)}°${x >= 0 ? "D" : "B"}`;
+  const r2 = x => Math.round(x * 100) / 100;
+
+  // Panel başlığı: nokta için koordinat, kutu için enlem ve boylam aralığı.
+  function areaTitle(sel) {
+    if (sel.kind === "point") return `${latTxt(sel.lat)} ${lonTxt(sel.lon)}`;
+    return `${latTxt(sel.south)}–${latTxt(sel.north)} · ${lonTxt(sel.west)}–${lonTxt(sel.east)}`;
+  }
+
+  // İki köşeden (tıklanan noktalar) güney/batı/kuzey/doğu kutusu kurar.
+  function boxFrom(a, b) {
+    return { kind: "box", south: r2(Math.min(a.lat, b.lat)), north: r2(Math.max(a.lat, b.lat)),
+      west: r2(Math.min(a.lng, b.lng)), east: r2(Math.max(a.lng, b.lng)) };
+  }
+  const tooBig = b => b.north - b.south > AREA_MAX_DEG || b.east - b.west > AREA_MAX_DEG;
+  const tooSmall = b => b.north - b.south < 0.05 || b.east - b.west < 0.05;
+
+  // Haritadaki çizimler: seçilen kutu ya da hücre (sarı), kullanılan hücre merkezleri
+  // (beyaz noktalar), seçilen nokta (sarı pin) ve çizilirken önizleme kutusu.
+  function areaFC() {
+    const f = [];
+    const poly = (b, kind, props = {}) => f.push({ type: "Feature", properties: { kind, ...props },
+      geometry: { type: "Polygon", coordinates: bboxPoly(b) } });
+    const dot = (lon, lat, kind) => f.push({ type: "Feature", properties: { kind },
+      geometry: { type: "Point", coordinates: [lon, lat] } });
+    const s = area.active ? area.sel : null, d = s && area.data;
+    if (s?.kind === "box") poly(s, "sel");
+    if (s?.kind === "point" && d) poly(d.point.cell, "sel");
+    if (d) d.point.cells.forEach(([la, lo]) => dot(lo, la, "cell"));
+    if (s?.kind === "point") dot(s.lon, s.lat, "pin");
+    if (area.picking && area.kind === "box" && area.corner && area.hover) {
+      const b = boxFrom(area.corner, area.hover);
+      poly(b, "preview", { big: tooBig(b) ? 1 : 0 });
+    }
+    return { type: "FeatureCollection", features: f };
+  }
+
+  // Alan katmanlarını haritaya ekler (harita yüklenince bir kez).
+  function addAreaLayers() {
+    map.addSource("area", { type: "geojson", data: areaFC() });
+    const kind = k => ["==", ["get", "kind"], k];
+    map.addLayer({ id: "area-fill", type: "fill", source: "area", filter: kind("sel"),
+      paint: { "fill-color": "#d9a441", "fill-opacity": 0.14 } });
+    map.addLayer({ id: "area-line", type: "line", source: "area", filter: kind("sel"),
+      paint: { "line-color": "#d9a441", "line-width": 2.6 } });
+    map.addLayer({ id: "area-preview", type: "line", source: "area", filter: kind("preview"),
+      paint: { "line-color": ["case", ["==", ["get", "big"], 1], "#e8553d", "#f1cf8a"], "line-width": 2.2,
+        "line-dasharray": [2, 1.5] } });
+    map.addLayer({ id: "area-cells", type: "circle", source: "area", filter: kind("cell"),
+      paint: { "circle-radius": 3.2, "circle-color": "#ffffff", "circle-stroke-color": "#1b1305",
+        "circle-stroke-width": 1, "circle-opacity": 0.9 } });
+    map.addLayer({ id: "area-pin", type: "circle", source: "area", filter: kind("pin"),
+      paint: { "circle-radius": 6.5, "circle-color": "#d9a441", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
+  }
+
+  // Haritadaki alan çizimlerini güncel duruma göre yeniler.
+  function renderAreaMap() { map.getSource("area")?.setData(areaFC()); }
+
+  // Üstteki küçük araç çubuğunun metnini ve Nokta/Kare çiz düğmelerini günceller.
+  function renderAreaBar() {
+    areaBar.hidden = !area.picking;
+    areaBtn.classList.toggle("on", area.active);
+    areaBtn.setAttribute("aria-pressed", String(area.active));
+    document.body.classList.toggle("picking", area.picking);
+    areaBar.querySelectorAll("#areaKind button").forEach(b => b.classList.toggle("on", b.dataset.k === area.kind));
+    let msg = "Haritada bir noktaya tıkla.", bad = false;
+    if (area.kind === "box") {
+      msg = "Kutunun bir köşesine tıkla.";
+      if (area.corner && area.hover) {
+        const b = boxFrom(area.corner, area.hover);
+        bad = tooBig(b);
+        msg = `Karşı köşeye tıkla · ${fmt(b.north - b.south, 1)}° × ${fmt(b.east - b.west, 1)}°`
+          + (bad ? ` · en fazla ${AREA_MAX_DEG}° × ${AREA_MAX_DEG}°` : "") + " · Esc: vazgeç";
+      }
+      if (area.flash === "small") { msg = "Kutu çok küçük; biraz daha geniş çiz."; bad = true; }
+    }
+    areaMsg.textContent = msg;
+    areaMsg.classList.toggle("bad", bad);
+  }
+
+  // Seçilen alanın verisini sunucudan ister. Aynı istek tekrar gönderilmez; kullanıcı bu
+  // arada başka bir yer seçerse geç gelen eski cevap atılır (seq sayacı).
+  async function loadArea() {
+    const key = areaKey(area.sel, state.variable);
+    if (!key || key === area.key) return;
+    area.key = key; area.loading = true; area.error = null;
+    const seq = ++area.seq, s = area.sel, v = AREA_VAR[state.variable].id;
+    const url = s.kind === "point" ? `/api/point?lat=${s.lat}&lon=${s.lon}&variable=${v}`
+      : `/api/box?south=${s.south}&west=${s.west}&north=${s.north}&east=${s.east}&variable=${v}`;
+    try {
+      const r = await fetch(url);
+      const j = await r.json().catch(() => ({}));
+      if (seq !== area.seq) return;
+      if (!r.ok) throw Object.assign(new Error(j.detail || `HTTP ${r.status}`), { status: r.status });
+      area.data = j; area.dataKey = key;
+    } catch (e) {
+      if (seq !== area.seq) return;
+      area.data = null; area.dataKey = null; area.error = areaErrorTR(e);
+      area.canRetry = e.status !== 422; // 422: bu yer için sonuç değişmez (ör. deniz), tekrar denemek boşuna
+    }
+    area.loading = false;
+    renderLeft(); renderAreaMap();
+  }
+
+  // Sunucu hatalarını kullanıcıya Türkçe ve ne yapacağını söyleyen bir cümleye çevirir.
+  function areaErrorTR(e) {
+    const msg = String(e.message || "");
+    if (/only measured over land/i.test(msg)) return "Toprak ıslaklığı yalnızca karada ölçülür; burası açık deniz. Karada bir yer seç.";
+    if (e.status === 502) return "NASA POWER'a şu an ulaşılamadı. Biraz sonra tekrar dene.";
+    if (!e.status) return "Sunucuya bağlanılamadı. agent_server.py çalışıyor mu?";
+    return `Bu alan analiz edilemedi: ${escH(msg)}`;
+  }
+
+  // Panel hikâye cümlesi (bölge panelindeki storyTR ile aynı dil, 45 yıllık NASA POWER için).
+  function areaStoryTR(res, av) {
+    const what = av.name.toLowerCase(), years = `${res.start_year}–${res.end_year}`;
+    const amount = `${fmt(Math.abs(res.sen_slope_per_decade), 2)} ${av.slopeUnit}`;
+    if (res.direction !== "increasing" && res.direction !== "decreasing")
+      return `Seçilen alanda ${what} ${years} arasında belirgin bir yönde değişmiyor (Sen eğimi ${signed(res.sen_slope_per_decade, 2)} ${av.slopeUnit} / 10 yıl).`;
+    const dir = res.direction === "increasing" ? "artıyor" : "azalıyor";
+    if (res.significant)
+      return `Seçilen alanda ${what} ${years} arasında on yılda yaklaşık <b>${amount}</b> ${dir}. Bu eğilim istatistiksel olarak <b>anlamlı</b> (mevsimsel Mann-Kendall, p &lt; 0,05).`;
+    return `Seçilen alanda ${what} on yılda yaklaşık ${amount} ${dir} gibi görünüyor, ancak bu eğilim <b>anlamlı değil</b>: ${res.n_years} yıllık doğal dalgalanmadan ayırt edilemiyor.`;
+  }
+
+  // Seriyi SVG çizgisine çevirir; boş aylarda çizgi kesilir.
+  function linePath(arr, X, Y) {
+    let d = "", pen = "M";
+    arr.forEach((val, i) => { if (val == null) { pen = "M"; return; } d += `${pen}${X(i).toFixed(1)},${Y(val).toFixed(1)}`; pen = "L"; });
+    return d;
+  }
+
+  // Sol paneli "Alan seç" moduna göre çizer: boş (yönerge), yükleniyor, hata ya da sonuç.
+  function renderAreaPanel() {
+    loadArea();
+    const el = document.getElementById("left"), av = AREA_VAR[state.variable], s = area.sel;
+    const head = `<div class="left-head"><span class="kicker">Seçilen alan · NASA POWER</span>
+        <button class="hide-btn" id="hideLeft" aria-label="Paneli gizle">Gizle ◂</button></div>`;
+    const back = `<button class="ghost full" id="areaBack">Bölgelere dön</button>`;
+    const pickAgain = area.picking ? "" : `<button class="fly" id="areaPick">Başka bir alan seç</button>`;
+    if (!s) {
+      el.innerHTML = `${head}<h2>Kendi alanını seç</h2>
+        <p class="story">${area.kind === "point" ? "Haritada bir noktaya tıkla." : "Haritada kutunun bir köşesine, sonra karşı köşesine tıkla (en fazla 10° × 10°)."}
+          Seçtiğin yerde <b>${av.name.toLowerCase()}</b> 1981–2025 arasında nasıl değişmiş, B'nin aynı trend analiziyle hesaplanır.</p>
+        <p class="note">Değişkeni üstteki düğmelerden değiştirebilirsin. Veri NASA POWER'ın aylık API'sinden (MERRA-2 tabanlı, ~0,5° × 0,625° ızgara) canlı alınır; internet gerekir.</p>
+        ${pickAgain}${back}`;
+      wireAreaPanel(); return;
+    }
+    const key = areaKey(s, state.variable), d = area.dataKey === key ? area.data : null;
+    const top = `${head}<h2${s.kind === "box" ? ' class="box-title"' : ""}>${areaTitle(s)}</h2><div class="sub">${av.name} · ${av.hint} · ${av.unit}</div>`;
+    if (!d && area.error) {
+      el.innerHTML = `${top}<div class="warn">${area.error}</div>
+        ${area.canRetry ? `<div class="btn-row"><button class="fly" id="areaRetry">Tekrar dene</button></div>` : ""}
+        ${pickAgain ? `<div class="btn-row">${pickAgain}</div>` : ""}${back}`;
+      wireAreaPanel(); return;
+    }
+    if (!d) {
+      el.innerHTML = `${top}<p class="story"><span class="typing">NASA POWER'dan 45 yıllık veri alınıyor <i></i><i></i><i></i></span></p>
+        <p class="note">İlk istek 5–20 saniye sürebilir; aynı yer tekrar sorulunca hızlı gelir.</p>${back}`;
+      wireAreaPanel(); return;
+    }
+    const res = d.result, pts = d.points, n = pts.length, pt = d.point;
+    const vals = pts.map(p => p.value), smooth = pts.map(p => p.smooth), keys = pts.map(p => p.date.slice(0, 7));
+    const ok = vals.filter(x => x != null), lo = Math.min(...ok), hi = Math.max(...ok), span = (hi - lo) || 1;
+    const W = 296, H = 92;
+    const X = i => 2 + (i / (n - 1)) * (W - 4), Y = val => H - 2 - ((val - lo) / span) * (H - 4);
+    const slopeM = res.sen_slope_per_decade / 120, mid = (n - 1) / 2, tY = i => Y(res.mean_value + slopeM * (i - mid));
+    const how = s.kind === "point"
+      ? `Noktayı içeren tek MERRA-2 ızgara hücresi (${latTxt(pt.cell.south)}–${latTxt(pt.cell.north)}, ${lonTxt(pt.cell.west, 3)}–${lonTxt(pt.cell.east, 3)}; yaklaşık 55 × 55 km). Haritadaki sarı kare bu hücre.`
+      : pt.n_cells === 1 ? "Kutu bir ızgara hücresinden küçük olduğu için tek bir hücrenin değeri kullanıldı (haritadaki beyaz nokta)."
+      : `Kutunun içindeki ${pt.n_cells} ızgara hücresinin alan ağırlıklı ortalaması (haritadaki beyaz noktalar).`;
+    el.innerHTML = `${top}
+      <p class="story">${areaStoryTR(res, av)}</p>
+      <div class="stats">
+        <div class="stat"><small>Sen eğimi / 10 yıl</small><b>${signed(res.sen_slope_per_decade, 2)} ${av.slopeUnit}</b></div>
+        <div class="stat"><small>%95 güven aralığı</small><b>${signed(res.ci_low, 2)} … ${signed(res.ci_high, 2)}</b></div>
+        <div class="stat"><small>Mann-Kendall p</small><b>${pTxt(res.mk_p)}</b> <span class="badge ${res.significant ? "sig" : "ns"}">${res.significant ? "Anlamlı" : "Değil"}</span></div>
+        <div class="stat"><small>${av.pct ? "% değişim / 10 yıl" : "Uzun dönem ortalama"}</small><b>${av.pct ? signed(res.percent_change_per_decade, 1) + " %" : fmt(res.mean_value, 1) + " " + av.unit}</b></div>
+      </div>
+      ${state.variable === "soil_moisture" && res.sen_slope_per_decade === 0 ? `<p class="note">NASA POWER bu değeri %1'lik adımlarla verir; çok yavaş değişimlerde eğim 0 görünebilir.</p>` : ""}
+      <p class="note">${how}</p>
+      <div class="bigchart">
+        <small>Aylık değer (soluk), 12 aylık ortalama (beyaz), Sen trendi (sarı kesikli)</small>
+        <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;margin-top:4px" aria-hidden="true">
+          <path d="${linePath(vals, X, Y)}" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+          <path d="${linePath(smooth, X, Y)}" fill="none" stroke="#fff" stroke-width="1.8"/>
+          <line x1="${X(0)}" x2="${X(n - 1)}" y1="${tY(0)}" y2="${tY(n - 1)}" stroke="#d9a441" stroke-width="1.6" stroke-dasharray="5 4"/>
+        </svg>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>${keys[0].slice(0, 4)}</span><span>${keys[n - 1].slice(0, 4)}</span></div>
+      </div>
+      <div class="sec"><h3>Isı haritası (yıl × ay)</h3>
+        <div class="hm">${heatmapSVG(vals, keys, state.variable, 296, av.unit)}
+          <small style="color:var(--muted);font-size:11px">${av.name} · NASA POWER · her hücre o ayın kendi ortalamasından sapması</small></div></div>
+      <div class="warn">Bu sonuç NASA POWER'dan (1981–2025) geliyor; bölge dosyalarındaki Giovanni verisinden (2001–2025) farklı bir kaynak ve dönem olduğu için sayılar birebir aynı olmayabilir. Tarla ölçeği değildir.</div>
+      <div class="sec"><h3>Kaynaklar</h3><ul class="src">
+        <li>${escH(pt.source)} · <a href="https://power.larc.nasa.gov/docs/services/api/" target="_blank" rel="noopener">NASA POWER API belgesi</a></li>
+        <li>Trend: B'nin mevsimsel Mann-Kendall + Sen eğimi (repodaki <code>src/trend.py</code>)</li></ul></div>
+      <div class="btn-row"><button class="fly" id="areaFly">Alana yakınlaş</button><button class="ghost" id="areaCsv">CSV indir</button></div>
+      ${pickAgain ? `<div class="btn-row">${pickAgain}</div>` : ""}${back}`;
+    wireAreaPanel();
+  }
+
+  // Paneldeki düğmelere görevlerini bağlar (panel her çizildiğinde yeniden).
+  function wireAreaPanel() {
+    const on = (id, fn) => { const b = document.getElementById(id); if (b) b.onclick = fn; };
+    on("hideLeft", () => setLeft(false));
+    on("areaBack", () => closeArea());
+    on("areaRetry", () => { area.key = null; renderLeft(); });
+    on("areaPick", () => { setPicking(true); renderLeft(); });
+    on("areaFly", flyToArea);
+    on("areaCsv", downloadAreaCSV);
+  }
+
+  // "Alan seç" modunu açar: harita tepeden görünüme geçer, tıklamalar alan seçer.
+  function openArea() {
+    area.active = true; document.body.classList.add("area-on");
+    setOrbit(false); setLeft(true, false);
+    map.easeTo({ pitch: 0, bearing: 0, padding: viewPadding(), duration: 700 });
+    setPicking(true); renderAll(true);
+  }
+
+  // Haritada seçim yapmayı açar ya da kapatır (seçilen alan ve sonuç kalır).
+  function setPicking(on) {
+    area.picking = on; area.corner = null; area.hover = null; area.flash = null;
+    if (on) { showHint(false); map.doubleClickZoom.disable(); } else map.doubleClickZoom.enable();
+    map.getCanvas().style.cursor = on ? "crosshair" : "";
+    renderAreaBar(); renderAreaMap();
+  }
+
+  // "Alan seç" modunu tamamen kapatır ve bölge dosyasına döner.
+  function closeArea(silent) {
+    if (!area.active) return;
+    Object.assign(area, { active: false, sel: null, data: null, dataKey: null, key: null, error: null, loading: false });
+    area.seq++;
+    document.body.classList.remove("area-on");
+    setPicking(false);
+    if (!silent) renderAll(true);
+  }
+
+  // Haritaya tıklanınca: nokta modunda noktayı seçer; kutu modunda ilk tıklama köşeyi
+  // koyar, ikinci tıklama kutuyu tamamlar (10°'den büyük ya da çok küçükse kabul etmez).
+  function onAreaClick(lngLat) {
+    const ll = lngLat.wrap();
+    area.flash = null;
+    if (area.kind === "point") { selectArea({ kind: "point", lat: r2(ll.lat), lon: r2(ll.lng) }); return; }
+    if (!area.corner) { area.corner = ll; area.hover = ll; renderAreaBar(); renderAreaMap(); return; }
+    const b = boxFrom(area.corner, ll);
+    if (tooBig(b)) { renderAreaBar(); return; }
+    if (tooSmall(b)) { area.flash = "small"; area.corner = null; area.hover = null; renderAreaBar(); renderAreaMap(); return; }
+    area.corner = null; area.hover = null;
+    selectArea(b);
+  }
+
+  // Yeni seçimi kaydeder; panel çizilirken veri isteği otomatik gönderilir.
+  function selectArea(sel) {
+    Object.assign(area, { sel, data: null, dataKey: null, error: null });
+    setLeft(true, false);
+    renderAll(true); renderAreaMap(); renderAreaBar();
+  }
+
+  // Kamerayı seçilen alana (nokta için hücresine) götürür.
+  function flyToArea() {
+    const s = area.sel; if (!s) return;
+    const b = s.kind === "point" ? area.data?.point?.cell : s;
+    if (!b) return;
+    const cam = map.cameraForBounds([[b.west, b.south], [b.east, b.north]], { padding: viewPadding(), maxZoom: 9 });
+    if (cam) map.flyTo({ ...cam, pitch: 50, bearing: 0, padding: viewPadding(), duration: 2200, essential: true });
+  }
+
+  // Seçilen alanın aylık serisini CSV olarak indirir (başlıkta kaynak ve hücre sayısı).
+  function downloadAreaCSV() {
+    const d = area.data; if (!d) return;
+    const av = AREA_VAR[state.variable];
+    const lines = [`month,${av.id}`, ...d.points.map(p => `${p.date.slice(0, 7)},${p.value ?? ""}`)];
+    const meta = `# ${areaTitle(area.sel)} | ${av.name} (${av.unit}) | ${d.point.source} | ${d.point.n_cells} grid cell(s)`;
+    const blob = new Blob(["﻿" + meta + "\n" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = `trend_dedektifi_alan_${av.id}.csv`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  areaBtn.onclick = () => { if (area.active) closeArea(); else openArea(); };
+  document.getElementById("areaDone").onclick = () => { setPicking(false); renderLeft(); };
+  areaBar.querySelectorAll("#areaKind button").forEach(b => b.onclick = () => {
+    area.kind = b.dataset.k; setPicking(true); renderLeft();
+  });
+  window.addEventListener("keydown", e => {
+    if (e.key !== "Escape" || !area.picking) return;
+    if (area.corner) { area.corner = null; area.hover = null; renderAreaBar(); renderAreaMap(); }
+    else { setPicking(false); renderLeft(); }
+  });
 
   function renderLegend() {
     const p = palette(state.variable), c = a => `rgb(${a.join(",")})`;
@@ -851,7 +1215,7 @@
     const w = window.innerWidth, leftOpen = w > 1100 && !document.body.classList.contains("left-closed");
     return { top: w > 760 ? 120 : 160, bottom: 110, left: leftOpen ? 360 : 30, right: w > 760 ? 60 : 20 };
   }
-  function selectRegion(id, fly) { state.region = id; save(); renderAll(true); if (fly) flyToRegion(id); }
+  function selectRegion(id, fly) { closeArea(true); state.region = id; save(); renderAll(true); if (fly) flyToRegion(id); }
   function flyToRegion(id, duration = 2600) {
     const r = regions.find(x => x.id === id), b = r.bbox;
     map.flyTo({ center: [(b.west + b.east) / 2, (b.south + b.north) / 2 - 0.35], zoom: 7.3, pitch: 66,
@@ -1040,9 +1404,16 @@
           geometry: { type: "Polygon", coordinates: sq(s.lat, s.lon, window.NDVI_DATA.window_km) } })) } });
       map.addLayer({ id: "ndvi-sites-line", type: "line", source: "ndvi-sites", paint: { "line-color": "#6fe08a", "line-width": 2.2 } });
     }
-    map.on("click", "region-fill", e => selectRegion(e.features[0].properties.id, true));
-    map.on("mouseenter", "region-fill", () => map.getCanvas().style.cursor = "pointer");
-    map.on("mouseleave", "region-fill", () => map.getCanvas().style.cursor = "");
+    // C: "Alan seç" açıkken tıklamalar bölge seçmez, alan seçer.
+    map.on("click", "region-fill", e => { if (!area.picking) selectRegion(e.features[0].properties.id, true); });
+    map.on("mouseenter", "region-fill", () => { if (!area.picking) map.getCanvas().style.cursor = "pointer"; });
+    map.on("mouseleave", "region-fill", () => { if (!area.picking) map.getCanvas().style.cursor = ""; });
+    addAreaLayers();
+    map.on("click", e => { if (area.picking) onAreaClick(e.lngLat); });
+    map.on("mousemove", e => {
+      if (!area.picking || area.kind !== "box" || !area.corner) return;
+      area.hover = e.lngLat.wrap(); renderAreaMap(); renderAreaBar();
+    });
 
     renderAll(true);
     setTimeout(() => overview(5000), 400);
@@ -1061,7 +1432,7 @@
       map.setLayoutProperty("ndvi", "visibility", a.ndvi ? "visible" : "none");
     }
     if (a.region === "overview") overview(3000);
-    else if (a.region && REGION_TR[a.region]) { state.region = a.region; flyToRegion(a.region); }
+    else if (a.region && REGION_TR[a.region]) { closeArea(true); state.region = a.region; flyToRegion(a.region); }
     save(); renderAll(true); updateNdvi(true);
   }
 

@@ -139,6 +139,11 @@ NDVI_PARTIAL=1 python detective3d/build_ndvi.py
   - Pencereler haritada yeşil karelerle gösterilir.
   - Ajan bu veriyi `get_ndvi_trend` aracıyla kullanır.
 - **CSV indir:** Seçili bölge ve değişken için Giovanni ve POWER aylık serileri tek dosyada indirilir.
+- **Alan seç (C):** Sağ üstteki **Alan seç** düğmesi haritayı tepeden görünüme alır.
+  - **Nokta:** Haritaya tıklayınca o noktayı içeren NASA POWER ızgara hücresi (~55 km) analiz edilir.
+  - **Kare çiz:** İki karşı köşeye tıklanır (en fazla 10° × 10°). Kutunun içindeki hücrelerin alan ağırlıklı ortalaması analiz edilir.
+  - Veri sunucunun `/api/point` ve `/api/box` adreslerinden canlı gelir (C'nin `api.py` + `power_loader.py`, 1981–2025). Trend B'nin aynı analiziyle hesaplanır; internet gerekir.
+  - Sonuç sol panelde gösterilir: hikâye cümlesi, istatistikler, grafik, ısı haritası ve CSV. **Bölgelere dön** ile üç bölgeye dönülür.
 - **Ajan aracı `get_long_record`:** "Uzun vadede de böyle mi?" sorusunu POWER verisiyle cevaplar. Veri setleri çelişirse ajan bunu söyler ve yerel istasyon (MGM) kontrolü önerir.
 
 ### Veri setlerinin çeliştiği yer: Doğu Karadeniz
